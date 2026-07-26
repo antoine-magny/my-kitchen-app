@@ -117,7 +117,7 @@ function formatTodayFr() {
 }
 
 export default function Home() {
-  const [query, setQuery] = useState("");iiiiiaaaaaa
+  const [query, setQuery] = useState("");
   const [saved, setSaved] = useState(false);
   const todayLabel = useMemo(() => formatTodayFr(), []);
 
