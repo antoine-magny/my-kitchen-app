@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
-import { AppSidebar, MenuIcon } from "@/components/app-sidebar";
+import { RECIPES, type Recipe, type RecipeFilter } from "@/lib/recipes";
 
 function SearchIcon() {
   return (
@@ -39,14 +40,14 @@ function MuscleIcon() {
   );
 }
 
-function HeartIcon({ filled }: { filled: boolean }) {
+function HeartIcon({ filled, light }: { filled: boolean; light?: boolean }) {
   return (
     <svg
       width="16"
       height="16"
       viewBox="0 0 24 24"
       fill={filled ? "#E85D75" : "none"}
-      stroke={filled ? "#E85D75" : "white"}
+      stroke={filled ? "#E85D75" : light ? "white" : "#7A8F7D"}
       strokeWidth="2.2"
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -65,115 +66,9 @@ function PlusIcon() {
   );
 }
 
-type Filter = "Tout" | "Express" | "Végétarien" | "Riche en protéines" | "Desserts";
+type Filter = RecipeFilter;
 
 const FILTERS: Filter[] = ["Tout", "Express", "Végétarien", "Riche en protéines", "Desserts"];
-
-interface Recipe {
-  id: number;
-  title: string;
-  photo: string;
-  time: string;
-  calories: number;
-  proteins: number;
-  tag: Filter | null;
-  tagLabel?: string;
-  featured?: boolean;
-}
-
-const RECIPES: Recipe[] = [
-  {
-    id: 1,
-    title: "Filet de bœuf, jus de truffe & légumes racines",
-    photo: "https://images.unsplash.com/photo-1663530761401-15eefb544889?w=900&h=560&fit=crop&auto=format",
-    time: "45 min",
-    calories: 680,
-    proteins: 52,
-    tag: "Riche en protéines",
-    tagLabel: "Signature",
-    featured: true,
-  },
-  {
-    id: 2,
-    title: "Dos de cabillaud, vierge d'herbes & fenouil braisé",
-    photo: "https://images.unsplash.com/photo-1676471926534-d5c9771909fa?w=600&h=400&fit=crop&auto=format",
-    time: "30 min",
-    calories: 380,
-    proteins: 34,
-    tag: "Riche en protéines",
-    tagLabel: "Léger",
-  },
-  {
-    id: 3,
-    title: "Salade de burrata, tomates rôties & basilic",
-    photo: "https://images.unsplash.com/photo-1771759441598-0105381b2e70?w=600&h=400&fit=crop&auto=format",
-    time: "15 min",
-    calories: 280,
-    proteins: 12,
-    tag: "Végétarien",
-    tagLabel: "Express",
-  },
-  {
-    id: 4,
-    title: "Buddha bowl quinoa, avocat & pois chiches croustillants",
-    photo: "https://images.unsplash.com/photo-1771074168436-8692a866cdb1?w=600&h=400&fit=crop&auto=format",
-    time: "20 min",
-    calories: 420,
-    proteins: 18,
-    tag: "Végétarien",
-    tagLabel: "Végétarien",
-  },
-  {
-    id: 5,
-    title: "Saumon fumé mi-cuit, crème citronnée & câpres",
-    photo: "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=600&h=400&fit=crop&auto=format",
-    time: "25 min",
-    calories: 450,
-    proteins: 42,
-    tag: "Riche en protéines",
-    tagLabel: "Protéines",
-  },
-  {
-    id: 6,
-    title: "Poulet rôti, jus corsé & pommes de terre grenaille",
-    photo: "https://images.unsplash.com/photo-1539735257177-0d3949225f96?w=600&h=400&fit=crop&auto=format",
-    time: "18 min",
-    calories: 510,
-    proteins: 38,
-    tag: "Express",
-    tagLabel: "Express",
-  },
-  {
-    id: 7,
-    title: "Moelleux au chocolat noir, cœur coulant praliné",
-    photo: "https://images.unsplash.com/photo-1606983340126-99ab4feaa64a?w=600&h=400&fit=crop&auto=format",
-    time: "35 min",
-    calories: 520,
-    proteins: 8,
-    tag: "Desserts",
-    tagLabel: "Dessert",
-  },
-  {
-    id: 8,
-    title: "Grande salade fraîche, vinaigrette miel & moutarde",
-    photo: "https://images.unsplash.com/photo-1778690103044-88ad0e274e32?w=600&h=400&fit=crop&auto=format",
-    time: "12 min",
-    calories: 240,
-    proteins: 10,
-    tag: "Express",
-    tagLabel: "Express",
-  },
-  {
-    id: 9,
-    title: "Sauce poisson maison, légumes poêlés",
-    photo: "https://images.unsplash.com/photo-1616671276441-2f2c277b8bf9?w=600&h=400&fit=crop&auto=format",
-    time: "40 min",
-    calories: 390,
-    proteins: 29,
-    tag: "Végétarien",
-    tagLabel: "Gastronomique",
-  },
-];
 
 const TAG_COLORS: Record<string, { bg: string; text: string }> = {
   Signature: { bg: "rgba(28,43,30,0.72)", text: "#E8F5EC" },
@@ -204,43 +99,46 @@ function RecipeCard({
         boxShadow: "0 2px 16px rgba(28,43,30,0.07)",
       }}
     >
-      <div className="relative overflow-hidden bg-[#D4EDD9]" style={{ height: 200 }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={recipe.photo}
-          alt={recipe.title}
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-        />
-        <div
-          className="absolute inset-0"
-          style={{ background: "linear-gradient(to top, rgba(28,43,30,0.48) 0%, transparent 55%)" }}
-        />
-        {tagCfg && recipe.tagLabel && (
+      <Link href={`/recettes/${recipe.id}`} className="block">
+        <div className="relative overflow-hidden bg-[#D4EDD9]" style={{ height: 200 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={recipe.photo}
+            alt={recipe.title}
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
           <div
-            className="absolute top-3 left-3 rounded-lg px-2.5 py-1 text-xs font-bold backdrop-blur-[4px]"
-            style={{ background: tagCfg.bg, color: tagCfg.text }}
-          >
-            {recipe.tagLabel}
-          </div>
-        )}
-        <button
-          type="button"
-          onClick={() => onToggleFav(recipe.id)}
-          className="absolute top-3 right-3 flex h-8 w-8 items-center justify-center rounded-xl transition-all duration-200 hover:scale-110"
-          style={{
-            background: isFav ? "rgba(255,255,255,0.95)" : "rgba(28,43,30,0.35)",
-            backdropFilter: "blur(4px)",
-          }}
-          aria-label="Ajouter aux favoris"
-        >
-          <HeartIcon filled={isFav} />
-        </button>
-      </div>
+            className="absolute inset-0"
+            style={{ background: "linear-gradient(to top, rgba(28,43,30,0.48) 0%, transparent 55%)" }}
+          />
+          {tagCfg && recipe.tagLabel && (
+            <div
+              className="absolute top-3 left-3 rounded-lg px-2.5 py-1 text-xs font-bold backdrop-blur-[4px]"
+              style={{ background: tagCfg.bg, color: tagCfg.text }}
+            >
+              {recipe.tagLabel}
+            </div>
+          )}
+        </div>
+      </Link>
 
       <div className="px-4 pt-3.5 pb-4">
-        <h3 className="font-lora mb-3 line-clamp-2 min-h-10 text-sm leading-snug font-bold text-[#1C2B1E]">
-          {recipe.title}
-        </h3>
+        <div className="mb-3 flex items-start justify-between gap-2">
+          <Link href={`/recettes/${recipe.id}`}>
+            <h3 className="font-lora line-clamp-2 min-h-10 text-sm leading-snug font-bold text-[#1C2B1E]">
+              {recipe.title}
+            </h3>
+          </Link>
+          <button
+            type="button"
+            onClick={() => onToggleFav(recipe.id)}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-all duration-200 hover:scale-110"
+            style={{ background: isFav ? "#FEE2E8" : "#F0F4EF" }}
+            aria-label="Ajouter aux favoris"
+          >
+            <HeartIcon filled={isFav} />
+          </button>
+        </div>
 
         <div className="mb-4 flex items-center gap-3">
           <div className="flex items-center gap-1.5 text-[#4A7C59]">
@@ -259,13 +157,21 @@ function RecipeCard({
           </div>
         </div>
 
-        <button
-          type="button"
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#C8E0CF] bg-[#F4F9F5] py-2.5 text-xs font-bold text-[#4A7C59] transition-all duration-200 hover:border-[#4A7C59] hover:bg-[#4A7C59] hover:text-white"
-        >
-          <PlusIcon />
-          Ajouter au planning
-        </button>
+        <div className="flex gap-2">
+          <Link
+            href={`/recettes/${recipe.id}`}
+            className="flex flex-1 items-center justify-center rounded-xl bg-[#4A7C59] py-2.5 text-xs font-bold text-white transition-all hover:opacity-90"
+          >
+            Voir les étapes
+          </Link>
+          <button
+            type="button"
+            className="flex items-center justify-center gap-1.5 rounded-xl border border-[#C8E0CF] bg-[#F4F9F5] px-3 py-2.5 text-xs font-bold text-[#4A7C59] transition-all hover:border-[#4A7C59]"
+            aria-label="Ajouter au planning"
+          >
+            <PlusIcon />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -282,29 +188,29 @@ function FeaturedCard({
 }) {
   return (
     <div
-      className="group relative mb-8 cursor-pointer overflow-hidden rounded-3xl bg-[#1C2B1E]"
+      className="group relative mb-8 overflow-hidden rounded-3xl bg-[#1C2B1E]"
       style={{
         height: 340,
         boxShadow: "0 12px 48px rgba(28,43,30,0.20)",
       }}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={recipe.photo}
-        alt={recipe.title}
-        className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-      />
-      <div
-        className="absolute inset-0"
-        style={{
-          background: "linear-gradient(to top, rgba(10,20,12,0.85) 0%, rgba(10,20,12,0.30) 50%, transparent 100%)",
-        }}
-      />
-
-      <div className="absolute top-5 left-5 flex items-center gap-2">
+      <Link href={`/recettes/${recipe.id}`} className="absolute inset-0 block">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={recipe.photo}
+          alt={recipe.title}
+          className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+        />
         <div
-          className="rounded-xl bg-[#4A7C59] px-3 py-1.5 text-xs font-extrabold tracking-[0.08em] text-white"
-        >
+          className="absolute inset-0"
+          style={{
+            background: "linear-gradient(to top, rgba(10,20,12,0.85) 0%, rgba(10,20,12,0.30) 50%, transparent 100%)",
+          }}
+        />
+      </Link>
+
+      <div className="pointer-events-none absolute top-5 left-5 flex items-center gap-2">
+        <div className="rounded-xl bg-[#4A7C59] px-3 py-1.5 text-xs font-extrabold tracking-[0.08em] text-white">
           RECETTE DU JOUR
         </div>
       </div>
@@ -312,17 +218,17 @@ function FeaturedCard({
       <button
         type="button"
         onClick={() => onToggleFav(recipe.id)}
-        className="absolute top-5 right-5 flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200 hover:scale-110"
+        className="absolute top-5 right-5 z-10 flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200 hover:scale-110"
         style={{
           background: isFav ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.18)",
           backdropFilter: "blur(6px)",
         }}
         aria-label="Ajouter aux favoris"
       >
-        <HeartIcon filled={isFav} />
+        <HeartIcon filled={isFav} light />
       </button>
 
-      <div className="absolute right-0 bottom-0 left-0 px-6 py-5">
+      <div className="pointer-events-none absolute right-0 bottom-0 left-0 z-10 px-6 py-5">
         <h2
           className="font-lora mb-3 text-2xl leading-tight font-bold text-white"
           style={{ textShadow: "0 1px 12px rgba(0,0,0,0.4)" }}
@@ -342,12 +248,12 @@ function FeaturedCard({
             <MuscleIcon />
             <span className="text-xs font-semibold">{recipe.proteins}g protéines</span>
           </div>
-          <button
-            type="button"
-            className="ml-auto flex items-center gap-2 rounded-xl bg-[#4A7C59] px-4 py-2 text-xs font-bold text-white transition-all hover:scale-105"
+          <Link
+            href={`/recettes/${recipe.id}`}
+            className="pointer-events-auto ml-auto flex items-center gap-2 rounded-xl bg-[#4A7C59] px-4 py-2 text-xs font-bold text-white transition-all hover:scale-105"
           >
-            <PlusIcon /> Ajouter au planning
-          </button>
+            Voir les étapes
+          </Link>
         </div>
       </div>
     </div>
@@ -358,7 +264,6 @@ export default function RecettesPage() {
   const [activeFilter, setActiveFilter] = useState<Filter>("Tout");
   const [favorites, setFavorites] = useState<Set<number>>(new Set([1, 5]));
   const [query, setQuery] = useState("");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const toggleFav = (id: number) => {
     setFavorites((prev) => {
@@ -387,29 +292,12 @@ export default function RecettesPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#F6F8F3]">
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={() => setSidebarOpen(false)} />
-      )}
-
-      {sidebarOpen && <AppSidebar isMobile onClose={() => setSidebarOpen(false)} />}
-      <AppSidebar />
-
-      <main className="min-w-0 flex-1 overflow-y-auto px-5 py-8 lg:px-10 lg:py-10">
+    <div className="min-h-screen bg-[#F6F8F3]">
+      <main className="mx-auto max-w-md px-5 py-8 sm:max-w-2xl lg:max-w-5xl lg:px-10 lg:py-10">
         <div className="mb-8 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button
-              type="button"
-              className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-[#1C2B1E] transition-colors lg:hidden"
-              style={{ boxShadow: "0 2px 10px rgba(28,43,30,0.08)" }}
-              onClick={() => setSidebarOpen(true)}
-            >
-              <MenuIcon />
-            </button>
-            <div>
-              <p className="mb-0.5 text-xs font-semibold tracking-[0.1em] text-[#7A8F7D] uppercase">Collection</p>
-              <h1 className="font-lora text-2xl leading-none font-bold text-[#1C2B1E] lg:text-3xl">Mes Recettes</h1>
-            </div>
+          <div>
+            <p className="mb-0.5 text-xs font-semibold tracking-[0.1em] text-[#7A8F7D] uppercase">Collection</p>
+            <h1 className="font-lora text-2xl leading-none font-bold text-[#1C2B1E] lg:text-3xl">Mes Recettes</h1>
           </div>
 
           <div

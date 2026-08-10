@@ -2,43 +2,10 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { getRecipeById } from "@/lib/recipes";
 
-const MAIN_MEAL = {
-  title: "Poulet rôti aux herbes & légumes du soleil",
-  photo:
-    "https://images.unsplash.com/photo-1539735257177-0d3949225f96?w=800&h=480&fit=crop&auto=format",
-  time: "45 min",
-  calories: 520,
-  proteins: 38,
-  servings: 2,
-};
-
-const FRIDGE_RECIPES = [
-  {
-    id: 1,
-    title: "Omelette provençale",
-    photo:
-      "https://images.unsplash.com/photo-1610328466269-1f36faad83c1?w=400&h=280&fit=crop&auto=format",
-    time: "10 min",
-    difficulty: "Facile",
-  },
-  {
-    id: 2,
-    title: "Pâtes à la tomate & basilic",
-    photo:
-      "https://images.unsplash.com/photo-1447279506476-3faec8071eee?w=400&h=280&fit=crop&auto=format",
-    time: "20 min",
-    difficulty: "Facile",
-  },
-  {
-    id: 3,
-    title: "Soupe de carottes épicée",
-    photo:
-      "https://images.unsplash.com/photo-1620791144170-8a443bf37a33?w=400&h=280&fit=crop&auto=format",
-    time: "30 min",
-    difficulty: "Moyen",
-  },
-];
+const MAIN_MEAL = getRecipeById(6)!;
+const FRIDGE_RECIPES = [getRecipeById(3)!, getRecipeById(4)!, getRecipeById(8)!];
 
 type Urgency = "red" | "orange" | "green";
 
@@ -167,9 +134,9 @@ export default function Home() {
         <section className="fade-up mb-7" style={{ animationDelay: "0.08s" }}>
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-lora text-lg font-bold text-[#1C2B1E]">Au menu aujourd&apos;hui</h2>
-            <button type="button" className="flex items-center gap-1 text-sm font-semibold text-[#4A7C59] transition-opacity hover:opacity-70">
+            <Link href="/recettes" className="flex items-center gap-1 text-sm font-semibold text-[#4A7C59] transition-opacity hover:opacity-70">
               Modifier <ChevronRight />
-            </button>
+            </Link>
           </div>
 
           <div
@@ -180,18 +147,20 @@ export default function Home() {
             }}
           >
             <div className="relative h-52 bg-[#D4EDD9]">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={MAIN_MEAL.photo} alt={MAIN_MEAL.title} className="h-full w-full object-cover" />
-              <div
-                className="absolute inset-0"
-                style={{
-                  background: "linear-gradient(to top, rgba(28,43,30,0.55) 0%, transparent 55%)",
-                }}
-              />
+              <Link href={`/recettes/${MAIN_MEAL.id}`} className="absolute inset-0 block">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={MAIN_MEAL.photo} alt={MAIN_MEAL.title} className="h-full w-full object-cover" />
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background: "linear-gradient(to top, rgba(28,43,30,0.55) 0%, transparent 55%)",
+                  }}
+                />
+              </Link>
               <button
                 type="button"
                 onClick={() => setSaved(!saved)}
-                className="absolute top-3 right-3 flex h-9 w-9 items-center justify-center rounded-xl backdrop-blur-sm transition-all"
+                className="absolute top-3 right-3 z-10 flex h-9 w-9 items-center justify-center rounded-xl backdrop-blur-sm transition-all"
                 style={{
                   background: saved ? "#4A7C59" : "rgba(255,255,255,0.82)",
                   color: saved ? "#fff" : "#4A7C59",
@@ -205,7 +174,7 @@ export default function Home() {
               </button>
 
               <div
-                className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-xl px-3 py-1.5"
+                className="pointer-events-none absolute bottom-3 left-3 z-10 flex items-center gap-1.5 rounded-xl px-3 py-1.5"
                 style={{ background: "rgba(255,255,255,0.90)", backdropFilter: "blur(6px)" }}
               >
                 <span className="text-[#4A7C59]">
@@ -237,7 +206,9 @@ export default function Home() {
                 </span>
               </div>
 
-              <h3 className="font-lora mb-4 text-base leading-snug font-bold text-[#1C2B1E]">{MAIN_MEAL.title}</h3>
+              <Link href={`/recettes/${MAIN_MEAL.id}`}>
+                <h3 className="font-lora mb-4 text-base leading-snug font-bold text-[#1C2B1E]">{MAIN_MEAL.title}</h3>
+              </Link>
 
               <div className="flex items-center gap-2.5">
                 <div className="flex items-center gap-1.5 rounded-xl bg-[#FFF7ED] px-3 py-1.5">
@@ -254,16 +225,16 @@ export default function Home() {
                 </div>
               </div>
 
-              <button
-                type="button"
-                className="mt-4 w-full rounded-2xl py-3.5 text-sm font-bold text-white transition-all active:scale-95"
+              <Link
+                href={`/recettes/${MAIN_MEAL.id}`}
+                className="mt-4 block w-full rounded-2xl py-3.5 text-center text-sm font-bold text-white transition-all active:scale-95"
                 style={{
                   background: "linear-gradient(135deg, #4A7C59, #5E9E72)",
                   boxShadow: "0 4px 14px rgba(74,124,89,0.30)",
                 }}
               >
                 Voir la recette complète
-              </button>
+              </Link>
             </div>
           </div>
         </section>
@@ -271,16 +242,16 @@ export default function Home() {
         <section className="fade-up mb-7" style={{ animationDelay: "0.16s" }}>
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-lora text-lg font-bold text-[#1C2B1E]">Que faire avec votre frigo&nbsp;?</h2>
-            <button type="button" className="flex items-center gap-1 text-sm font-semibold text-[#4A7C59] transition-opacity hover:opacity-70">
+            <Link href="/recettes" className="flex items-center gap-1 text-sm font-semibold text-[#4A7C59] transition-opacity hover:opacity-70">
               Tout voir <ChevronRight />
-            </button>
+            </Link>
           </div>
 
           <div className="grid grid-cols-3 gap-3">
             {FRIDGE_RECIPES.map((recipe) => (
-              <button
+              <Link
                 key={recipe.id}
-                type="button"
+                href={`/recettes/${recipe.id}`}
                 className="overflow-hidden rounded-2xl text-left transition-transform hover:shadow-lg active:scale-95"
                 style={{
                   background: "#FFFFFF",
@@ -302,7 +273,7 @@ export default function Home() {
                     <span className="text-xs font-medium">{recipe.time}</span>
                   </div>
                 </div>
-              </button>
+              </Link>
             ))}
           </div>
         </section>
@@ -310,9 +281,9 @@ export default function Home() {
         <section className="fade-up" style={{ animationDelay: "0.24s" }}>
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-lora text-lg font-bold text-[#1C2B1E]">Ingrédients bientôt périmés</h2>
-            <button type="button" className="flex items-center gap-1 text-sm font-semibold text-[#4A7C59] transition-opacity hover:opacity-70">
+            <Link href="/frigo" className="flex items-center gap-1 text-sm font-semibold text-[#4A7C59] transition-opacity hover:opacity-70">
               Gérer <ChevronRight />
-            </button>
+            </Link>
           </div>
 
           <div
@@ -366,47 +337,6 @@ export default function Home() {
           </div>
         </section>
 
-        <nav
-          className="fixed right-0 bottom-0 left-0 flex items-center justify-around px-2 py-3"
-          style={{
-            background: "rgba(255,255,255,0.92)",
-            backdropFilter: "blur(16px)",
-            borderTop: "1px solid #E2EBE3",
-            boxShadow: "0 -4px 24px rgba(74,124,89,0.08)",
-          }}
-        >
-          {[
-            { icon: "🏠", label: "Accueil", href: "/", active: true },
-            { icon: "📖", label: "Recettes", href: "/recettes", active: false },
-            { icon: "🧊", label: "Frigo", href: "/frigo", active: false },
-            { icon: "🛒", label: "Courses", href: null, active: false },
-          ].map((item) =>
-            item.href ? (
-              <Link
-                key={item.label}
-                href={item.href}
-                className="flex min-w-[60px] flex-col items-center gap-0.5 rounded-xl px-4 py-1 transition-all"
-              >
-                <span className="text-xl">{item.icon}</span>
-                <span className={`text-xs font-semibold ${item.active ? "text-[#4A7C59]" : "text-[#7A8F7D]"}`}>
-                  {item.label}
-                </span>
-                {item.active && <div className="mt-0.5 h-1 w-1 rounded-full bg-[#4A7C59]" />}
-              </Link>
-            ) : (
-              <button
-                key={item.label}
-                type="button"
-                className="flex min-w-[60px] flex-col items-center gap-0.5 rounded-xl px-4 py-1 transition-all"
-              >
-                <span className="text-xl">{item.icon}</span>
-                <span className="text-xs font-semibold text-[#7A8F7D]">{item.label}</span>
-              </button>
-            ),
-          )}
-        </nav>
-
-        <div className="h-20" />
       </div>
     </div>
   );

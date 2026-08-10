@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AppSidebar, MenuIcon } from "@/components/app-sidebar";
 
 function PlusIcon({ size = 14 }: { size?: number }) {
   return (
@@ -408,7 +407,6 @@ export default function FrigoPage() {
   const [activeTab, setActiveTab] = useState<TabId>("fridge");
   const [items, setItems] = useState<Ingredient[]>(INITIAL);
   const [showModal, setShowModal] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [newIds, setNewIds] = useState<Set<number>>(new Set());
 
@@ -454,31 +452,14 @@ export default function FrigoPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#F6F8F3]">
-      {sidebarOpen && (
-        <div className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={() => setSidebarOpen(false)} />
-      )}
-
-      {sidebarOpen && <AppSidebar isMobile onClose={() => setSidebarOpen(false)} />}
-      <AppSidebar />
-
-      <main className="flex min-w-0 flex-1 flex-col">
-        <div className="flex shrink-0 items-center justify-between border-b border-[#E8EDE9] px-5 py-5 lg:px-10 lg:py-7">
-          <div className="flex items-center gap-4">
-            <button
-              type="button"
-              className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-[#1C2B1E] transition-colors hover:bg-[#EBF2EC] lg:hidden"
-              style={{ boxShadow: "0 2px 10px rgba(28,43,30,0.08)" }}
-              onClick={() => setSidebarOpen(true)}
-            >
-              <MenuIcon />
-            </button>
-            <div>
-              <p className="mb-0.5 text-xs font-semibold tracking-[0.1em] text-[#7A8F7D] uppercase">Inventaire</p>
-              <h1 className="font-lora text-2xl leading-none font-bold text-[#1C2B1E] lg:text-3xl">
-                Mon Frigo &amp; Placards
-              </h1>
-            </div>
+    <div className="min-h-screen bg-[#F6F8F3]">
+      <main className="mx-auto flex min-h-screen max-w-md flex-col sm:max-w-2xl lg:max-w-3xl">
+        <div className="flex shrink-0 items-center justify-between border-b border-[#E8EDE9] px-5 py-5 lg:px-8 lg:py-7">
+          <div>
+            <p className="mb-0.5 text-xs font-semibold tracking-[0.1em] text-[#7A8F7D] uppercase">Inventaire</p>
+            <h1 className="font-lora text-2xl leading-none font-bold text-[#1C2B1E] lg:text-3xl">
+              Mon Frigo &amp; Placards
+            </h1>
           </div>
 
           <button
@@ -496,7 +477,7 @@ export default function FrigoPage() {
           </button>
         </div>
 
-        <div className="flex shrink-0 items-end gap-0 border-b border-[#E8EDE9] px-5 lg:px-10">
+        <div className="flex shrink-0 items-end gap-0 border-b border-[#E8EDE9] px-5 lg:px-8">
           {TABS.map((tab) => {
             const isActive = activeTab === tab.id;
             const urgent = urgentCount(tab.id);
@@ -538,7 +519,7 @@ export default function FrigoPage() {
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          <div className="max-w-3xl px-5 py-6 lg:px-10">
+          <div className="px-5 py-6 lg:px-8">
             <div className="mb-5 flex items-center gap-4">
               <div
                 className="flex flex-1 items-center gap-2.5 rounded-xl px-3.5 py-2.5"
