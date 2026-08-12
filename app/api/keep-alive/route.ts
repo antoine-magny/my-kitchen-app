@@ -18,7 +18,7 @@ export async function GET(request: Request) {
     );
 
     // 3. Ping SQL sur votre vraie table en français ('recettes')
-    const { data, error } = await supabase.from('publc.recipes').select('id').limit(1);
+    const { data, error } = await supabase.from('public.recipes').select('id').limit(1);
 
     if (error) {
       console.error('Erreur Supabase Ping:', error);
