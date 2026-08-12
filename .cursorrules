@@ -4,7 +4,7 @@
 --- RÈGLE : SYNCHRONISATION GIT ---
 Quand l'utilisateur écrit "synchro git", "synchro", ou "met à jour github" :
 1. Exécute la commande terminal : git add .
-2. Analyse les fichiers modifiés pour rédiger un message de commit concis et clair en français (ex: "Ajout de la page frigo").
+2. Analyse les fichiers modifiés pour rédiger un message de commit concis et clair en français (ex: "Ajout de la page frigo"). Ajoutes la date et l'heure à la fin du message (fuseau horaire : Paris).
 3. Exécute la commande terminal : git commit -m "Message de commit généré"
 4. Exécute la commande terminal : git push
 5. Confirme à l'utilisateur que le code a été envoyé sur GitHub et que la mise à jour Vercel est lancée.
