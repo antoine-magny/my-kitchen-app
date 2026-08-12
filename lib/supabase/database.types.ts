@@ -141,30 +141,36 @@ export type Database = {
       pantry_items: {
         Row: {
           created_at: string
+          emoji: string | null
           expiration_date: string | null
           id: string
           ingredient_id: string
           quantity: number
+          storage_location: string
           unit: string
           updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          emoji?: string | null
           expiration_date?: string | null
           id?: string
           ingredient_id: string
           quantity: number
+          storage_location?: string
           unit: string
           updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
+          emoji?: string | null
           expiration_date?: string | null
           id?: string
           ingredient_id?: string
           quantity?: number
+          storage_location?: string
           unit?: string
           updated_at?: string
           user_id?: string
@@ -302,6 +308,7 @@ export type Database = {
           difficulty: string
           id: string
           instructions: string
+          photo_url: string | null
           prep_time_minutes: number | null
           servings: number
           title: string
@@ -313,6 +320,7 @@ export type Database = {
           difficulty?: string
           id?: string
           instructions: string
+          photo_url?: string | null
           prep_time_minutes?: number | null
           servings?: number
           title: string
@@ -324,6 +332,7 @@ export type Database = {
           difficulty?: string
           id?: string
           instructions?: string
+          photo_url?: string | null
           prep_time_minutes?: number | null
           servings?: number
           title?: string

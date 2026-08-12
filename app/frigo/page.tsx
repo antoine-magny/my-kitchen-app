@@ -1,6 +1,20 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+
+import {
+  dlcStatus,
+  daysUntilDlc,
+  FRIDGE_TABS,
+  getFridgeItems,
+  nextFridgeItemId,
+  setFridgeItems,
+  type FridgeItem,
+  type FridgeStorageLocation,
+} from "@/lib/fridge";
+import { INGREDIENTS } from "@/lib/ingredients";
+import { DEFAULT_UNIT, UNITS, unitLabel, type UnitCode } from "@/lib/units";
 
 function PlusIcon({ size = 14 }: { size?: number }) {
   return (
@@ -49,6 +63,14 @@ function SearchIcon() {
   );
 }
 
+function ChevronDownIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  );
+}
+
 function CalendarIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -60,85 +82,54 @@ function CalendarIcon() {
   );
 }
 
-type TabId = "fridge" | "freezer" | "pantry";
-
-interface Ingredient {
-  id: number;
-  emoji: string;
-  name: string;
-  quantity: number;
-  unit: string;
-  dlc: string | null;
-  category: TabId;
+function MoreIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+      <circle cx="12" cy="5" r="1.6" />
+      <circle cx="12" cy="12" r="1.6" />
+      <circle cx="12" cy="19" r="1.6" />
+    </svg>
+  );
 }
 
-function fmt(d: Date) {
-  return d.toISOString().split("T")[0];
+function MoveIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 9l-3 3 3 3" />
+      <path d="M9 5l3-3 3 3" />
+      <path d="M15 19l3 3 3-3" />
+      <path d="M19 9l3 3-3 3" />
+      <path d="M2 12h20" />
+      <path d="M12 2v20" />
+    </svg>
+  );
 }
 
-function daysFrom(n: number) {
-  const d = new Date();
-  d.setDate(d.getDate() + n);
-  return fmt(d);
-}
+type TabId = FridgeStorageLocation;
+type Ingredient = FridgeItem;
 
-let nextId = 100;
-
-const INITIAL: Ingredient[] = [
-  { id: 1, emoji: "🥚", name: "Œufs", quantity: 6, unit: "unités", dlc: daysFrom(7), category: "fridge" },
-  { id: 2, emoji: "🥛", name: "Lait demi-écrémé", quantity: 1, unit: "L", dlc: daysFrom(2), category: "fridge" },
-  { id: 3, emoji: "🧀", name: "Comté", quantity: 150, unit: "g", dlc: daysFrom(14), category: "fridge" },
-  { id: 4, emoji: "🥩", name: "Poulet fermier", quantity: 500, unit: "g", dlc: daysFrom(0), category: "fridge" },
-  { id: 5, emoji: "🍅", name: "Tomates cerises", quantity: 250, unit: "g", dlc: daysFrom(1), category: "fridge" },
-  { id: 6, emoji: "🥕", name: "Carottes", quantity: 4, unit: "unités", dlc: daysFrom(6), category: "fridge" },
-  { id: 7, emoji: "🧈", name: "Beurre AOP", quantity: 250, unit: "g", dlc: daysFrom(21), category: "fridge" },
-  { id: 8, emoji: "🥗", name: "Mesclun bio", quantity: 100, unit: "g", dlc: daysFrom(2), category: "fridge" },
-  { id: 9, emoji: "🍋", name: "Citrons", quantity: 3, unit: "unités", dlc: daysFrom(8), category: "fridge" },
-  { id: 10, emoji: "🐟", name: "Filets de saumon", quantity: 2, unit: "pièces", dlc: daysFrom(60), category: "freezer" },
-  { id: 11, emoji: "🥦", name: "Brocolis surgelés", quantity: 400, unit: "g", dlc: daysFrom(90), category: "freezer" },
-  { id: 12, emoji: "🍦", name: "Sorbet citron", quantity: 500, unit: "g", dlc: daysFrom(45), category: "freezer" },
-  { id: 13, emoji: "🍖", name: "Bœuf haché 5%", quantity: 300, unit: "g", dlc: daysFrom(-2), category: "freezer" },
-  { id: 14, emoji: "🫛", name: "Petits pois", quantity: 800, unit: "g", dlc: daysFrom(120), category: "freezer" },
-  { id: 15, emoji: "🍝", name: "Pâtes linguine", quantity: 500, unit: "g", dlc: null, category: "pantry" },
-  { id: 16, emoji: "🍚", name: "Riz basmati", quantity: 800, unit: "g", dlc: null, category: "pantry" },
-  { id: 17, emoji: "🫒", name: "Huile d'olive", quantity: 750, unit: "mL", dlc: daysFrom(180), category: "pantry" },
-  { id: 18, emoji: "🧂", name: "Fleur de sel", quantity: 200, unit: "g", dlc: null, category: "pantry" },
-  { id: 19, emoji: "🌶️", name: "Paprika fumé", quantity: 50, unit: "g", dlc: daysFrom(300), category: "pantry" },
-  { id: 20, emoji: "🍫", name: "Chocolat noir 70%", quantity: 200, unit: "g", dlc: daysFrom(60), category: "pantry" },
-  { id: 21, emoji: "🧁", name: "Farine T55", quantity: 1, unit: "kg", dlc: daysFrom(180), category: "pantry" },
-  { id: 22, emoji: "☕", name: "Café en grains", quantity: 250, unit: "g", dlc: daysFrom(90), category: "pantry" },
-];
-
-const TABS: { id: TabId; label: string; emoji: string }[] = [
-  { id: "fridge", label: "Réfrigérateur", emoji: "🧊" },
-  { id: "freezer", label: "Congélateur", emoji: "❄️" },
-  { id: "pantry", label: "Placards", emoji: "🏺" },
-];
-
-const EMOJI_SUGGESTIONS = [
-  "🥚", "🥛", "🧀", "🥩", "🍅", "🥕", "🧈", "🥗", "🍋", "🫐", "🍎", "🍊",
-  "🥦", "🥬", "🧅", "🥔", "🫑", "🍞", "🐟", "🍖", "🥑", "🍇", "🫚", "🧄",
-];
-
-function dlcStatus(dlc: string | null): "urgent" | "soon" | "ok" | "none" {
-  if (!dlc) return "none";
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const diff = Math.floor((new Date(dlc).getTime() - today.getTime()) / 86400000);
-  if (diff <= 0) return "urgent";
-  if (diff <= 3) return "soon";
-  return "ok";
-}
+const TABS = FRIDGE_TABS;
 
 function dlcLabel(dlc: string | null): string {
   if (!dlc) return "";
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const diff = Math.floor((new Date(dlc).getTime() - today.getTime()) / 86400000);
-  if (diff < 0) return `Périmé (${Math.abs(diff)}j)`;
+  const diff = daysUntilDlc(dlc);
+  if (diff < 0) {
+    const days = Math.abs(diff);
+    return `Périmé depuis ${days} jour${days > 1 ? "s" : ""}`;
+  }
   if (diff === 0) return "Expire aujourd'hui";
   if (diff === 1) return "Expire demain";
   return `DLC ${new Date(dlc).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}`;
+}
+
+function expiredSinceLabel(dlc: string): string {
+  const diff = daysUntilDlc(dlc);
+  if (diff < 0) {
+    const days = Math.abs(diff);
+    return `Périmé depuis ${days} jour${days > 1 ? "s" : ""}`;
+  }
+  if (diff === 0) return "Expire aujourd'hui";
+  return dlcLabel(dlc);
 }
 
 const STATUS_STYLE = {
@@ -160,7 +151,7 @@ function AddModal({
   const [emoji, setEmoji] = useState("🥚");
   const [name, setName] = useState("");
   const [qty, setQty] = useState("1");
-  const [unit, setUnit] = useState("unités");
+  const [unit, setUnit] = useState<UnitCode>(DEFAULT_UNIT);
   const [dlc, setDlc] = useState("");
   const [showPicker, setShowPicker] = useState(false);
   const nameRef = useRef<HTMLInputElement>(null);
@@ -176,7 +167,7 @@ function AddModal({
       emoji,
       name: name.trim(),
       quantity: Number(qty) || 1,
-      unit: unit.trim() || "unités",
+      unit,
       dlc: dlc || null,
       category: activeTab,
     });
@@ -219,7 +210,7 @@ function AddModal({
               </button>
               {showPicker && (
                 <div
-                  className="slide-down absolute top-16 left-0 z-10 grid gap-1 rounded-2xl p-3"
+                  className="slide-down absolute top-16 left-0 z-10 grid max-h-64 gap-1 overflow-y-auto rounded-2xl p-3"
                   style={{
                     background: "#FFFFFF",
                     boxShadow: "0 8px 32px rgba(20,31,22,0.14)",
@@ -228,18 +219,20 @@ function AddModal({
                     width: 216,
                   }}
                 >
-                  {EMOJI_SUGGESTIONS.map((e) => (
+                  {INGREDIENTS.map((item) => (
                     <button
-                      key={e}
+                      key={item.id}
                       type="button"
+                      title={item.name}
                       onClick={() => {
-                        setEmoji(e);
+                        setEmoji(item.emoji);
+                        setName((current) => (current.trim() ? current : item.name));
                         setShowPicker(false);
                       }}
                       className="flex h-8 w-8 items-center justify-center rounded-lg text-lg transition-all hover:bg-[#EBF2EC]"
-                      style={{ background: emoji === e ? "#EBF2EC" : "transparent" }}
+                      style={{ background: emoji === item.emoji ? "#EBF2EC" : "transparent" }}
                     >
-                      {e}
+                      {item.emoji}
                     </button>
                   ))}
                 </div>
@@ -280,13 +273,23 @@ function AddModal({
               <label className="mb-1.5 block text-xs font-bold tracking-wide text-[#7A8F7D]" style={{ letterSpacing: "0.04em" }}>
                 UNITÉ
               </label>
-              <input
-                value={unit}
-                onChange={(e) => setUnit(e.target.value)}
-                placeholder="g, mL, unités…"
-                className="w-full rounded-xl bg-[#FAFBF9] px-4 py-3 text-sm font-semibold text-[#1C2B1E] outline-none transition-all focus:border-[#4A7C59]"
-                style={{ border: "1.5px solid #E2EBE3" }}
-              />
+              <div className="relative">
+                <select
+                  value={unit}
+                  onChange={(e) => setUnit(e.target.value as UnitCode)}
+                  className="w-full appearance-none rounded-xl bg-[#FAFBF9] py-3 pr-10 pl-4 text-sm font-semibold text-[#1C2B1E] outline-none transition-all focus:border-[#4A7C59]"
+                  style={{ border: "1.5px solid #E2EBE3" }}
+                >
+                  {UNITS.map((u) => (
+                    <option key={u.code} value={u.code}>
+                      {u.label}
+                    </option>
+                  ))}
+                </select>
+                <span className="pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 text-[#7A8F7D]">
+                  <ChevronDownIcon />
+                </span>
+              </div>
             </div>
           </div>
 
@@ -319,24 +322,322 @@ function AddModal({
   );
 }
 
+function ExpiredModal({
+  items,
+  tabLabel,
+  onClose,
+  onEditDlc,
+}: {
+  items: Ingredient[];
+  tabLabel: string;
+  onClose: () => void;
+  onEditDlc: (id: number) => void;
+}) {
+  const sorted = [...items].sort((a, b) => {
+    const da = a.dlc ? daysUntilDlc(a.dlc) : 0;
+    const db = b.dlc ? daysUntilDlc(b.dlc) : 0;
+    return da - db;
+  });
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
+      style={{ background: "rgba(20,31,22,0.55)", backdropFilter: "blur(4px)" }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        className="scale-in w-full max-h-[85vh] overflow-y-auto rounded-t-3xl p-7 sm:w-auto sm:min-w-[420px] sm:max-w-md sm:rounded-3xl"
+        style={{ background: "#FFFFFF", boxShadow: "0 24px 64px rgba(20,31,22,0.22)" }}
+      >
+        <div className="mb-5 flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold tracking-[0.08em] text-[#DC2626] uppercase">Attention</p>
+            <h2 className="font-lora text-xl font-bold text-[#1C2B1E]">
+              {sorted.length} expiré{sorted.length > 1 ? "s" : ""}
+            </h2>
+            <p className="mt-1 text-sm font-medium text-[#7A8F7D]">
+              Dans {tabLabel.toLowerCase()}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[#7A8F7D] transition-colors hover:bg-[#F0F4EF]"
+            aria-label="Fermer"
+          >
+            <XIcon />
+          </button>
+        </div>
+
+        <div
+          className="overflow-hidden rounded-2xl border border-[#FECACA] bg-[#FEF2F2]"
+        >
+          {sorted.map((item, idx) => (
+            <div key={item.id}>
+              {idx > 0 && <div className="mx-4 h-px bg-[#FECACA]/40" />}
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onEditDlc(item.id);
+                }}
+                className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-[#FEE2E2]"
+              >
+                <span className="text-2xl select-none" aria-hidden>
+                  {item.emoji}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-bold text-[#1C2B1E]">{item.name}</p>
+                  <p className="mt-0.5 text-xs font-semibold text-[#DC2626]">
+                    {item.dlc ? expiredSinceLabel(item.dlc) : "Date inconnue"}
+                  </p>
+                  {item.dlc && (
+                    <p className="mt-0.5 text-xs font-medium text-[#9CA3AF]">
+                      DLC&nbsp;:{" "}
+                      {new Date(item.dlc).toLocaleDateString("fr-FR", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })}
+                    </p>
+                  )}
+                </div>
+                <span className="shrink-0 rounded-lg bg-white px-2 py-1 text-xs font-bold text-[#7A8F7D]">
+                  {item.quantity} {unitLabel(item.unit)}
+                </span>
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <p className="mt-4 text-center text-xs font-medium text-[#9CA3AF]">
+          Appuyez sur un ingrédient pour modifier sa date
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function EditDlcModal({
+  item,
+  onSave,
+  onClose,
+}: {
+  item: Ingredient;
+  onSave: (dlc: string | null) => void;
+  onClose: () => void;
+}) {
+  const [dlc, setDlc] = useState(item.dlc ?? "");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, []);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(dlc || null);
+    onClose();
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
+      style={{ background: "rgba(20,31,22,0.55)", backdropFilter: "blur(4px)" }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        className="scale-in w-full rounded-t-3xl p-7 sm:w-auto sm:min-w-[400px] sm:rounded-3xl"
+        style={{ background: "#FFFFFF", boxShadow: "0 24px 64px rgba(20,31,22,0.22)" }}
+      >
+        <div className="mb-6 flex items-center justify-between">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="text-2xl select-none">{item.emoji}</span>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold tracking-[0.08em] text-[#7A8F7D] uppercase">Date d&apos;expiration</p>
+              <h2 className="font-lora truncate text-xl font-bold text-[#1C2B1E]">{item.name}</h2>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[#7A8F7D] transition-colors hover:bg-[#F0F4EF]"
+          >
+            <XIcon />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div>
+            <label className="mb-1.5 block text-xs font-bold tracking-wide text-[#7A8F7D]" style={{ letterSpacing: "0.04em" }}>
+              DATE LIMITE DE CONSOMMATION
+            </label>
+            <input
+              ref={inputRef}
+              type="date"
+              value={dlc}
+              onChange={(e) => setDlc(e.target.value)}
+              className="w-full rounded-xl bg-[#FAFBF9] px-4 py-3 text-sm font-semibold text-[#1C2B1E] outline-none transition-all focus:border-[#4A7C59]"
+              style={{ border: "1.5px solid #E2EBE3" }}
+            />
+          </div>
+
+          <div className="flex gap-3">
+            {item.dlc && (
+              <button
+                type="button"
+                onClick={() => {
+                  onSave(null);
+                  onClose();
+                }}
+                className="flex-1 rounded-2xl py-3.5 text-sm font-bold text-[#7A8F7D] transition-all hover:bg-[#F0F4EF] active:scale-[0.98]"
+                style={{ border: "1.5px solid #E2EBE3" }}
+              >
+                Retirer la date
+              </button>
+            )}
+            <button
+              type="submit"
+              className="flex-1 rounded-2xl py-3.5 text-sm font-bold text-white transition-all hover:opacity-90 active:scale-[0.98]"
+              style={{
+                background: "linear-gradient(135deg, #4A7C59, #5E9E72)",
+                boxShadow: "0 4px 16px rgba(74,124,89,0.28)",
+              }}
+            >
+              Enregistrer
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 function IngredientRow({
   item,
   onAdjust,
   onDelete,
+  onEditDlc,
+  onMove,
+  onRename,
   isNew,
 }: {
   item: Ingredient;
   onAdjust: (id: number, delta: number) => void;
   onDelete: (id: number) => void;
+  onEditDlc: (id: number) => void;
+  onMove: (id: number, category: TabId) => void;
+  onRename: (id: number, name: string) => void;
   isNew: boolean;
 }) {
   const status = dlcStatus(item.dlc);
   const style = STATUS_STYLE[status];
   const [deleting, setDeleting] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuPos, setMenuPos] = useState<{ top?: number; bottom?: number; right: number } | null>(null);
+  const [nameDraft, setNameDraft] = useState(item.name);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const destinations = TABS.filter((tab) => tab.id !== item.category);
+
+  useEffect(() => {
+    setNameDraft(item.name);
+  }, [item.name]);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (menuRef.current?.contains(target) || buttonRef.current?.contains(target)) return;
+      setMenuOpen(false);
+      setMenuPos(null);
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setMenuOpen(false);
+        setMenuPos(null);
+      }
+    };
+    const handleReposition = () => {
+      setMenuOpen(false);
+      setMenuPos(null);
+    };
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKey);
+    window.addEventListener("resize", handleReposition);
+    window.addEventListener("scroll", handleReposition, true);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKey);
+      window.removeEventListener("resize", handleReposition);
+      window.removeEventListener("scroll", handleReposition, true);
+    };
+  }, [menuOpen]);
+
+  const toggleMenu = () => {
+    if (menuOpen) {
+      setMenuOpen(false);
+      setMenuPos(null);
+      return;
+    }
+    if (!buttonRef.current) return;
+
+    const rect = buttonRef.current.getBoundingClientRect();
+    const MENU_HEIGHT = 56 + destinations.length * 44 + 56;
+    const GAP = 8;
+    const BOTTOM_NAV_SAFE = 88;
+
+    let clipBottom = window.innerHeight - BOTTOM_NAV_SAFE;
+    let el: HTMLElement | null = buttonRef.current.parentElement;
+    while (el && el !== document.body) {
+      const { overflow, overflowY } = getComputedStyle(el);
+      if (
+        overflow === "hidden" ||
+        overflow === "auto" ||
+        overflow === "scroll" ||
+        overflowY === "hidden" ||
+        overflowY === "auto" ||
+        overflowY === "scroll"
+      ) {
+        clipBottom = Math.min(clipBottom, el.getBoundingClientRect().bottom);
+      }
+      el = el.parentElement;
+    }
+
+    const openUp = clipBottom - rect.bottom < MENU_HEIGHT + GAP;
+    setMenuPos({
+      right: Math.max(8, window.innerWidth - rect.right),
+      ...(openUp
+        ? { bottom: window.innerHeight - rect.top + GAP }
+        : { top: rect.bottom + GAP }),
+    });
+    setMenuOpen(true);
+  };
 
   const handleDelete = () => {
+    setMenuOpen(false);
+    setMenuPos(null);
     setDeleting(true);
     setTimeout(() => onDelete(item.id), 260);
+  };
+
+  const handleMove = (category: TabId) => {
+    setMenuOpen(false);
+    setMenuPos(null);
+    onMove(item.id, category);
+  };
+
+  const commitName = () => {
+    const trimmed = nameDraft.trim();
+    if (!trimmed) {
+      setNameDraft(item.name);
+      return;
+    }
+    if (trimmed !== item.name) onRename(item.id, trimmed);
   };
 
   return (
@@ -352,14 +653,32 @@ function IngredientRow({
       <span className="w-8 shrink-0 text-center text-xl select-none">{item.emoji}</span>
 
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-bold text-[#1C2B1E]">{item.name}</p>
-        {item.dlc && (
+        <input
+          type="text"
+          value={nameDraft}
+          onChange={(e) => setNameDraft(e.target.value)}
+          onBlur={commitName}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.currentTarget.blur();
+            }
+            if (e.key === "Escape") {
+              setNameDraft(item.name);
+              e.currentTarget.blur();
+            }
+          }}
+          className="w-full bg-transparent text-sm font-bold text-[#1C2B1E] outline-none rounded-lg px-1.5 py-0.5 -mx-1.5 transition-colors hover:bg-[#F0F4EF] focus:bg-[#F0F4EF] focus:ring-2 focus:ring-[#C8E0CF]"
+          aria-label={`Nom de ${item.name}`}
+        />
+        {item.dlc ? (
           <div className="mt-0.5 flex items-center gap-1.5">
             <div className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: style.dot }} />
             <span className="text-xs font-medium" style={{ color: style.color }}>
               {dlcLabel(item.dlc)}
             </span>
           </div>
+        ) : (
+          <p className="mt-0.5 text-xs font-medium text-[#9CA3AF]">Pas de date d&apos;expiration</p>
         )}
       </div>
 
@@ -389,29 +708,119 @@ function IngredientRow({
         </button>
       </div>
 
-      <span className="hidden w-12 shrink-0 text-right text-xs font-semibold text-[#9CA3AF] sm:block">{item.unit}</span>
+      <span className="hidden w-12 shrink-0 text-right text-xs font-semibold text-[#9CA3AF] sm:block">{unitLabel(item.unit)}</span>
 
-      <button
-        type="button"
-        onClick={handleDelete}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[#9CA3AF] opacity-0 transition-all group-hover:opacity-100 hover:bg-[#FEF2F2] hover:text-[#EF4444]"
-        aria-label="Supprimer"
-      >
-        <TrashIcon />
-      </button>
+      <div className="relative shrink-0">
+        <button
+          ref={buttonRef}
+          type="button"
+          onClick={toggleMenu}
+          className="flex h-8 w-8 items-center justify-center rounded-xl text-[#9CA3AF] transition-all hover:bg-[#F0F4EF] hover:text-[#1C2B1E]"
+          style={{ background: menuOpen ? "#F0F4EF" : "transparent", color: menuOpen ? "#1C2B1E" : undefined }}
+          aria-label="Options de l'ingrédient"
+          aria-expanded={menuOpen}
+        >
+          <MoreIcon />
+        </button>
+
+        {menuOpen &&
+          menuPos &&
+          createPortal(
+            <div
+              ref={menuRef}
+              className="slide-down fixed z-[60] min-w-[240px] overflow-hidden rounded-2xl py-1.5"
+              style={{
+                top: menuPos.top,
+                bottom: menuPos.bottom,
+                right: menuPos.right,
+                background: "#FFFFFF",
+                boxShadow: "0 10px 36px rgba(20,31,22,0.16)",
+                border: "1px solid #E2EBE3",
+              }}
+              role="menu"
+            >
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setMenuOpen(false);
+                  setMenuPos(null);
+                  onEditDlc(item.id);
+                }}
+                className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-semibold text-[#1C2B1E] transition-colors hover:bg-[#F6F8F3]"
+              >
+                <span className="text-[#4A7C59]">
+                  <CalendarIcon />
+                </span>
+                {item.dlc ? "Modifier la date d'expiration" : "Ajouter une date d'expiration"}
+              </button>
+
+              <div className="mx-3 my-1 h-px bg-[#F0F4EF]" />
+
+              <p className="px-4 pt-1.5 pb-1 text-[10px] font-bold tracking-[0.08em] text-[#9CA3AF] uppercase">
+                Déplacer vers
+              </p>
+              {destinations.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="menuitem"
+                  onClick={() => handleMove(tab.id)}
+                  className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-semibold text-[#1C2B1E] transition-colors hover:bg-[#F6F8F3]"
+                >
+                  <span className="flex w-3.5 items-center justify-center text-[#4A7C59]" aria-hidden>
+                    <MoveIcon />
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span aria-hidden>{tab.emoji}</span>
+                    {tab.label}
+                  </span>
+                </button>
+              ))}
+
+              <div className="mx-3 my-1 h-px bg-[#F0F4EF]" />
+              <button
+                type="button"
+                role="menuitem"
+                onClick={handleDelete}
+                className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-semibold text-[#DC2626] transition-colors hover:bg-[#FEF2F2]"
+              >
+                <TrashIcon />
+                Supprimer
+              </button>
+            </div>,
+            document.body,
+          )}
+      </div>
     </div>
   );
 }
 
 export default function FrigoPage() {
   const [activeTab, setActiveTab] = useState<TabId>("fridge");
-  const [items, setItems] = useState<Ingredient[]>(INITIAL);
+  const [items, setItems] = useState<Ingredient[]>([]);
+  const [ready, setReady] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showExpired, setShowExpired] = useState(false);
+  const [editingDlcId, setEditingDlcId] = useState<number | null>(null);
   const [query, setQuery] = useState("");
   const [newIds, setNewIds] = useState<Set<number>>(new Set());
 
+  useEffect(() => {
+    setItems(getFridgeItems());
+    setReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!ready) return;
+    setFridgeItems(items);
+  }, [items, ready]);
+
   const tabItems = items.filter((i) => i.category === activeTab);
   const filtered = tabItems.filter((i) => i.name.toLowerCase().includes(query.toLowerCase()));
+  const editingItem = editingDlcId != null ? items.find((i) => i.id === editingDlcId) ?? null : null;
+  const expiredItems = tabItems.filter((i) => dlcStatus(i.dlc) === "urgent");
+  const activeTabLabel = TABS.find((t) => t.id === activeTab)?.label ?? "";
 
   const priorityOrder = { urgent: 0, soon: 1, ok: 2, none: 3 };
   const sorted = [...filtered].sort(
@@ -433,8 +842,33 @@ export default function FrigoPage() {
     setItems((prev) => prev.filter((i) => i.id !== id));
   };
 
+  const handleMove = (id: number, category: TabId) => {
+    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, category } : i)));
+    setActiveTab(category);
+    setNewIds((prev) => {
+      const s = new Set(prev);
+      s.add(id);
+      setTimeout(() => {
+        setNewIds((p) => {
+          const n = new Set(p);
+          n.delete(id);
+          return n;
+        });
+      }, 600);
+      return s;
+    });
+  };
+
+  const handleRename = (id: number, name: string) => {
+    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, name } : i)));
+  };
+
+  const handleUpdateDlc = (id: number, dlc: string | null) => {
+    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, dlc } : i)));
+  };
+
   const handleAdd = (item: Omit<Ingredient, "id">) => {
-    const id = ++nextId;
+    const id = nextFridgeItemId(items);
     setItems((prev) => [...prev, { ...item, id }]);
     setNewIds((prev) => {
       const s = new Set(prev);
@@ -538,16 +972,34 @@ export default function FrigoPage() {
               </div>
 
               {soonCount(activeTab) > 0 && (
-                <div
-                  className="hidden shrink-0 items-center gap-1.5 rounded-xl border border-[#FED7AA] bg-[#FFF7ED] px-3 py-2 sm:flex"
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (urgentCount(activeTab) > 0) setShowExpired(true);
+                  }}
+                  disabled={urgentCount(activeTab) === 0}
+                  className={`flex shrink-0 items-center gap-1.5 rounded-xl border px-3 py-2 transition-all ${
+                    urgentCount(activeTab) > 0
+                      ? "border-[#FECACA] bg-[#FEF2F2] active:scale-95 hover:bg-[#FEE2E2]"
+                      : "cursor-default border-[#FED7AA] bg-[#FFF7ED]"
+                  }`}
+                  aria-label={
+                    urgentCount(activeTab) > 0
+                      ? `Voir les ${urgentCount(activeTab)} ingrédient${urgentCount(activeTab) > 1 ? "s" : ""} expiré${urgentCount(activeTab) > 1 ? "s" : ""}`
+                      : undefined
+                  }
                 >
                   <CalendarIcon />
-                  <span className="text-xs font-bold text-[#C2410C]">
+                  <span
+                    className={`text-xs font-bold ${
+                      urgentCount(activeTab) > 0 ? "text-[#DC2626]" : "text-[#C2410C]"
+                    }`}
+                  >
                     {urgentCount(activeTab) > 0
                       ? `${urgentCount(activeTab)} expiré${urgentCount(activeTab) > 1 ? "s" : ""}`
                       : `${soonCount(activeTab)} bientôt`}
                   </span>
-                </div>
+                </button>
               )}
             </div>
 
@@ -584,6 +1036,9 @@ export default function FrigoPage() {
                       item={item}
                       onAdjust={handleAdjust}
                       onDelete={handleDelete}
+                      onEditDlc={setEditingDlcId}
+                      onMove={handleMove}
+                      onRename={handleRename}
                       isNew={newIds.has(item.id)}
                     />
                   </div>
@@ -611,6 +1066,23 @@ export default function FrigoPage() {
 
       {showModal && (
         <AddModal activeTab={activeTab} onAdd={handleAdd} onClose={() => setShowModal(false)} />
+      )}
+
+      {showExpired && expiredItems.length > 0 && (
+        <ExpiredModal
+          items={expiredItems}
+          tabLabel={activeTabLabel}
+          onClose={() => setShowExpired(false)}
+          onEditDlc={setEditingDlcId}
+        />
+      )}
+
+      {editingItem && (
+        <EditDlcModal
+          item={editingItem}
+          onSave={(dlc) => handleUpdateDlc(editingItem.id, dlc)}
+          onClose={() => setEditingDlcId(null)}
+        />
       )}
     </div>
   );

@@ -1,0 +1,345 @@
+import "server-only";
+
+import { Type } from "@google/genai";
+import {
+  createGeminiClient,
+  getGeminiApiKey,
+  getGeminiModel,
+} from "@/lib/ai/gemini";
+import type { ParsedRecipe } from "@/lib/recipe-import";
+import { DEFAULT_UNIT, UNITS, type UnitCode } from "@/lib/units";
+
+export type { ParsedRecipe } from "@/lib/recipe-import";
+
+export class ParseRecipeError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ParseRecipeError";
+  }
+}
+
+const UNIT_CODES = new Set<string>(UNITS.map((u) => u.code));
+
+const PARSE_RESPONSE_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    title: { type: Type.STRING },
+    prep_time: { type: Type.STRING, description: 'Ex. "15 min"' },
+    cook_time: { type: Type.STRING, description: 'Ex. "20 min"' },
+    servings: { type: Type.NUMBER },
+    calories_per_serving: { type: Type.NUMBER },
+    protein_per_serving: { type: Type.NUMBER },
+    ingredients: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          name: { type: Type.STRING },
+          amount: { type: Type.NUMBER },
+          unit: {
+            type: Type.STRING,
+            description: "g | kg | ml | l | unite | cas | cac | pincee | tranche | botte",
+          },
+        },
+        required: ["name", "amount", "unit"],
+      },
+    },
+    instructions: {
+      type: Type.ARRAY,
+      items: { type: Type.STRING },
+    },
+  },
+  required: [
+    "title",
+    "prep_time",
+    "cook_time",
+    "servings",
+    "calories_per_serving",
+    "protein_per_serving",
+    "ingredients",
+    "instructions",
+  ],
+} as const;
+
+const SYSTEM_INSTRUCTION = [
+  "Tu es un assistant culinaire expert. Extrais une recette complète et structurée.",
+  "Réponds uniquement en JSON strict (pas de markdown).",
+  "Langue : français.",
+  "prep_time et cook_time : chaînes courtes du type \"15 min\". Si inconnu, estime raisonnablement.",
+  "ingredients.unit doit être l’un de : g, kg, ml, l, unite, cas, cac, pincee, tranche, botte.",
+  "amount est un nombre positif (pas de fraction textuelle).",
+  "instructions : liste ordonnée d’étapes actionnables (une phrase claire par étape).",
+  "calories_per_serving et protein_per_serving : estimations réalistes si absentes de la source.",
+].join(" ");
+
+/**
+ * Analyse une photo de recette (base64, avec ou sans préfixe data URL).
+ */
+export async function parseRecipeFromImage(imageBase64: string): Promise<ParsedRecipe> {
+  ensureApiKey();
+  const { mimeType, data } = splitDataUrl(imageBase64);
+  if (!data) {
+    throw new ParseRecipeError("Image base64 invalide ou vide.");
+  }
+
+  const ai = createGeminiClient();
+  const response = await ai.models.generateContent({
+    model: getGeminiModel(),
+    contents: [
+      {
+        role: "user",
+        parts: [
+          { inlineData: { mimeType, data } },
+          {
+            text: "Extrais la recette visible sur cette image (livre, capture d’écran, photo de carnet…).",
+          },
+        ],
+      },
+    ],
+    config: {
+      systemInstruction: SYSTEM_INSTRUCTION,
+      temperature: 0.2,
+      responseMimeType: "application/json",
+      responseSchema: PARSE_RESPONSE_SCHEMA,
+    },
+  });
+
+  return coerceParsedRecipe(response.text);
+}
+
+/**
+ * Récupère le HTML d’une URL de cuisine, puis demande à Gemini d’en extraire la recette.
+ */
+export async function parseRecipeFromUrl(url: string): Promise<ParsedRecipe> {
+  ensureApiKey();
+
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(url);
+  } catch {
+    throw new ParseRecipeError("URL invalide.");
+  }
+  if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+    throw new ParseRecipeError("Seules les URL http(s) sont acceptées.");
+  }
+
+  const html = await fetchPageHtml(parsedUrl.toString());
+  const textContent = htmlToPlainText(html).slice(0, 80_000);
+  if (textContent.trim().length < 80) {
+    throw new ParseRecipeError("Impossible d’extraire du contenu exploitable depuis cette page.");
+  }
+
+  const ai = createGeminiClient();
+  const response = await ai.models.generateContent({
+    model: getGeminiModel(),
+    contents: [
+      {
+        role: "user",
+        parts: [
+          {
+            text: [
+              `Source : ${parsedUrl.toString()}`,
+              "Extrais la recette principale de ce contenu de page web :",
+              textContent,
+            ].join("\n\n"),
+          },
+        ],
+      },
+    ],
+    config: {
+      systemInstruction: SYSTEM_INSTRUCTION,
+      temperature: 0.2,
+      responseMimeType: "application/json",
+      responseSchema: PARSE_RESPONSE_SCHEMA,
+    },
+  });
+
+  return coerceParsedRecipe(response.text);
+}
+
+function ensureApiKey() {
+  if (!getGeminiApiKey()) {
+    throw new ParseRecipeError(
+      "GEMINI_API_KEY manquant dans .env.local (clé serveur, sans préfixe NEXT_PUBLIC_).",
+    );
+  }
+}
+
+function splitDataUrl(raw: string): { mimeType: string; data: string } {
+  const trimmed = raw.trim();
+  const match = trimmed.match(/^data:([^;]+);base64,(.+)$/i);
+  if (match) {
+    return { mimeType: match[1] || "image/jpeg", data: match[2] };
+  }
+  return { mimeType: "image/jpeg", data: trimmed.replace(/\s/g, "") };
+}
+
+async function fetchPageHtml(url: string): Promise<string> {
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (compatible; MyKitchenApp/1.0; +https://localhost) AppleWebKit/537.36",
+        Accept: "text/html,application/xhtml+xml",
+      },
+      redirect: "follow",
+      signal: AbortSignal.timeout(15_000),
+    });
+  } catch (error) {
+    const detail = error instanceof Error ? error.message.slice(0, 160) : "réseau";
+    throw new ParseRecipeError(`Échec du téléchargement de la page : ${detail}`);
+  }
+
+  if (!response.ok) {
+    throw new ParseRecipeError(`La page a répondu HTTP ${response.status}.`);
+  }
+
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!contentType.includes("text/html") && !contentType.includes("application/xhtml")) {
+    throw new ParseRecipeError("L’URL ne pointe pas vers une page HTML.");
+  }
+
+  return response.text();
+}
+
+function htmlToPlainText(html: string): string {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<noscript[\s\S]*?<\/noscript>/gi, " ")
+    .replace(/<!--[\s\S]*?-->/g, " ")
+    .replace(/<\/(p|div|h[1-6]|li|tr|br|section|article)>/gi, "\n")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&#39;/gi, "'")
+    .replace(/&quot;/gi, '"')
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .replace(/[ \t]{2,}/g, " ")
+    .trim();
+}
+
+function coerceParsedRecipe(raw: string | undefined): ParsedRecipe {
+  if (!raw?.trim()) {
+    throw new ParseRecipeError("Réponse Gemini vide.");
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(stripCodeFences(raw));
+  } catch {
+    throw new ParseRecipeError("JSON Gemini invalide.");
+  }
+
+  if (!parsed || typeof parsed !== "object") {
+    throw new ParseRecipeError("Schéma Gemini inattendu.");
+  }
+
+  const row = parsed as Record<string, unknown>;
+  const title = asNonEmptyString(row.title);
+  if (!title) throw new ParseRecipeError("Titre manquant dans la réponse IA.");
+
+  const ingredientsRaw = Array.isArray(row.ingredients) ? row.ingredients : [];
+  const ingredients: ParsedRecipe["ingredients"] = [];
+  for (const item of ingredientsRaw) {
+    if (!item || typeof item !== "object") continue;
+    const ing = item as Record<string, unknown>;
+    const name = asNonEmptyString(ing.name);
+    if (!name) continue;
+    const amount = asPositiveNumber(ing.amount, 1);
+    const unit = normalizeUnit(ing.unit);
+    ingredients.push({ name, amount, unit });
+  }
+
+  const instructionsRaw = Array.isArray(row.instructions) ? row.instructions : [];
+  const instructions = instructionsRaw
+    .map((step) => (typeof step === "string" ? step.trim() : ""))
+    .filter(Boolean);
+
+  if (ingredients.length === 0) {
+    throw new ParseRecipeError("Aucun ingrédient exploitable dans la réponse IA.");
+  }
+  if (instructions.length === 0) {
+    throw new ParseRecipeError("Aucune étape exploitable dans la réponse IA.");
+  }
+
+  return {
+    title,
+    prep_time: asNonEmptyString(row.prep_time) ?? "15 min",
+    cook_time: asNonEmptyString(row.cook_time) ?? "20 min",
+    servings: Math.max(1, Math.round(asPositiveNumber(row.servings, 4))),
+    calories_per_serving: Math.round(asPositiveNumber(row.calories_per_serving, 400)),
+    protein_per_serving: Math.round(asPositiveNumber(row.protein_per_serving, 20)),
+    ingredients,
+    instructions,
+  };
+}
+
+function stripCodeFences(text: string): string {
+  const trimmed = text.trim();
+  const fenced = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/i);
+  return fenced?.[1]?.trim() ?? trimmed;
+}
+
+function asNonEmptyString(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function asPositiveNumber(value: unknown, fallback: number): number {
+  const n = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
+  if (!Number.isFinite(n) || n <= 0) return fallback;
+  return n;
+}
+
+/** Normalise les unités libres vers les codes `unit_domain`. */
+export function normalizeUnit(value: unknown): UnitCode {
+  if (typeof value !== "string") return DEFAULT_UNIT;
+  const raw = value.trim().toLowerCase();
+  if (UNIT_CODES.has(raw)) return raw as UnitCode;
+
+  const aliases: Record<string, UnitCode> = {
+    "c.à.s": "cas",
+    "c.a.s": "cas",
+    "cas": "cas",
+    "càs": "cas",
+    "tbsp": "cas",
+    "c.à.c": "cac",
+    "c.a.c": "cac",
+    "cac": "cac",
+    "càc": "cac",
+    "tsp": "cac",
+    "ml": "ml",
+    "cl": "ml",
+    "l": "l",
+    "litre": "l",
+    "litres": "l",
+    "g": "g",
+    "gr": "g",
+    "gramme": "g",
+    "grammes": "g",
+    "kg": "kg",
+    "pincée": "pincee",
+    "pincee": "pincee",
+    "tranche": "tranche",
+    "tranches": "tranche",
+    "botte": "botte",
+    "bottes": "botte",
+    "unité": "unite",
+    "unite": "unite",
+    "unités": "unite",
+    "unites": "unite",
+    "pièce": "unite",
+    "piece": "unite",
+    "pièces": "unite",
+    "pce": "unite",
+    "pc": "unite",
+  };
+
+  return aliases[raw] ?? DEFAULT_UNIT;
+}

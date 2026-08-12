@@ -1,13 +1,53 @@
 "use client";
 
 import Link from "next/link";
-import { use, useState } from "react";
-import { getRecipeById } from "@/lib/recipes";
+import { useRouter } from "next/navigation";
+import { use, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { RecipeFormModal } from "@/components/add-recipe-modal";
+import {
+  deleteRecipe,
+  getRecipeById,
+  updateRecipe,
+  type NewRecipeInput,
+  type Recipe,
+} from "@/lib/recipes";
 
 function BackIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
       <path d="m15 18-6-6 6-6" />
+    </svg>
+  );
+}
+
+function MoreIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+      <circle cx="12" cy="5" r="1.6" />
+      <circle cx="12" cy="12" r="1.6" />
+      <circle cx="12" cy="19" r="1.6" />
+    </svg>
+  );
+}
+
+function EditIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+      <path d="M10 11v6" />
+      <path d="M14 11v6" />
+      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
     </svg>
   );
 }
@@ -48,16 +88,185 @@ function UsersIcon() {
   );
 }
 
+const FAVORITES_KEY = "my-kitchen-favorite-recipes";
+
+function removeFromFavorites(id: number) {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = window.localStorage.getItem(FAVORITES_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw) as number[];
+    if (!Array.isArray(parsed)) return;
+    window.localStorage.setItem(
+      FAVORITES_KEY,
+      JSON.stringify(parsed.filter((favId) => favId !== id)),
+    );
+  } catch {
+    /* ignore */
+  }
+}
+
+function RecipeActionsMenu({
+  onEdit,
+  onDelete,
+}: {
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (menuRef.current?.contains(target) || buttonRef.current?.contains(target)) return;
+      setMenuOpen(false);
+      setMenuPos(null);
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setMenuOpen(false);
+        setMenuPos(null);
+      }
+    };
+    const close = () => {
+      setMenuOpen(false);
+      setMenuPos(null);
+    };
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKey);
+    window.addEventListener("resize", close);
+    window.addEventListener("scroll", close, true);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKey);
+      window.removeEventListener("resize", close);
+      window.removeEventListener("scroll", close, true);
+    };
+  }, [menuOpen]);
+
+  function toggleMenu() {
+    if (menuOpen) {
+      setMenuOpen(false);
+      setMenuPos(null);
+      return;
+    }
+    if (!buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    setMenuPos({
+      top: rect.bottom + 8,
+      right: Math.max(8, window.innerWidth - rect.right),
+    });
+    setMenuOpen(true);
+  }
+
+  return (
+    <div className="absolute top-4 right-4 z-20">
+      <button
+        ref={buttonRef}
+        type="button"
+        onClick={toggleMenu}
+        className="flex h-10 w-10 items-center justify-center rounded-xl text-[#1C2B1E] transition-transform active:scale-95"
+        style={{
+          background: menuOpen ? "rgba(255,255,255,1)" : "rgba(255,255,255,0.92)",
+          backdropFilter: "blur(8px)",
+        }}
+        aria-label="Options de la recette"
+        aria-expanded={menuOpen}
+        aria-haspopup="menu"
+      >
+        <MoreIcon />
+      </button>
+
+      {menuOpen &&
+        menuPos &&
+        createPortal(
+          <div
+            ref={menuRef}
+            className="fixed z-[60] min-w-[200px] overflow-hidden rounded-2xl py-1.5"
+            style={{
+              top: menuPos.top,
+              right: menuPos.right,
+              background: "#FFFFFF",
+              boxShadow: "0 10px 36px rgba(20,31,22,0.16)",
+              border: "1px solid #E2EBE3",
+            }}
+            role="menu"
+          >
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setMenuOpen(false);
+                setMenuPos(null);
+                onEdit();
+              }}
+              className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-semibold text-[#1C2B1E] transition-colors hover:bg-[#F6F8F3]"
+            >
+              <span className="text-[#4A7C59]">
+                <EditIcon />
+              </span>
+              Modifier la recette
+            </button>
+            <div className="mx-3 my-1 h-px bg-[#F0F4EF]" />
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setMenuOpen(false);
+                setMenuPos(null);
+                onDelete();
+              }}
+              className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-semibold text-[#B91C1C] transition-colors hover:bg-[#FEF2F2]"
+            >
+              <TrashIcon />
+              Supprimer la recette
+            </button>
+          </div>,
+          document.body,
+        )}
+    </div>
+  );
+}
+
 export default function RecipeStepsPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const router = useRouter();
   const { id } = use(params);
-  const recipe = getRecipeById(Number(id));
+  const recipeId = Number(id);
+  const [recipe, setRecipe] = useState<Recipe | undefined>(() => getRecipeById(recipeId));
+  const [showEditModal, setShowEditModal] = useState(false);
   const [doneSteps, setDoneSteps] = useState<Set<number>>(new Set());
   const [currentStep, setCurrentStep] = useState(0);
   const [tab, setTab] = useState<"ingredients" | "steps">("steps");
+
+  useEffect(() => {
+    setRecipe(getRecipeById(recipeId));
+  }, [recipeId]);
+
+  const handleUpdate = (input: NewRecipeInput) => {
+    const updated = updateRecipe(recipeId, input);
+    setRecipe(updated);
+    setDoneSteps(new Set());
+    setCurrentStep(0);
+  };
+
+  const handleDelete = () => {
+    const title = recipe?.title ?? "cette recette";
+    const confirmed = window.confirm(
+      `Supprimer « ${title} » ? Cette action est définitive.`,
+    );
+    if (!confirmed) return;
+    deleteRecipe(recipeId);
+    removeFromFavorites(recipeId);
+    router.push("/recettes");
+  };
 
   if (!recipe) {
     return (
@@ -98,8 +307,12 @@ export default function RecipeStepsPage({
     <div className="min-h-screen bg-[#F6F8F3]">
       <div className="relative mx-auto max-w-md overflow-hidden sm:max-w-lg">
         <div className="relative h-64 bg-[#D4EDD9] sm:h-72">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={recipe.photo} alt={recipe.title} className="h-full w-full object-cover" />
+          {recipe.photo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={recipe.photo} alt={recipe.title} className="h-full w-full object-cover" />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-6xl">🍽️</div>
+          )}
           <div
             className="absolute inset-0"
             style={{
@@ -109,15 +322,20 @@ export default function RecipeStepsPage({
 
           <Link
             href="/recettes"
-            className="absolute top-4 left-4 flex h-10 w-10 items-center justify-center rounded-xl text-[#1C2B1E] transition-transform active:scale-95"
+            className="absolute top-4 left-4 z-10 flex h-10 w-10 items-center justify-center rounded-xl text-[#1C2B1E] transition-transform active:scale-95"
             style={{ background: "rgba(255,255,255,0.92)", backdropFilter: "blur(8px)" }}
             aria-label="Retour"
           >
             <BackIcon />
           </Link>
 
+          <RecipeActionsMenu
+            onEdit={() => setShowEditModal(true)}
+            onDelete={handleDelete}
+          />
+
           {recipe.tagLabel && (
-            <div className="absolute top-4 right-4 rounded-xl bg-[#4A7C59] px-3 py-1.5 text-xs font-extrabold tracking-wide text-white">
+            <div className="absolute top-4 right-16 z-10 rounded-xl bg-[#4A7C59] px-3 py-1.5 text-xs font-extrabold tracking-wide text-white">
               {recipe.tagLabel}
             </div>
           )}
@@ -303,6 +521,14 @@ export default function RecipeStepsPage({
           </div>
         )}
       </div>
+
+      {showEditModal && (
+        <RecipeFormModal
+          recipe={recipe}
+          onSave={handleUpdate}
+          onClose={() => setShowEditModal(false)}
+        />
+      )}
     </div>
   );
 }

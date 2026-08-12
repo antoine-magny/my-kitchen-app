@@ -1,21 +1,43 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { getRecipeById } from "@/lib/recipes";
+import { useEffect, useMemo, useState } from "react";
+import { formatTodayLongFr } from "@/lib/date-paris";
+import {
+  daysUntilDlc,
+  dlcStatus,
+  getExpiringFridgeItems,
+  getFridgeItems,
+  type FridgeItem,
+} from "@/lib/fridge";
+import { suggestRecipesFromFridge } from "@/lib/generate-from-fridge";
+import { getRecipeById, type Recipe } from "@/lib/recipes";
 
 const MAIN_MEAL = getRecipeById(6)!;
-const FRIDGE_RECIPES = [getRecipeById(3)!, getRecipeById(4)!, getRecipeById(8)!];
+const FALLBACK_FRIDGE_RECIPES = [getRecipeById(3)!, getRecipeById(4)!, getRecipeById(8)!].filter(
+  Boolean,
+) as Recipe[];
 
 type Urgency = "red" | "orange" | "green";
 
-const EXPIRING = [
-  { id: 1, name: "Tomates cerises", detail: "Expire demain", urgency: "red" as Urgency },
-  { id: 2, name: "Yaourts nature", detail: "Expire dans 2 jours", urgency: "orange" as Urgency },
-  { id: 3, name: "Épinards frais", detail: "Expire dans 2 jours", urgency: "orange" as Urgency },
-  { id: 4, name: "Poitrine de poulet", detail: "Expire dans 4 jours", urgency: "green" as Urgency },
-  { id: 5, name: "Camembert", detail: "Expire dans 5 jours", urgency: "green" as Urgency },
-];
+function fridgeUrgency(item: FridgeItem): Urgency {
+  const status = dlcStatus(item.dlc);
+  if (status === "urgent") return "red";
+  if (status === "soon") return "orange";
+  return "green";
+}
+
+function fridgeDetail(item: FridgeItem): string {
+  if (!item.dlc) return "Sans DLC";
+  const days = daysUntilDlc(item.dlc);
+  if (days < 0) {
+    const n = Math.abs(days);
+    return `Périmé depuis ${n} jour${n > 1 ? "s" : ""}`;
+  }
+  if (days === 0) return "Expire aujourd'hui";
+  if (days === 1) return "Expire demain";
+  return `Expire dans ${days} jours`;
+}
 
 const urgencyConfig: Record<Urgency, { dot: string; bg: string; text: string; label: string }> = {
   red: { dot: "#EF4444", bg: "#FEF2F2", text: "#B91C1C", label: "Urgent" },
@@ -74,19 +96,37 @@ function StarIcon() {
   );
 }
 
-function formatTodayFr() {
-  const formatted = new Date().toLocaleDateString("fr-FR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
-  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
-}
-
 export default function Home() {
   const [query, setQuery] = useState("");
   const [saved, setSaved] = useState(false);
-  const todayLabel = useMemo(() => formatTodayFr(), []);
+  const [fridgeItems, setFridgeItemsState] = useState<FridgeItem[]>([]);
+  const [fridgeReady, setFridgeReady] = useState(false);
+
+  useEffect(() => {
+    setFridgeItemsState(getFridgeItems());
+    setFridgeReady(true);
+  }, []);
+
+  const fridgeRecipes = useMemo(() => {
+    if (!fridgeReady) return FALLBACK_FRIDGE_RECIPES;
+    const result = suggestRecipesFromFridge({
+      mealCount: 3,
+      preferExpiring: true,
+      items: fridgeItems,
+    });
+    const matched = result.suggestions
+      .map((s) => (s.recipeId != null ? getRecipeById(s.recipeId) : undefined))
+      .filter((r): r is Recipe => r != null);
+    if (matched.length >= 3) return matched.slice(0, 3);
+    const ids = new Set(matched.map((r) => r.id));
+    return [...matched, ...FALLBACK_FRIDGE_RECIPES.filter((r) => !ids.has(r.id))].slice(0, 3);
+  }, [fridgeItems, fridgeReady]);
+
+  const expiring = useMemo(() => {
+    if (!fridgeReady) return [];
+    return getExpiringFridgeItems(5, fridgeItems).slice(0, 5);
+  }, [fridgeItems, fridgeReady]);
+  const todayLabel = useMemo(() => formatTodayLongFr(), []);
 
   return (
     <div className="min-h-screen bg-[#F6F8F3]">
@@ -227,11 +267,7 @@ export default function Home() {
 
               <Link
                 href={`/recettes/${MAIN_MEAL.id}`}
-                className="mt-4 block w-full rounded-2xl py-3.5 text-center text-sm font-bold text-white transition-all active:scale-95"
-                style={{
-                  background: "linear-gradient(135deg, #4A7C59, #5E9E72)",
-                  boxShadow: "0 4px 14px rgba(74,124,89,0.30)",
-                }}
+                className="btn-primary mt-4 block w-full rounded-2xl py-3.5 text-center text-sm font-bold"
               >
                 Voir la recette complète
               </Link>
@@ -248,7 +284,7 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-3 gap-3">
-            {FRIDGE_RECIPES.map((recipe) => (
+            {fridgeRecipes.map((recipe) => (
               <Link
                 key={recipe.id}
                 href={`/recettes/${recipe.id}`}
@@ -293,35 +329,44 @@ export default function Home() {
               boxShadow: "0 4px 20px rgba(74,124,89,0.09)",
             }}
           >
-            {EXPIRING.map((item, idx) => {
-              const cfg = urgencyConfig[item.urgency];
-              return (
-                <div
-                  key={item.id}
-                  className="flex items-center gap-4 px-5 py-4 transition-colors"
-                  style={{
-                    borderBottom: idx < EXPIRING.length - 1 ? "1px solid #F0F4EF" : "none",
-                  }}
-                >
+            {expiring.length === 0 ? (
+              <div className="px-5 py-8 text-center">
+                <p className="text-sm font-medium text-[#7A8F7D]">
+                  Rien d’urgent pour le moment — votre frigo est sous contrôle.
+                </p>
+              </div>
+            ) : (
+              expiring.map((item, idx) => {
+                const urgency = fridgeUrgency(item);
+                const cfg = urgencyConfig[urgency];
+                return (
                   <div
-                    className="h-3 w-3 shrink-0 rounded-full"
-                    style={{ background: cfg.dot, boxShadow: `0 0 0 3px ${cfg.bg}` }}
-                  />
-
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold text-[#1C2B1E]">{item.name}</p>
-                    <p className="mt-0.5 text-xs font-medium text-[#7A8F7D]">{item.detail}</p>
-                  </div>
-
-                  <span
-                    className="shrink-0 rounded-lg px-2.5 py-1 text-xs font-bold"
-                    style={{ background: cfg.bg, color: cfg.text }}
+                    key={item.id}
+                    className="flex items-center gap-4 px-5 py-4 transition-colors"
+                    style={{
+                      borderBottom: idx < expiring.length - 1 ? "1px solid #F0F4EF" : "none",
+                    }}
                   >
-                    {cfg.label}
-                  </span>
-                </div>
-              );
-            })}
+                    <div
+                      className="h-3 w-3 shrink-0 rounded-full"
+                      style={{ background: cfg.dot, boxShadow: `0 0 0 3px ${cfg.bg}` }}
+                    />
+
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-bold text-[#1C2B1E]">{item.name}</p>
+                      <p className="mt-0.5 text-xs font-medium text-[#7A8F7D]">{fridgeDetail(item)}</p>
+                    </div>
+
+                    <span
+                      className="shrink-0 rounded-lg px-2.5 py-1 text-xs font-bold"
+                      style={{ background: cfg.bg, color: cfg.text }}
+                    >
+                      {cfg.label}
+                    </span>
+                  </div>
+                );
+              })
+            )}
           </div>
 
           <div className="mt-4 flex items-start gap-3 rounded-2xl border border-[#C8E0CF] bg-[#EBF2EC] px-4 py-4">

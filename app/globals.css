@@ -64,3 +64,21 @@ body {
 .slide-down {
   animation: slideDown 0.18s ease-out both;
 }
+
+/* CTA principal — style de référence « Ajouter une recette » */
+.btn-primary {
+  background: linear-gradient(135deg, #4a7c59, #5e9e72);
+  box-shadow: 0 4px 18px rgba(74, 124, 89, 0.3);
+  color: #fff;
+  transition:
+    opacity 0.2s ease,
+    transform 0.15s ease;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+}
+
+.btn-primary:active {
+  transform: scale(0.95);
+}
