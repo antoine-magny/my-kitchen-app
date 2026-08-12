@@ -27,6 +27,7 @@ function fridgeUrgency(item: FridgeItem): Urgency {
   return "green";
 }
 
+
 function fridgeDetail(item: FridgeItem): string {
   if (!item.dlc) return "Sans DLC";
   const days = daysUntilDlc(item.dlc);
