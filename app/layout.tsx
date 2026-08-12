@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Lora, Nunito } from "next/font/google";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 const nunito = Nunito({
@@ -26,7 +27,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" className={`${nunito.variable} ${lora.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col font-[family-name:var(--font-nunito)]">{children}</body>
+      <body className="flex min-h-full flex-col font-[family-name:var(--font-nunito)]">
+        {children}
+        <SpeedInsights />
+      </body>
     </html>
   );
 }
