@@ -160,12 +160,16 @@ export function SelectRecipeModal({
                       }}
                     >
                       <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-[#D4EDD9]">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={recipe.photo}
-                          alt=""
-                          className="h-full w-full object-cover"
-                        />
+                        {recipe.photo ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={recipe.photo}
+                            alt=""
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-lg">🍽️</div>
+                        )}
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-bold text-[#1C2B1E]">{recipe.title}</p>

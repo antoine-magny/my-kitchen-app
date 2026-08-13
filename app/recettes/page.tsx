@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AddRecipeModal } from "@/components/add-recipe-modal";
+import { MissingIngredientsBadges } from "@/components/missing-ingredients-badges";
 import {
   RECIPES,
   addCustomRecipe,
@@ -171,6 +172,8 @@ function RecipeCard({
             <HeartIcon filled={isFav} />
           </button>
         </div>
+
+        <MissingIngredientsBadges names={recipe.missingIngredients} className="mb-3" />
 
         <div className="mb-4 flex items-center gap-3">
           <div className="flex items-center gap-1.5 text-[#4A7C59]">

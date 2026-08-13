@@ -8,6 +8,10 @@ import {
   getGeminiModel,
 } from "@/lib/ai/gemini";
 import {
+  MEAL_TYPE_LABELS,
+  type MealType,
+} from "@/lib/meal-types";
+import {
   DIFFICULTIES,
   RECIPE_TAGS,
   type NewRecipeInput,
@@ -19,6 +23,15 @@ export type AiRecipeCreation = {
   matchedIngredients: string[];
   missingIngredients: string[];
   reason: string;
+};
+
+const MEAL_TYPE_PROMPT: Record<MealType, string> = {
+  breakfast:
+    "EXIGENCE STRICTE sur la typologie : tu dois UNIQUEMENT proposer des recettes de petit-déjeuner (porridge, granola, yaourt, pancakes, gaufres, œufs brouillés, omelette légère, smoothie, tartines, porridge salé doux, granola bowls). Interdiction formelle des plats de déjeuner ou de dîner (poulet rôti, pâtes en plat, steaks, gratins, poissons en plat principal, currys, tajines, etc.).",
+  lunch:
+    "EXIGENCE STRICTE sur la typologie : tu dois UNIQUEMENT proposer des recettes de déjeuner, plats complets adaptés au midi (salades composées, bowls, poêlées, viandes/poissons avec accompagnement, tartes salées). Pas de petit-déjeuner (pancakes, granola) ni de dessert.",
+  dinner:
+    "EXIGENCE STRICTE sur la typologie : tu dois UNIQUEMENT proposer des recettes de dîner, plats du soir (mijotés, poêlées, gratins, poissons, viandes, légumes). Pas de petit-déjeuner. Pas de dessert.",
 };
 
 const DEFAULT_PHOTO =
@@ -81,6 +94,12 @@ const RECIPE_RESPONSE_SCHEMA = {
             type: Type.ARRAY,
             items: { type: Type.STRING },
           },
+          missing_ingredients: {
+            type: Type.ARRAY,
+            items: { type: Type.STRING },
+            description:
+              "1 ou 2 basiques absents du frigo maximum (œufs, farine, crème, épices). Tableau vide si tout est disponible.",
+          },
           reason: { type: Type.STRING },
         },
         required: [
@@ -93,7 +112,7 @@ const RECIPE_RESPONSE_SCHEMA = {
           "ingredients",
           "steps",
           "matchedIngredients",
-          "missingIngredients",
+          "missing_ingredients",
           "reason",
         ],
       },
@@ -119,6 +138,8 @@ export async function createRecipesFromFridge(
     mealCount: number;
     preferExpiring: boolean;
     excludeDesserts: boolean;
+    mealType: MealType;
+    targetDate?: string;
   },
 ): Promise<AiRecipeCreation[]> {
   if (!getGeminiApiKey()) {
@@ -132,6 +153,8 @@ export async function createRecipesFromFridge(
   }
 
   const mealCount = Math.max(1, Math.min(4, options.mealCount));
+  const mealType = options.mealType;
+  const mealLabel = MEAL_TYPE_LABELS[mealType];
   const inventory = items.map((item) => ({
     name: item.name,
     quantity: item.quantity,
@@ -143,15 +166,22 @@ export async function createRecipesFromFridge(
 
   const systemInstruction = [
     "Tu es un chef français. Tu crées des recettes concrètes à partir d’un inventaire de cuisine.",
-    "Réponds uniquement avec un JSON strict compatible NewRecipeInput (pas de markdown).",
+    "Réponds uniquement avec un JSON strict (pas de markdown).",
+    `Retourne exactement ${mealCount} recette${mealCount > 1 ? "s" : ""} distincte${mealCount > 1 ? "s" : ""} dans le tableau recipes.`,
     "Chaque recette doit inclure title, time, calories, proteins, servings, difficulty,",
     "tag (Express|Végétarien|Riche en protéines|Desserts|null), tagLabel optionnel,",
     "ingredients[{name,amount}], steps[{title,detail,duration?}]",
-    "matchedIngredients, missingIngredients et reason.",
-    "Priorise les produits urgency=urgent puis soon. Quantités réalistes. Étapes actionnables.",
+    "matchedIngredients, missing_ingredients et reason.",
+    MEAL_TYPE_PROMPT[mealType],
+    "Tu dois proposer des recettes réalisables avec les ingrédients actuels du frigo.",
+    "Cependant, tu es autorisé à proposer une recette où il manque 1 ou 2 ingrédients MAXIMUM,",
+    "à condition que ces ingrédients soient des basiques faciles à trouver (ex: œufs, farine, crème, épices).",
+    "Si tu utilises un ingrédient manquant, tu dois le signaler explicitement dans missing_ingredients.",
+    "missing_ingredients est un tableau de 0, 1 ou 2 noms (jamais plus). Tableau vide si tout est dans le frigo.",
+    "N’invente pas de produits rares, de viandes ou de légumes absents du frigo dans missing_ingredients.",
     "matchedIngredients = noms d’ingrédients de la recette couverts par le frigo.",
-    "missingIngredients = ingrédients à acheter (hors sel/poivre/huile de base).",
-    options.excludeDesserts ? "N’inclus aucun dessert." : "",
+    "Priorise les produits urgency=urgent puis soon. Quantités réalistes. Étapes actionnables.",
+    options.excludeDesserts && mealType !== "breakfast" ? "N’inclus aucun dessert." : "",
     options.preferExpiring ? "Favorise l’usage des produits bientôt périmés." : "",
   ]
     .filter(Boolean)
@@ -159,9 +189,12 @@ export async function createRecipesFromFridge(
 
   const userPrompt = JSON.stringify({
     mealCount,
+    mealType,
+    mealLabel,
+    targetDate: options.targetDate ?? null,
     inventory,
     language: "fr",
-    outputShape: "NewRecipeInput[] dans { recipes: [...] }",
+    outputShape: `{ recipes: NewRecipeInput[] } — exactement ${mealCount} éléments`,
   });
 
   try {
@@ -248,6 +281,17 @@ function coerceAiRecipe(entry: unknown): AiRecipeCreation | null {
     asNonEmptyString(raw.tagLabel) ??
     (tag === "Riche en protéines" ? "Protéines" : tag === "Desserts" ? "Dessert" : tag ?? undefined);
 
+  const matchedIngredients = asStringArray(raw.matchedIngredients);
+  const missingIngredients = asStringArray(raw.missing_ingredients).length
+    ? asStringArray(raw.missing_ingredients)
+    : asStringArray(raw.missingIngredients);
+  const cappedMissing = missingIngredients.slice(0, 2);
+  const reason =
+    asNonEmptyString(raw.reason) ??
+    (matchedIngredients.length > 0
+      ? `Basée sur ${matchedIngredients.slice(0, 3).join(", ")}`
+      : "Recette générée à partir de votre frigo");
+
   const draft: NewRecipeInput = {
     title,
     photo: asHttpUrl(raw.photo) ?? DEFAULT_PHOTO,
@@ -260,17 +304,10 @@ function coerceAiRecipe(entry: unknown): AiRecipeCreation | null {
     tagLabel,
     ingredients,
     steps,
+    missingIngredients: cappedMissing,
   };
 
-  const matchedIngredients = asStringArray(raw.matchedIngredients);
-  const missingIngredients = asStringArray(raw.missingIngredients);
-  const reason =
-    asNonEmptyString(raw.reason) ??
-    (matchedIngredients.length > 0
-      ? `Basée sur ${matchedIngredients.slice(0, 3).join(", ")}`
-      : "Recette générée à partir de votre frigo");
-
-  return { draft, matchedIngredients, missingIngredients, reason };
+  return { draft, matchedIngredients, missingIngredients: cappedMissing, reason };
 }
 
 function coerceIngredients(value: unknown): NewRecipeInput["ingredients"] {

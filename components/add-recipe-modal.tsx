@@ -210,6 +210,7 @@ export function RecipeFormModal({
       tagLabel: tagToLabel(selectedTag) ?? recipe?.tagLabel,
       ingredients: cleanedIngredients,
       steps: cleanedSteps,
+      missingIngredients: recipe?.missingIngredients,
     });
     onClose();
   };

@@ -3,7 +3,8 @@
  * pour l’UI Frigo, le planning et la génération de recettes.
  */
 
-import { DEFAULT_UNIT, type UnitCode } from "@/lib/units";
+import { normalizeProductName } from "@/lib/shopping-categories";
+import { DEFAULT_UNIT, isUnitCode, type UnitCode } from "@/lib/units";
 
 export const FRIDGE_STORAGE_LOCATIONS = ["fridge", "freezer", "pantry"] as const;
 
@@ -32,6 +33,31 @@ export type FridgeSnapshotItem = {
 };
 
 export const FRIDGE_STORAGE_KEY = "my-kitchen-fridge-items";
+
+/** Minimum d’ingrédients exploitables pour lancer une génération IA. */
+export const MIN_USABLE_FRIDGE_ITEMS = 3;
+
+const NON_EXPLOITABLE_STAPLES = [
+  "sel",
+  "poivre",
+  "fleur de sel",
+  "huile",
+  "huile d olive",
+  "eau",
+] as const;
+
+export function isExploitableFridgeItem(item: { name: string; quantity: number }): boolean {
+  if (item.quantity <= 0) return false;
+  const normalized = normalizeProductName(item.name);
+  if (!normalized) return false;
+  return !NON_EXPLOITABLE_STAPLES.some(
+    (staple) => normalized === staple || normalized.startsWith(`${staple} `),
+  );
+}
+
+export function countUsableFridgeItems(items: Array<{ name: string; quantity: number }>): number {
+  return items.filter(isExploitableFridgeItem).length;
+}
 
 export const FRIDGE_TABS: {
   id: FridgeStorageLocation;
@@ -100,21 +126,6 @@ export function dlcStatus(
   if (diff <= 0) return "urgent";
   if (diff <= 3) return "soon";
   return "ok";
-}
-
-function isUnitCode(value: string): value is UnitCode {
-  return (
-    value === "g" ||
-    value === "kg" ||
-    value === "ml" ||
-    value === "l" ||
-    value === "unite" ||
-    value === "cas" ||
-    value === "cac" ||
-    value === "pincee" ||
-    value === "tranche" ||
-    value === "botte"
-  );
 }
 
 function sanitizeItem(raw: unknown, index: number): FridgeItem | null {

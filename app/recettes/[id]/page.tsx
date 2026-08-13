@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { use, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { RecipeFormModal } from "@/components/add-recipe-modal";
+import { MissingIngredientsBadges } from "@/components/missing-ingredients-badges";
 import {
   deleteRecipe,
   getRecipeById,
@@ -360,6 +361,7 @@ export default function RecipeStepsPage({
         </div>
 
         <div className="px-5 pt-4 pb-28">
+          <MissingIngredientsBadges names={recipe.missingIngredients} className="mb-4" />
           <div
             className="mb-5 overflow-hidden rounded-2xl"
             style={{ background: "#FFFFFF", boxShadow: "0 2px 14px rgba(74,124,89,0.08)" }}
@@ -414,18 +416,29 @@ export default function RecipeStepsPage({
               className="overflow-hidden rounded-3xl"
               style={{ background: "#FFFFFF", boxShadow: "0 4px 20px rgba(74,124,89,0.09)" }}
             >
-              {recipe.ingredients.map((ing, idx) => (
+              {recipe.ingredients.map((ing, idx) => {
+                const missing = (recipe.missingIngredients ?? []).some(
+                  (name) => name.toLowerCase() === ing.name.toLowerCase(),
+                );
+                return (
                 <div
                   key={ing.name}
-                  className="flex items-center justify-between px-5 py-3.5"
+                  className="flex items-center justify-between gap-3 px-5 py-3.5"
                   style={{
                     borderBottom: idx < recipe.ingredients.length - 1 ? "1px solid #F0F4EF" : "none",
+                    background: missing ? "#FFF7ED" : undefined,
                   }}
                 >
                   <span className="text-sm font-semibold text-[#1C2B1E]">{ing.name}</span>
-                  <span className="text-sm font-bold text-[#4A7C59]">{ing.amount}</span>
+                  <span className="shrink-0 text-right">
+                    {missing ? (
+                      <span className="mr-2 text-[11px] font-bold text-[#C2410C]">⚠️ Manque</span>
+                    ) : null}
+                    <span className="text-sm font-bold text-[#4A7C59]">{ing.amount}</span>
+                  </span>
                 </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <ol className="flex flex-col gap-3">

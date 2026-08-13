@@ -25,6 +25,8 @@ export interface Recipe {
   featured?: boolean;
   ingredients: RecipeIngredient[];
   steps: RecipeStep[];
+  /** Ingrédients absents du frigo (basiques, 1 ou 2 max) — recettes générées IA. */
+  missingIngredients?: string[];
 }
 
 export const RECIPES: Recipe[] = [

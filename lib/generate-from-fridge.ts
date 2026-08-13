@@ -8,20 +8,28 @@
 
 import type { FridgeItem, FridgeSnapshotItem } from "@/lib/fridge";
 import { getFridgeSnapshot, toFridgeSnapshotItem } from "@/lib/fridge";
+import { type MealType } from "@/lib/meal-types";
 import { getAllRecipes, type NewRecipeInput, type Recipe } from "@/lib/recipes";
 import { normalizeProductName } from "@/lib/shopping-categories";
+
+export type { MealType } from "@/lib/meal-types";
+export { isMealType, MEAL_TYPE_LABELS, MEAL_TYPES } from "@/lib/meal-types";
 
 export type GenerateFromFridgeMode = "match_existing" | "ai_create";
 
 export type GenerateFromFridgeRequest = {
   items: FridgeSnapshotItem[];
   mode?: GenerateFromFridgeMode;
-  /** Nombre de suggestions souhaitées (défaut 2 = déjeuner + dîner). */
+  /** Nombre d’options de recettes souhaitées (défaut 2). */
   mealCount?: number;
   /** Favorise les recettes utilisant des DLC urgentes. */
   preferExpiring?: boolean;
   /** Exclut les desserts (défaut true). */
   excludeDesserts?: boolean;
+  /** Type de repas ciblé (petit-déjeuner / déjeuner / dîner). */
+  mealType?: MealType;
+  /** Date cible YYYY-MM-DD. */
+  targetDate?: string;
 };
 
 export type GenerateFromFridgeSuggestion = {
@@ -59,6 +67,8 @@ export type AiRecipeProvider = (
     mealCount: number;
     preferExpiring: boolean;
     excludeDesserts: boolean;
+    mealType: MealType;
+    targetDate?: string;
   },
 ) => Promise<AiRecipeProviderResult[]>;
 
@@ -87,6 +97,27 @@ function significantTokens(name: string): string[] {
 function isStaple(ingredientName: string): boolean {
   const n = normalizeProductName(ingredientName);
   return PANTRY_STAPLES.some((s) => n === s || n.includes(s) || s.includes(n));
+}
+
+function parseRecipeMinutes(time: string): number | null {
+  const match = time.match(/(\d+)/);
+  if (!match) return null;
+  const value = Number(match[1]);
+  return Number.isFinite(value) ? value : null;
+}
+
+function recipeFitsMealType(
+  recipe: Recipe,
+  mealType: MealType | undefined,
+  excludeDesserts: boolean,
+): boolean {
+  if (excludeDesserts && recipe.tag === "Desserts" && mealType !== "breakfast") return false;
+  if (!mealType) return true;
+  if (mealType === "breakfast") {
+    const minutes = parseRecipeMinutes(recipe.time);
+    if (minutes != null && minutes > 35) return false;
+  }
+  return true;
 }
 
 export function ingredientNamesMatch(a: string, b: string): boolean {
@@ -182,17 +213,17 @@ export function matchRecipesFromFridge(
     preferExpiring?: boolean;
     /** Exclut les desserts (défaut true pour le planning repas). */
     excludeDesserts?: boolean;
+    mealType?: MealType;
   } = {},
 ): GenerateFromFridgeSuggestion[] {
   const mealCount = Math.max(1, options.mealCount ?? 2);
   const preferExpiring = options.preferExpiring ?? true;
   const excludeDesserts = options.excludeDesserts ?? true;
+  const mealType = options.mealType;
 
   if (fridge.length === 0) return [];
 
-  const catalog = excludeDesserts
-    ? recipes.filter((r) => r.tag !== "Desserts")
-    : recipes;
+  const catalog = recipes.filter((recipe) => recipeFitsMealType(recipe, mealType, excludeDesserts));
 
   const ranked = catalog
     .map((recipe) => scoreRecipeAgainstFridge(recipe, fridge, preferExpiring))
@@ -254,6 +285,8 @@ export async function generateFromFridge(
   const mealCount = request.mealCount ?? 2;
   const preferExpiring = request.preferExpiring ?? true;
   const excludeDesserts = request.excludeDesserts ?? true;
+  const mealType = request.mealType ?? "lunch";
+  const targetDate = request.targetDate;
 
   if (mode === "ai_create") {
     const fallback = () =>
@@ -261,6 +294,7 @@ export async function generateFromFridge(
         mealCount,
         preferExpiring,
         excludeDesserts,
+        mealType,
       });
 
     if (!options.aiProvider) {
@@ -281,6 +315,8 @@ export async function generateFromFridge(
         mealCount,
         preferExpiring,
         excludeDesserts,
+        mealType,
+        targetDate,
       });
 
       const suggestions: GenerateFromFridgeSuggestion[] = created.map((item, index) => ({
@@ -290,7 +326,10 @@ export async function generateFromFridge(
         matchedIngredients: item.matchedIngredients,
         missingIngredients: item.missingIngredients,
         reason: item.reason,
-        recipeDraft: item.draft,
+        recipeDraft: {
+          ...item.draft,
+          missingIngredients: item.missingIngredients,
+        },
       }));
 
       return {
@@ -323,6 +362,7 @@ export async function generateFromFridge(
     mealCount,
     preferExpiring,
     excludeDesserts,
+    mealType,
   });
 
   return {

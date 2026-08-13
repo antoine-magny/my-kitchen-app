@@ -3,9 +3,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { GenerateFromFridgeModal } from "@/components/generate-from-fridge-modal";
+import { MissingIngredientsBadges } from "@/components/missing-ingredients-badges";
 import { SelectRecipeModal } from "@/components/select-recipe-modal";
 import {
   addDays,
+  calendarDateFromIso,
   dayKey,
   formatWeekLabel,
   mondayBasedIndex,
@@ -13,11 +16,10 @@ import {
   sameDay,
   startOfWeek,
 } from "@/lib/date-paris";
-import type { GenerateFromFridgeResult } from "@/lib/generate-from-fridge";
-import { getFridgeSnapshot } from "@/lib/fridge";
+import { MEAL_TYPE_LABELS, type MealType } from "@/lib/meal-types";
 import {
-  addCustomRecipe,
   getRecipeById,
+  type Recipe,
   type RecipeIngredient,
 } from "@/lib/recipes";
 import { replaceShoppingListFromIngredients, setExportBannerCount } from "@/lib/shopping-list";
@@ -210,7 +212,7 @@ export default function PlanningPage() {
   const [pickerSlot, setPickerSlot] = useState<MealSlot | null>(null);
   const [exportMessage, setExportMessage] = useState<string | null>(null);
   const [generateMessage, setGenerateMessage] = useState<string | null>(null);
-  const [generating, setGenerating] = useState(false);
+  const [generateModalOpen, setGenerateModalOpen] = useState(false);
 
   const today = parisCalendarDate();
   const todayKey = dayKey(today);
@@ -238,6 +240,10 @@ export default function PlanningPage() {
 
   const lunch = dayPlan.lunchId != null ? getRecipeById(dayPlan.lunchId) : null;
   const dinner = dayPlan.dinnerId != null ? getRecipeById(dayPlan.dinnerId) : null;
+  const breakfastRecipe =
+    dayPlan.breakfast?.id.startsWith("recipe-")
+      ? getRecipeById(Number(dayPlan.breakfast.id.slice("recipe-".length)))
+      : undefined;
 
   const totals = useMemo(() => {
     let calories = 0;
@@ -279,22 +285,52 @@ export default function PlanningPage() {
     if (slot === "dinner") updateDayPlan({ dinnerId: null });
   }
 
-  function selectRecipeForSlot(slot: MealSlot, recipeId: number) {
-    if (slot === "breakfast") {
-      const recipe = getRecipeById(recipeId);
-      if (!recipe) return;
-      updateDayPlan({
-        breakfast: {
+  function assignRecipeToDate(date: Date, slot: MealSlot, recipeId: number) {
+    const recipe = getRecipeById(recipeId);
+    if (!recipe) return;
+
+    const targetWeekStart = startOfWeek(date);
+    const targetWeekId = dayKey(targetWeekStart);
+    const key = dayKey(date);
+
+    setPlansByWeek((prev) => {
+      const currentWeek = prev[targetWeekId] ?? buildInitialPlans(targetWeekStart);
+      const currentDay = currentWeek[key] ?? {
+        breakfast: null,
+        lunchId: null,
+        dinnerId: null,
+      };
+      const nextDay: DayPlan = { ...currentDay };
+      if (slot === "breakfast") {
+        nextDay.breakfast = {
           id: `recipe-${recipe.id}`,
           name: recipe.title,
           detail: `${recipe.difficulty} · ${recipe.time}`,
           calories: recipe.calories,
           proteins: recipe.proteins,
+        };
+      }
+      if (slot === "lunch") nextDay.lunchId = recipe.id;
+      if (slot === "dinner") nextDay.dinnerId = recipe.id;
+      return {
+        ...prev,
+        [targetWeekId]: {
+          ...currentWeek,
+          [key]: nextDay,
         },
-      });
-    }
-    if (slot === "lunch") updateDayPlan({ lunchId: recipeId });
-    if (slot === "dinner") updateDayPlan({ dinnerId: recipeId });
+      };
+    });
+
+    const currentWeekStart = startOfWeek(today);
+    const offset = Math.round(
+      (targetWeekStart.getTime() - currentWeekStart.getTime()) / (7 * 24 * 60 * 60 * 1000),
+    );
+    setWeekOffset(offset);
+    setSelectedIndex(mondayBasedIndex(date));
+  }
+
+  function selectRecipeForSlot(slot: MealSlot, recipeId: number) {
+    assignRecipeToDate(selectedDay, slot, recipeId);
     setPickerSlot(null);
   }
 
@@ -342,80 +378,35 @@ export default function PlanningPage() {
     setPickerSlot(slot);
   }
 
-  async function generateFromFridgeForDay() {
-    setExportMessage(null);
-    setGenerating(true);
-    try {
-      const snapshot = getFridgeSnapshot();
-      if (snapshot.length === 0) {
-        setGenerateMessage("Votre frigo est vide — ajoutez des ingrédients d’abord.");
-        return;
-      }
+  function defaultGenerateMealType(): MealType {
+    if (dayPlan.lunchId == null) return "lunch";
+    if (dayPlan.dinnerId == null) return "dinner";
+    if (dayPlan.breakfast == null) return "breakfast";
+    return "lunch";
+  }
 
-      const response = await fetch("/api/generate-from-fridge", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          items: snapshot,
-          mode: "ai_create",
-          mealCount: 2,
-          preferExpiring: true,
-          excludeDesserts: true,
-        }),
-      });
-
-      if (!response.ok) {
-        openManualMealPicker("Impossible de générer — choisissez une recette.");
-        return;
-      }
-
-      const result = (await response.json()) as GenerateFromFridgeResult;
-
-      // IA KO → même menu que « Remplacer », sans auto-remplir le fallback.
-      if (result.aiUnavailable || !result.suggestions.some((s) => s.source === "ai")) {
-        const detail = result.message?.includes("GEMINI_API_KEY")
-          ? "Clé Gemini manquante ou invalide — choisissez une recette."
-          : "IA indisponible — choisissez une recette pour ce repas.";
-        openManualMealPicker(detail);
-        return;
-      }
-
-      const recipeIds: number[] = [];
-      const titles: string[] = [];
-
-      for (const suggestion of result.suggestions) {
-        if (suggestion.source === "ai" && suggestion.recipeDraft) {
-          const recipe = addCustomRecipe(suggestion.recipeDraft);
-          recipeIds.push(recipe.id);
-          titles.push(recipe.title);
-        }
-      }
-
-      const lunchId = recipeIds[0] ?? null;
-      const dinnerId = recipeIds[1] ?? recipeIds[0] ?? null;
-
-      if (lunchId == null && dinnerId == null) {
-        openManualMealPicker(
-          result.message ?? "Aucune recette générée — choisissez manuellement.",
-        );
-        return;
-      }
-
-      updateDayPlan({
-        lunchId: lunchId ?? dayPlan.lunchId,
-        dinnerId: dinnerId ?? dayPlan.dinnerId,
-      });
-
-      setGenerateMessage(
-        titles.length === 1
-          ? `Recette créée — ${titles[0]}`
-          : `Recettes créées — ${titles.slice(0, 2).join(" · ")}`,
-      );
-    } catch {
-      openManualMealPicker("Impossible de générer — choisissez une recette.");
-    } finally {
-      setGenerating(false);
+  function handleGeneratedFromFridge({
+    dateIso,
+    mealType,
+    recipes,
+  }: {
+    dateIso: string;
+    mealType: MealType;
+    recipes: Recipe[];
+  }) {
+    const date = calendarDateFromIso(dateIso);
+    const recipe = recipes[0];
+    setGenerateModalOpen(false);
+    if (!date || !recipe) {
+      openManualMealPicker("Aucune recette générée — choisissez manuellement.");
+      return;
     }
+    assignRecipeToDate(date, mealType, recipe.id);
+    setGenerateMessage(
+      recipes.length === 1
+        ? `Recette créée — ${recipe.title}`
+        : `Option retenue — ${recipe.title} (${MEAL_TYPE_LABELS[mealType].toLowerCase()})`,
+    );
   }
 
   return (
@@ -573,6 +564,7 @@ export default function PlanningPage() {
                     <p className="mt-0.5 text-xs font-medium text-[#7A8F7D]">
                       {dayPlan.breakfast.detail} · {dayPlan.breakfast.calories} kcal · {dayPlan.breakfast.proteins}g prot.
                     </p>
+                    <MissingIngredientsBadges names={breakfastRecipe?.missingIngredients} className="mt-2" />
                   </div>
                   <button
                     type="button"
@@ -611,8 +603,12 @@ export default function PlanningPage() {
               >
                 <div className="relative h-44 bg-[#D4EDD9]">
                   <Link href={`/recettes/${lunch.id}`} className="absolute inset-0 block">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={lunch.photo} alt={lunch.title} className="h-full w-full object-cover" />
+                    {lunch.photo ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={lunch.photo} alt={lunch.title} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-5xl">🍽️</div>
+                    )}
                     <div
                       className="absolute inset-0"
                       style={{
@@ -649,6 +645,7 @@ export default function PlanningPage() {
                       {lunch.title}
                     </h3>
                   </Link>
+                  <MissingIngredientsBadges names={lunch.missingIngredients} className="mb-3" />
 
                   <div className="mb-4 flex items-center gap-2.5">
                     <div className="flex items-center gap-1.5 rounded-xl bg-[#FFF7ED] px-3 py-1.5">
@@ -692,8 +689,12 @@ export default function PlanningPage() {
               >
                 <div className="relative h-44 bg-[#D4EDD9]">
                   <Link href={`/recettes/${dinner.id}`} className="absolute inset-0 block">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={dinner.photo} alt={dinner.title} className="h-full w-full object-cover" />
+                    {dinner.photo ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={dinner.photo} alt={dinner.title} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-5xl">🍽️</div>
+                    )}
                     <div
                       className="absolute inset-0"
                       style={{
@@ -729,6 +730,7 @@ export default function PlanningPage() {
                       {dinner.title}
                     </h3>
                   </Link>
+                  <MissingIngredientsBadges names={dinner.missingIngredients} className="mb-3" />
 
                   <div className="mb-4 flex items-center gap-2.5">
                     <div className="flex items-center gap-1.5 rounded-xl bg-[#FFF7ED] px-3 py-1.5">
@@ -777,12 +779,15 @@ export default function PlanningPage() {
 
           <button
             type="button"
-            onClick={generateFromFridgeForDay}
-            disabled={generating}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-[#C8E0CF] bg-white py-3.5 text-sm font-bold text-[#2E5C3A] transition-all hover:bg-[#EBF2EC] active:scale-[0.98] disabled:cursor-wait disabled:opacity-70"
+            onClick={() => {
+              setExportMessage(null);
+              setGenerateMessage(null);
+              setGenerateModalOpen(true);
+            }}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-[#C8E0CF] bg-white py-3.5 text-sm font-bold text-[#2E5C3A] transition-all hover:bg-[#EBF2EC] active:scale-[0.98]"
           >
             <span aria-hidden>🎲</span>
-            {generating ? "Génération…" : "Générer automatiquement selon mon frigo"}
+            Générer automatiquement selon mon frigo
           </button>
 
           {generateMessage && (
@@ -790,6 +795,15 @@ export default function PlanningPage() {
           )}
         </section>
       </div>
+
+      {generateModalOpen && (
+        <GenerateFromFridgeModal
+          defaultDate={selectedDay}
+          defaultMealType={defaultGenerateMealType()}
+          onClose={() => setGenerateModalOpen(false)}
+          onGenerated={handleGeneratedFromFridge}
+        />
+      )}
 
       {pickerSlot && (
         <SelectRecipeModal

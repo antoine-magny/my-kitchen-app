@@ -38,6 +38,25 @@ export function dayKey(date: Date): string {
   return `${date.getUTCFullYear()}-${date.getUTCMonth()}-${date.getUTCDate()}`;
 }
 
+/** YYYY-MM-DD à partir d’une date calendaire Paris (UTC midi). */
+export function isoDateFromCalendar(date: Date): string {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/** Date calendaire Paris (UTC midi) depuis YYYY-MM-DD. */
+export function calendarDateFromIso(iso: string): Date | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso.trim());
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (!Number.isFinite(year) || month < 1 || month > 12 || day < 1 || day > 31) return null;
+  return new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+}
+
 /** Index 0 = lundi … 6 = dimanche. */
 export function mondayBasedIndex(date: Date): number {
   const day = date.getUTCDay();

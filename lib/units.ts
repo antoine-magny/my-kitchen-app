@@ -19,6 +19,10 @@ export type UnitCode = (typeof UNITS)[number]["code"];
 
 export const DEFAULT_UNIT: UnitCode = "unite";
 
+export function isUnitCode(value: string): value is UnitCode {
+  return UNITS.some((unit) => unit.code === value);
+}
+
 export function unitLabel(code: UnitCode): string {
   return UNITS.find((u) => u.code === code)?.label ?? code;
 }

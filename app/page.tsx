@@ -189,8 +189,12 @@ export default function Home() {
           >
             <div className="relative h-52 bg-[#D4EDD9]">
               <Link href={`/recettes/${MAIN_MEAL.id}`} className="absolute inset-0 block">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={MAIN_MEAL.photo} alt={MAIN_MEAL.title} className="h-full w-full object-cover" />
+                {MAIN_MEAL.photo ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={MAIN_MEAL.photo} alt={MAIN_MEAL.title} className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-5xl">🍽️</div>
+                )}
                 <div
                   className="absolute inset-0"
                   style={{
@@ -296,8 +300,12 @@ export default function Home() {
                 }}
               >
                 <div className="relative h-24 bg-[#D4EDD9]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={recipe.photo} alt={recipe.title} className="h-full w-full object-cover" />
+                  {recipe.photo ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={recipe.photo} alt={recipe.title} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-2xl">🍽️</div>
+                  )}
                   <div
                     className="absolute inset-0"
                     style={{ background: "linear-gradient(to top, rgba(28,43,30,0.35) 0%, transparent 60%)" }}
