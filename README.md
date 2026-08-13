@@ -20,6 +20,7 @@ modification.
 | Base de données | Supabase (PostgreSQL + RLS) |
 | IA | Google Gemini via `@google/genai` |
 | Hébergement | Vercel (+ un cron déclaré dans `vercel.json`) |
+| CI | GitHub Actions (`.github/workflows/ci.yml`) : `lint` + `build` à chaque push sur `main` |
 
 > Next.js 16 introduit des ruptures par rapport aux versions précédentes. En cas
 > de doute sur une API du framework, consulter `node_modules/next/dist/docs/`
@@ -36,6 +37,7 @@ Pour un contrôle de types complet : `npx tsc --noEmit`.
 
 ```
 app/                    Routes App Router (une page par écran)
+  layout.tsx            Shell global : polices Nunito/Lora + BottomNav
   page.tsx              Accueil : repas du jour, frigo en un coup d'œil
   frigo/                Inventaire frigo / congélateur / placards
   planning/             Planning hebdomadaire des repas
@@ -44,11 +46,15 @@ app/                    Routes App Router (une page par écran)
   api/                  Route Handlers (voir plus bas)
 components/             Composants React partagés
   icons.tsx             Toutes les icônes SVG de l'app (props size / strokeWidth)
+  bottom-nav.tsx        Navigation fixe (5 onglets)
   frigo/                Composants propres à la page frigo
+  generate-from-fridge-modal.tsx  Génération de recettes depuis le planning
+  select-recipe-modal.tsx         Choix d'une recette du catalogue
 lib/                    Logique métier, sans JSX
   ai/                   Client Gemini et prompts
   supabase/             Client admin + types générés du schéma
 scripts/                Utilitaires ponctuels lancés à la main
+.github/workflows/      CI GitHub Actions (lint + build)
 ```
 
 ### Séparation des responsabilités
@@ -57,7 +63,7 @@ La règle structurante du projet : **`lib/` ne contient jamais de JSX, `app/` ne
 contient jamais de logique métier réutilisable.** Une page assemble des
 composants et appelle des fonctions de `lib/`.
 
-Trois exemples de cette découpe, utiles comme modèles :
+Quelques exemples de cette découpe, utiles comme modèles :
 
 - `app/planning/page.tsx` ne fait que du rendu ; la construction d'une semaine et
   l'agrégation des ingrédients vivent dans `lib/planning.ts`.
@@ -67,6 +73,9 @@ Trois exemples de cette découpe, utiles comme modèles :
   (formulaire d'édition) et `components/add-recipe-modal.tsx` (parcours d'ajout
   en 3 modes), avec les styles de champs communs dans
   `components/recipe-form-styles.ts`.
+- `app/planning/page.tsx` délègue le choix de recette à
+  `components/select-recipe-modal.tsx` et la génération IA à
+  `components/generate-from-fridge-modal.tsx`.
 
 ### Icônes
 
@@ -82,7 +91,8 @@ C'est le point le plus important à comprendre avant de toucher au code.
 
 **L'essentiel de l'état applicatif vit dans le `localStorage` du navigateur**,
 pas dans Supabase. Supabase sert de stockage complémentaire côté serveur pour
-les recettes enregistrées et un instantané de l'inventaire consommé par l'IA.
+les recettes enregistrées et un instantané d'inventaire (`pantry_items`) lu
+par l'IA — l'app **n'écrit jamais** l'inventaire UI vers cette table.
 
 Clés `localStorage` utilisées :
 
@@ -90,11 +100,18 @@ Clés `localStorage` utilisées :
 | --- | --- | --- |
 | `my-kitchen-fridge-items` | Inventaire frigo/congélateur/placards | `lib/fridge.ts` |
 | `my-kitchen-shopping-list` | Liste de courses | `lib/shopping-list.ts` |
-| `my-kitchen-shopping-export-banner` | Bandeau « X articles exportés » | `lib/shopping-list.ts` |
 | `my-kitchen-custom-recipes` | Recettes créées par l'utilisateur | `lib/recipes.ts` |
 | `my-kitchen-recipe-overrides` | Modifications des recettes livrées | `lib/recipes.ts` |
 | `my-kitchen-deleted-recipes` | Recettes livrées masquées | `lib/recipes.ts` |
 | `my-kitchen-favorite-recipes` | Favoris | pages `app/recettes` |
+
+Deux exceptions à ce modèle :
+
+- Le bandeau « X articles exportés » (`my-kitchen-shopping-export-banner`) vit
+  dans le **`sessionStorage`**, pas le `localStorage` (`lib/shopping-list.ts`).
+- Le **planning n'est pas persisté** : il reste dans l'état React de
+  `app/planning/page.tsx` et disparaît au rechargement. La table
+  `meal_plan_entries` existe dans le schéma mais n'est pas utilisée.
 
 ### Le pattern d'hydratation — à ne pas « corriger »
 
@@ -157,8 +174,12 @@ Toutes ne sont pas encore exploitées par le code. Les tables réellement lues o
 - `recipes` et `recipe_ingredients` — enregistrement d'une recette
   (`lib/save-recipe.ts`) ;
 - `ingredients` — résolution ou création d'un ingrédient au passage ;
-- `pantry_items` — lecture de l'inventaire côté serveur
-  (`lib/fridge-supabase.ts`).
+- `pantry_items` — **lecture seule** de l'inventaire côté serveur
+  (`lib/fridge-supabase.ts`). L'écran Frigo, lui, ne touche qu'au
+  `localStorage`.
+
+`meal_plan_entries` et `shopping_list_items` existent dans le schéma mais le
+planning et la liste de courses restent 100 % côté client.
 
 ---
 
@@ -172,10 +193,16 @@ Toutes ne sont pas encore exploitées par le code. Les tables réellement lues o
 | `POST /api/parse-recipe` | Extrait une recette depuis une photo ou une URL (Gemini) |
 | `GET /api/keep-alive` | Ping quotidien de la base — voir ci-dessous |
 
+La génération (`/api/generate-from-fridge` et le modal associé) **préfère
+`pantry_items`** s'il contient au moins `MIN_USABLE_FRIDGE_ITEMS` ingrédients
+exploitables ; sinon elle retombe sur le snapshot `localStorage` envoyé par le
+client. Les deux sources ne sont pas synchronisées.
+
 `/api/keep-alive` n'a aucune fonction applicative. Un projet Supabase gratuit se
 met en pause après une période d'inactivité ; le cron déclaré dans `vercel.json`
-(tous les jours à minuit) appelle cette route pour remettre le compteur à zéro.
-Un service externe comme cron-job.org peut jouer le même rôle.
+(tous les jours à minuit) appelle cette route, qui lit une ligne de `recipes`
+pour remettre le compteur à zéro. Un service externe comme cron-job.org peut
+jouer le même rôle.
 
 ---
 
