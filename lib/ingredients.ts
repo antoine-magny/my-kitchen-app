@@ -94,20 +94,3 @@ export const INGREDIENTS = [
   { id: "sauce", name: "Sauce / Vinaigre", emoji: "🥢", category: "pantry" },
   { id: "canned_food", name: "Boîte de conserve", emoji: "🥫", category: "pantry" },
 ] as const satisfies readonly IngredientCatalogItem[];
-
-export type IngredientId = (typeof INGREDIENTS)[number]["id"];
-
-export const INGREDIENT_EMOJIS: string[] = INGREDIENTS.map((item) => item.emoji);
-
-/** Première occurrence d'un emoji dans le catalogue (utile pour le sélecteur). */
-export function findIngredientByEmoji(emoji: string): IngredientCatalogItem | undefined {
-  return INGREDIENTS.find((item) => item.emoji === emoji);
-}
-
-export function findIngredientById(id: IngredientId | string): IngredientCatalogItem | undefined {
-  return INGREDIENTS.find((item) => item.id === id);
-}
-
-export function getIngredientsByCategory(category: IngredientCategory): IngredientCatalogItem[] {
-  return INGREDIENTS.filter((item) => item.category === category);
-}

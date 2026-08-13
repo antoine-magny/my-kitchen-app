@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { CheckIcon, TrashIcon } from "@/components/icons";
 import { groupByShoppingCategory } from "@/lib/shopping-categories";
 import {
   clearCheckedShoppingItems,
@@ -12,26 +13,6 @@ import {
   updateShoppingItem,
   type ShoppingListItem,
 } from "@/lib/shopping-list";
-
-function CheckIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
-}
-
-function TrashIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="3 6 5 6 21 6" />
-      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-      <path d="M10 11v6" />
-      <path d="M14 11v6" />
-      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-    </svg>
-  );
-}
 
 const inputNameClass =
   "w-full bg-transparent text-sm font-bold text-[#1C2B1E] outline-none rounded-lg px-1.5 py-0.5 -mx-1.5 transition-colors hover:bg-[#F0F4EF] focus:bg-[#F0F4EF] focus:ring-2 focus:ring-[#C8E0CF]";
@@ -96,7 +77,7 @@ function ShoppingItemRow({
         aria-label={item.checked ? `Décocher ${item.name}` : `Cocher ${item.name}`}
         aria-pressed={item.checked}
       >
-        <CheckIcon />
+        <CheckIcon size={14} />
       </button>
 
       <div className="min-w-0 flex-1">
@@ -139,7 +120,7 @@ function ShoppingItemRow({
         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[#9CA3AF] transition-colors hover:bg-[#FEF2F2] hover:text-[#B91C1C] active:scale-95"
         aria-label={`Supprimer ${item.name}`}
       >
-        <TrashIcon />
+        <TrashIcon size={14} />
       </button>
     </div>
   );

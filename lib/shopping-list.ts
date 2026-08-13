@@ -253,10 +253,6 @@ export function getShoppingList(): ShoppingListItem[] {
   return readList();
 }
 
-export function setShoppingList(items: ShoppingListItem[]) {
-  writeList(items.map((item) => withCategory(item)));
-}
-
 export function toggleShoppingItem(id: string): ShoppingListItem[] {
   const next = readList().map((item) =>
     item.id === id ? { ...item, checked: !item.checked } : item,

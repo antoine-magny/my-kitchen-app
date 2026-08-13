@@ -1,36 +1,231 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# My Kitchen App
 
-## Getting Started
+Application de cuisine personnelle : inventaire du frigo, catalogue de recettes,
+planning de repas hebdomadaire, liste de courses, et génération de recettes
+assistée par IA à partir de ce qu'il reste dans le frigo.
 
-First, run the development server:
+Ce README est le **point d'entrée pour les futures requêtes IA** : il décrit
+l'architecture, les conventions et les pièges du projet. À lire avant toute
+modification.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## Tech stack
+
+| Brique | Choix |
+| --- | --- |
+| Framework | Next.js 16 (App Router, Turbopack) |
+| Langage | TypeScript strict, alias `@/*` vers la racine |
+| UI | React 19 + Tailwind CSS v4 (via `@tailwindcss/postcss`) |
+| Base de données | Supabase (PostgreSQL + RLS) |
+| IA | Google Gemini via `@google/genai` |
+| Hébergement | Vercel (+ un cron déclaré dans `vercel.json`) |
+
+> Next.js 16 introduit des ruptures par rapport aux versions précédentes. En cas
+> de doute sur une API du framework, consulter `node_modules/next/dist/docs/`
+> plutôt que de se fier à ses souvenirs.
+
+Commandes : `npm run dev` (serveur local), `npm run build`, `npm run lint`.
+Pour un contrôle de types complet : `npx tsc --noEmit`.
+
+---
+
+## Architecture
+
+### Arborescence
+
+```
+app/                    Routes App Router (une page par écran)
+  page.tsx              Accueil : repas du jour, frigo en un coup d'œil
+  frigo/                Inventaire frigo / congélateur / placards
+  planning/             Planning hebdomadaire des repas
+  recettes/             Liste des recettes + détail dynamique [id]
+  courses/              Liste de courses
+  api/                  Route Handlers (voir plus bas)
+components/             Composants React partagés
+  icons.tsx             Toutes les icônes SVG de l'app (props size / strokeWidth)
+  frigo/                Composants propres à la page frigo
+lib/                    Logique métier, sans JSX
+  ai/                   Client Gemini et prompts
+  supabase/             Client admin + types générés du schéma
+scripts/                Utilitaires ponctuels lancés à la main
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Séparation des responsabilités
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+La règle structurante du projet : **`lib/` ne contient jamais de JSX, `app/` ne
+contient jamais de logique métier réutilisable.** Une page assemble des
+composants et appelle des fonctions de `lib/`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Trois exemples de cette découpe, utiles comme modèles :
 
-## Learn More
+- `app/planning/page.tsx` ne fait que du rendu ; la construction d'une semaine et
+  l'agrégation des ingrédients vivent dans `lib/planning.ts`.
+- `app/frigo/page.tsx` orchestre l'état, mais les modales et la ligne
+  d'ingrédient sont dans `components/frigo/`.
+- Les deux modales de recette sont séparées : `components/recipe-form-modal.tsx`
+  (formulaire d'édition) et `components/add-recipe-modal.tsx` (parcours d'ajout
+  en 3 modes), avec les styles de champs communs dans
+  `components/recipe-form-styles.ts`.
 
-To learn more about Next.js, take a look at the following resources:
+### Icônes
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Aucune icône ne doit être redéfinie localement dans une page ou un composant.
+Tout passe par `components/icons.tsx`, qui expose des composants prenant `size`
+et `strokeWidth`. Ajouter une nouvelle icône là, jamais ailleurs.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## Persistance : le modèle hybride
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+C'est le point le plus important à comprendre avant de toucher au code.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+**L'essentiel de l'état applicatif vit dans le `localStorage` du navigateur**,
+pas dans Supabase. Supabase sert de stockage complémentaire côté serveur pour
+les recettes enregistrées et un instantané de l'inventaire consommé par l'IA.
+
+Clés `localStorage` utilisées :
+
+| Clé | Contenu | Module |
+| --- | --- | --- |
+| `my-kitchen-fridge-items` | Inventaire frigo/congélateur/placards | `lib/fridge.ts` |
+| `my-kitchen-shopping-list` | Liste de courses | `lib/shopping-list.ts` |
+| `my-kitchen-shopping-export-banner` | Bandeau « X articles exportés » | `lib/shopping-list.ts` |
+| `my-kitchen-custom-recipes` | Recettes créées par l'utilisateur | `lib/recipes.ts` |
+| `my-kitchen-recipe-overrides` | Modifications des recettes livrées | `lib/recipes.ts` |
+| `my-kitchen-deleted-recipes` | Recettes livrées masquées | `lib/recipes.ts` |
+| `my-kitchen-favorite-recipes` | Favoris | pages `app/recettes` |
+
+### Le pattern d'hydratation — à ne pas « corriger »
+
+Les pages lisent le `localStorage` dans un `useEffect` vide et appellent
+`setState` immédiatement :
+
+```tsx
+useEffect(() => {
+  setItems(getFridgeItems());
+  setReady(true);
+}, []);
+```
+
+ESLint signale ces appels via `react-hooks/set-state-in-effect` (9 occurrences
+actuellement). **Ces avertissements sont assumés et ne doivent pas être
+« corrigés ».** L'état initial doit rester vide pour que le rendu serveur et le
+premier rendu client concordent ; le `localStorage` n'est lisible qu'après
+montage. Le drapeau `ready` évite d'écraser le stockage avec un état vide au
+premier passage de l'effet d'écriture.
+
+Les recettes livrées avec l'app sont un tableau en dur (`RECIPES` dans
+`lib/recipes.ts`), fusionné à l'exécution avec les créations, modifications et
+suppressions stockées côté client.
+
+---
+
+## Supabase
+
+### Accès aux données
+
+**L'application n'a pas d'écran de connexion.** Tous les accès passent par le
+serveur avec la clé secrète, épinglés sur un unique utilisateur propriétaire
+identifié par `KITCHEN_OWNER_ID`. La RLS reste active côté base et continue de
+bloquer tout accès direct depuis le navigateur.
+
+Le seul point d'entrée est `lib/supabase/admin.ts` :
+
+- `createAdminClient()` — client Supabase typé, clé secrète, sans session ;
+- `getOwnerId()` — UUID du propriétaire, requis pour toute écriture.
+
+Les deux modules sont marqués `server-only` : les importer depuis un composant
+client fait échouer le build, ce qui est voulu.
+
+Pour initialiser le propriétaire sur une nouvelle base :
+`node scripts/setup-owner.mjs` crée l'utilisateur et affiche l'UUID à recopier
+dans `KITCHEN_OWNER_ID`.
+
+### Schéma
+
+Le schéma complet est typé dans `lib/supabase/database.types.ts` (fichier
+généré — ne pas l'éditer à la main, le régénérer depuis Supabase). Tables
+disponibles : `profiles`, `recipes`, `ingredients`, `recipe_ingredients`,
+`recipe_tags`, `tags`, `pantry_items`, `meal_plan_entries`,
+`shopping_list_items`, `aisles`, `seasonal_produce`, `cooking_tips`, plus la vue
+`v_recipe_nutrition`.
+
+Toutes ne sont pas encore exploitées par le code. Les tables réellement lues ou
+écrites aujourd'hui :
+
+- `recipes` et `recipe_ingredients` — enregistrement d'une recette
+  (`lib/save-recipe.ts`) ;
+- `ingredients` — résolution ou création d'un ingrédient au passage ;
+- `pantry_items` — lecture de l'inventaire côté serveur
+  (`lib/fridge-supabase.ts`).
+
+---
+
+## Routes API
+
+| Route | Rôle |
+| --- | --- |
+| `POST /api/recipes` | Enregistre une recette dans Supabase |
+| `GET /api/fridge-inventory` | Lit l'inventaire (`pantry_items`) côté serveur |
+| `POST /api/generate-from-fridge` | Génère des recettes à partir du frigo (Gemini) |
+| `POST /api/parse-recipe` | Extrait une recette depuis une photo ou une URL (Gemini) |
+| `GET /api/keep-alive` | Ping quotidien de la base — voir ci-dessous |
+
+`/api/keep-alive` n'a aucune fonction applicative. Un projet Supabase gratuit se
+met en pause après une période d'inactivité ; le cron déclaré dans `vercel.json`
+(tous les jours à minuit) appelle cette route pour remettre le compteur à zéro.
+Un service externe comme cron-job.org peut jouer le même rôle.
+
+---
+
+## IA (Gemini)
+
+Le client vit dans `lib/ai/gemini.ts`, marqué `server-only` : la clé API ne doit
+jamais transiter par le navigateur, donc jamais de préfixe `NEXT_PUBLIC_`.
+
+Deux usages, chacun avec son module de prompt et de parsing :
+
+- `lib/ai/create-recipes-from-fridge.ts` — propose des recettes réalisables avec
+  l'inventaire disponible ;
+- `lib/ai/parse-recipe.ts` — transforme une photo ou une page web en recette
+  structurée.
+
+Le module `lib/generate-from-fridge.ts` fait le tri en amont : il commence par
+chercher des correspondances dans le catalogue local et ne sollicite l'IA que si
+nécessaire. `MIN_USABLE_FRIDGE_ITEMS` (dans `lib/fridge.ts`) fixe le nombre
+minimum d'ingrédients exploitables avant de lancer une génération — les
+basiques comme le sel ou l'huile ne comptent pas.
+
+---
+
+## Variables d'environnement
+
+À définir dans `.env.local` en local, et dans les réglages du projet Vercel en
+production.
+
+| Variable | Requise | Utilité |
+| --- | --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | oui | URL du projet Supabase |
+| `SUPABASE_SECRET_KEY` | oui | Clé secrète serveur (Project Settings → API Keys). Contourne la RLS, ne jamais l'exposer au client |
+| `KITCHEN_OWNER_ID` | oui | UUID du profil propriétaire, fourni par `scripts/setup-owner.mjs` |
+| `GEMINI_API_KEY` | pour l'IA | Clé Google Gemini. Sans elle, les routes de génération et d'import renvoient une erreur explicite, le reste de l'app fonctionne |
+| `GEMINI_MODEL` | non | Force un modèle précis. Par défaut `gemini-3.6-flash` (`GEMINI_FLASH_MODEL`) |
+
+`NEXT_PUBLIC_SUPABASE_ANON_KEY` peut encore figurer dans `.env.local` mais n'est
+plus référencée nulle part dans le code.
+
+---
+
+## Conventions
+
+- Le code, les commentaires et les libellés d'interface sont en français.
+- Les commentaires expliquent une intention ou une contrainte non évidente,
+  jamais ce que le code fait déjà lisiblement.
+- Les imports internes passent par l'alias `@/`, jamais par des chemins relatifs
+  remontants.
+- Les dates et le calendrier passent par `lib/date-paris.ts`, qui ancre tout sur
+  le fuseau Europe/Paris. Ne pas utiliser `new Date()` directement pour du
+  calcul de jour ou de semaine.
+- Les unités de mesure sont un ensemble fermé défini dans `lib/units.ts`
+  (`UnitCode`) : un code invalide fait échouer la compilation.

@@ -12,9 +12,6 @@ import { type MealType } from "@/lib/meal-types";
 import { getAllRecipes, type NewRecipeInput, type Recipe } from "@/lib/recipes";
 import { normalizeProductName } from "@/lib/shopping-categories";
 
-export type { MealType } from "@/lib/meal-types";
-export { isMealType, MEAL_TYPE_LABELS, MEAL_TYPES } from "@/lib/meal-types";
-
 export type GenerateFromFridgeMode = "match_existing" | "ai_create";
 
 export type GenerateFromFridgeRequest = {

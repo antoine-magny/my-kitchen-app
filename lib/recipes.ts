@@ -465,10 +465,6 @@ function writeDeletedIds(ids: Set<number>) {
   window.localStorage.setItem(DELETED_RECIPES_KEY, JSON.stringify([...ids]));
 }
 
-export function getCustomRecipes(): Recipe[] {
-  return readCustomRecipes();
-}
-
 export function getAllRecipes(): Recipe[] {
   const overrides = readOverrides();
   const deleted = readDeletedIds();

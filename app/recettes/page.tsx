@@ -3,6 +3,14 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AddRecipeModal } from "@/components/add-recipe-modal";
+import {
+  ClockIcon,
+  FlameIcon,
+  HeartIcon,
+  MuscleIcon,
+  PlusIcon,
+  SearchIcon,
+} from "@/components/icons";
 import { MissingIngredientsBadges } from "@/components/missing-ingredients-badges";
 import {
   RECIPES,
@@ -12,68 +20,6 @@ import {
   type Recipe,
   type RecipeFilter,
 } from "@/lib/recipes";
-
-function SearchIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="11" cy="11" r="8" />
-      <path d="m21 21-4.35-4.35" />
-    </svg>
-  );
-}
-
-function ClockIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" />
-      <polyline points="12 6 12 12 16 14" />
-    </svg>
-  );
-}
-
-function FlameIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
-    </svg>
-  );
-}
-
-function MuscleIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M6.5 6.5c3.5-3.5 9-3.5 12 0s3 8.5 0 12-8.5 3-12 0" />
-      <path d="M6.5 17.5c-3 3-2 7 2 6" />
-      <path d="m10 20 4-4" />
-    </svg>
-  );
-}
-
-function HeartIcon({ filled, light }: { filled: boolean; light?: boolean }) {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill={filled ? "#E85D75" : "none"}
-      stroke={filled ? "#E85D75" : light ? "white" : "#7A8F7D"}
-      strokeWidth="2.2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-    </svg>
-  );
-}
-
-function PlusIcon({ size = 13 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="12" y1="5" x2="12" y2="19" />
-      <line x1="5" y1="12" x2="19" y2="12" />
-    </svg>
-  );
-}
 
 type Filter = RecipeFilter | "Favoris";
 
@@ -177,17 +123,17 @@ function RecipeCard({
 
         <div className="mb-4 flex items-center gap-3">
           <div className="flex items-center gap-1.5 text-[#4A7C59]">
-            <ClockIcon />
+            <ClockIcon size={12} />
             <span className="text-xs font-semibold text-[#4A7C59]">{recipe.time}</span>
           </div>
           <div className="h-3 w-px rounded-full bg-[#E2EBE3]" />
           <div className="flex items-center gap-1.5 text-[#F97316]">
-            <FlameIcon />
+            <FlameIcon size={12} />
             <span className="text-xs font-semibold text-[#7A8F7D]">{recipe.calories} kcal</span>
           </div>
           <div className="h-3 w-px rounded-full bg-[#E2EBE3]" />
           <div className="flex items-center gap-1.5 text-[#3B82F6]">
-            <MuscleIcon />
+            <MuscleIcon size={12} />
             <span className="text-xs font-semibold text-[#7A8F7D]">{recipe.proteins}g</span>
           </div>
         </div>
@@ -267,15 +213,15 @@ function FeaturedCard({
         </h2>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5 text-white/75">
-            <ClockIcon />
+            <ClockIcon size={12} />
             <span className="text-xs font-semibold">{recipe.time}</span>
           </div>
           <div className="flex items-center gap-1.5 text-white/75">
-            <FlameIcon />
+            <FlameIcon size={12} />
             <span className="text-xs font-semibold">{recipe.calories} kcal</span>
           </div>
           <div className="flex items-center gap-1.5 text-white/75">
-            <MuscleIcon />
+            <MuscleIcon size={12} />
             <span className="text-xs font-semibold">{recipe.proteins}g protéines</span>
           </div>
           <Link
@@ -361,7 +307,7 @@ export default function RecettesPage() {
               }}
             >
               <span className="shrink-0 text-[#7A8F7D]">
-                <SearchIcon />
+                <SearchIcon size={16} />
               </span>
               <input
                 type="text"

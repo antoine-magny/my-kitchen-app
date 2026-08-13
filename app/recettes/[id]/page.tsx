@@ -4,8 +4,18 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { RecipeFormModal } from "@/components/add-recipe-modal";
+import {
+  CheckIcon,
+  ChevronLeftIcon,
+  ClockIcon,
+  EditIcon,
+  FlameIcon,
+  MoreIcon,
+  TrashIcon,
+  UsersIcon,
+} from "@/components/icons";
 import { MissingIngredientsBadges } from "@/components/missing-ingredients-badges";
+import { RecipeFormModal } from "@/components/recipe-form-modal";
 import {
   deleteRecipe,
   getRecipeById,
@@ -13,81 +23,6 @@ import {
   type NewRecipeInput,
   type Recipe,
 } from "@/lib/recipes";
-
-function BackIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-      <path d="m15 18-6-6 6-6" />
-    </svg>
-  );
-}
-
-function MoreIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-      <circle cx="12" cy="5" r="1.6" />
-      <circle cx="12" cy="12" r="1.6" />
-      <circle cx="12" cy="19" r="1.6" />
-    </svg>
-  );
-}
-
-function EditIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 20h9" />
-      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
-    </svg>
-  );
-}
-
-function TrashIcon() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="3 6 5 6 21 6" />
-      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-      <path d="M10 11v6" />
-      <path d="M14 11v6" />
-      <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-    </svg>
-  );
-}
-
-function ClockIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" />
-      <polyline points="12 6 12 12 16 14" />
-    </svg>
-  );
-}
-
-function FlameIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
-    </svg>
-  );
-}
-
-function CheckIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
-}
-
-function UsersIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-    </svg>
-  );
-}
 
 const FAVORITES_KEY = "my-kitchen-favorite-recipes";
 
@@ -179,7 +114,7 @@ function RecipeActionsMenu({
         aria-expanded={menuOpen}
         aria-haspopup="menu"
       >
-        <MoreIcon />
+        <MoreIcon size={16} />
       </button>
 
       {menuOpen &&
@@ -208,7 +143,7 @@ function RecipeActionsMenu({
               className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-semibold text-[#1C2B1E] transition-colors hover:bg-[#F6F8F3]"
             >
               <span className="text-[#4A7C59]">
-                <EditIcon />
+                <EditIcon size={15} />
               </span>
               Modifier la recette
             </button>
@@ -223,7 +158,7 @@ function RecipeActionsMenu({
               }}
               className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-semibold text-[#B91C1C] transition-colors hover:bg-[#FEF2F2]"
             >
-              <TrashIcon />
+              <TrashIcon size={15} />
               Supprimer la recette
             </button>
           </div>,
@@ -327,7 +262,7 @@ export default function RecipeStepsPage({
             style={{ background: "rgba(255,255,255,0.92)", backdropFilter: "blur(8px)" }}
             aria-label="Retour"
           >
-            <BackIcon />
+            <ChevronLeftIcon size={18} strokeWidth={2.4} />
           </Link>
 
           <RecipeActionsMenu
@@ -345,13 +280,13 @@ export default function RecipeStepsPage({
             <h1 className="font-lora text-2xl leading-tight font-bold text-white">{recipe.title}</h1>
             <div className="mt-3 flex flex-wrap items-center gap-3 text-white/85">
               <span className="flex items-center gap-1.5 text-xs font-semibold">
-                <ClockIcon /> {recipe.time}
+                <ClockIcon size={14} strokeWidth={2.4} /> {recipe.time}
               </span>
               <span className="flex items-center gap-1.5 text-xs font-semibold">
-                <FlameIcon /> {recipe.calories} kcal
+                <FlameIcon size={14} /> {recipe.calories} kcal
               </span>
               <span className="flex items-center gap-1.5 text-xs font-semibold">
-                <UsersIcon /> {recipe.servings} pers.
+                <UsersIcon size={14} /> {recipe.servings} pers.
               </span>
               <span className="rounded-lg bg-white/15 px-2 py-0.5 text-xs font-bold backdrop-blur-sm">
                 {recipe.difficulty}
@@ -466,7 +401,7 @@ export default function RecipeStepsPage({
                             color: done || current ? "#FFFFFF" : "#4A7C59",
                           }}
                         >
-                          {done ? <CheckIcon /> : index + 1}
+                          {done ? <CheckIcon size={14} strokeWidth={3} /> : index + 1}
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="mb-1 flex items-start justify-between gap-2">

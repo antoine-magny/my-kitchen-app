@@ -21,16 +21,3 @@ export type RecipeFormIngredientRow = {
 export function emptyIngredientRow(): RecipeFormIngredientRow {
   return { name: "", amount: "", unit: "g" };
 }
-
-export function emptyParsedRecipe(): ParsedRecipe {
-  return {
-    title: "",
-    prep_time: "15 min",
-    cook_time: "20 min",
-    servings: 4,
-    calories_per_serving: 400,
-    protein_per_serving: 20,
-    ingredients: [{ name: "", amount: 0, unit: "g" }],
-    instructions: [""],
-  };
-}

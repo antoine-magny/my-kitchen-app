@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { CheckIcon, SpinnerIcon, XIcon } from "@/components/icons";
 import { MissingIngredientsBadges } from "@/components/missing-ingredients-badges";
 import { isoDateFromCalendar } from "@/lib/date-paris";
 import {
@@ -13,32 +14,6 @@ import {
 import type { GenerateFromFridgeResult } from "@/lib/generate-from-fridge";
 import { MEAL_TYPE_LABELS, MEAL_TYPES, type MealType } from "@/lib/meal-types";
 import { addCustomRecipe, type Recipe } from "@/lib/recipes";
-
-function XIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  );
-}
-
-function SpinnerIcon() {
-  return (
-    <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" className="opacity-25" />
-      <path d="M4 12a8 8 0 0 1 8-8" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function CheckIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
-}
 
 const inputClass =
   "w-full rounded-xl bg-[#FAFBF9] px-4 py-3 text-sm font-semibold text-[#1C2B1E] outline-none transition-all focus:border-[#4A7C59]";
@@ -223,7 +198,7 @@ export function GenerateFromFridgeModal({
             className="flex h-8 w-8 items-center justify-center rounded-xl text-[#7A8F7D] transition-colors hover:bg-[#F0F4EF] disabled:opacity-50"
             aria-label="Fermer"
           >
-            <XIcon />
+            <XIcon size={18} />
           </button>
         </div>
 
@@ -256,7 +231,7 @@ export function GenerateFromFridgeModal({
                           style={{ background: "#4A7C59" }}
                           aria-hidden
                         >
-                          <CheckIcon />
+                          <CheckIcon size={14} />
                         </span>
                       ) : null}
                     </button>
@@ -378,7 +353,7 @@ export function GenerateFromFridgeModal({
             >
               {generating ? (
                 <>
-                  <SpinnerIcon />
+                  <SpinnerIcon size={16} />
                   Génération en cours…
                 </>
               ) : (

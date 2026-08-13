@@ -1,42 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { CheckIcon, ClockIcon, SearchIcon, XIcon } from "@/components/icons";
 import { getAllRecipes, type Recipe } from "@/lib/recipes";
-
-function XIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  );
-}
-
-function SearchIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="11" cy="11" r="8" />
-      <path d="m21 21-4.35-4.35" />
-    </svg>
-  );
-}
-
-function ClockIcon() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" />
-      <polyline points="12 6 12 12 16 14" />
-    </svg>
-  );
-}
-
-function CheckIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
-}
 
 const SLOT_LABELS = {
   breakfast: "petit-déjeuner",
@@ -113,7 +79,7 @@ export function SelectRecipeModal({
             className="flex h-8 w-8 items-center justify-center rounded-xl text-[#7A8F7D] transition-colors hover:bg-[#F0F4EF]"
             aria-label="Fermer"
           >
-            <XIcon />
+            <XIcon size={18} />
           </button>
         </div>
 
@@ -126,7 +92,7 @@ export function SelectRecipeModal({
             }}
           >
             <span className="text-[#7A8F7D]">
-              <SearchIcon />
+              <SearchIcon size={16} />
             </span>
             <input
               type="search"
@@ -175,7 +141,7 @@ export function SelectRecipeModal({
                         <p className="truncate text-sm font-bold text-[#1C2B1E]">{recipe.title}</p>
                         <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs font-medium text-[#7A8F7D]">
                           <span className="inline-flex items-center gap-1">
-                            <ClockIcon />
+                            <ClockIcon size={12} />
                             {recipe.time}
                           </span>
                           <span>·</span>
@@ -190,7 +156,7 @@ export function SelectRecipeModal({
                           style={{ background: "#4A7C59" }}
                           aria-hidden
                         >
-                          <CheckIcon />
+                          <CheckIcon size={14} />
                         </span>
                       ) : (
                         <span className="shrink-0 text-xs font-bold text-[#4A7C59]">Choisir</span>

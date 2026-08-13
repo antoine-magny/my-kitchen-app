@@ -4,6 +4,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { GenerateFromFridgeModal } from "@/components/generate-from-fridge-modal";
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ClockIcon,
+  FlameIcon,
+  ProteinIcon,
+} from "@/components/icons";
 import { MissingIngredientsBadges } from "@/components/missing-ingredients-badges";
 import { SelectRecipeModal } from "@/components/select-recipe-modal";
 import {
@@ -18,157 +25,15 @@ import {
 } from "@/lib/date-paris";
 import { MEAL_TYPE_LABELS, type MealType } from "@/lib/meal-types";
 import {
-  getRecipeById,
-  type Recipe,
-  type RecipeIngredient,
-} from "@/lib/recipes";
+  buildInitialPlans,
+  collectIngredientsFromDayOnward,
+  DAY_SHORT,
+  MONTHS_FR,
+  type DayPlan,
+  type MealSlot,
+} from "@/lib/planning";
+import { getRecipeById, type Recipe } from "@/lib/recipes";
 import { replaceShoppingListFromIngredients, setExportBannerCount } from "@/lib/shopping-list";
-
-const LUNCH_RECIPE = getRecipeById(6)!;
-
-const MONTHS_FR = [
-  "janvier",
-  "février",
-  "mars",
-  "avril",
-  "mai",
-  "juin",
-  "juillet",
-  "août",
-  "septembre",
-  "octobre",
-  "novembre",
-  "décembre",
-] as const;
-
-const DAY_SHORT = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"] as const;
-
-type MealSlot = "breakfast" | "lunch" | "dinner";
-
-type BreakfastItem = {
-  id: string;
-  name: string;
-  detail: string;
-  calories: number;
-  proteins: number;
-};
-
-type DayPlan = {
-  breakfast: BreakfastItem | null;
-  lunchId: number | null;
-  dinnerId: number | null;
-};
-
-function parseDayKey(key: string): Date | null {
-  const parts = key.split("-").map(Number);
-  if (parts.length !== 3 || parts.some((n) => !Number.isFinite(n))) return null;
-  const [year, month, day] = parts;
-  return new Date(Date.UTC(year, month, day, 12, 0, 0));
-}
-
-function buildInitialPlans(weekStart: Date): Record<string, DayPlan> {
-  const isCurrentWeek = sameDay(weekStart, startOfWeek(parisCalendarDate()));
-  const seedIndex = isCurrentWeek ? mondayBasedIndex(parisCalendarDate()) : -1;
-  const plans: Record<string, DayPlan> = {};
-  for (let i = 0; i < 7; i++) {
-    const day = addDays(weekStart, i);
-    const key = dayKey(day);
-    const seeded = i === seedIndex;
-    plans[key] = {
-      breakfast: seeded
-        ? {
-            id: "bf-yaourt",
-            name: "Yaourt grec & granola",
-            detail: "Maison · 5 min",
-            calories: 320,
-            proteins: 18,
-          }
-        : null,
-      lunchId: seeded ? LUNCH_RECIPE.id : null,
-      dinnerId: null,
-    };
-  }
-  return plans;
-}
-
-function ingredientsFromDayPlan(plan: DayPlan): RecipeIngredient[] {
-  const items: RecipeIngredient[] = [];
-
-  if (plan.breakfast) {
-    if (plan.breakfast.id.startsWith("recipe-")) {
-      const recipeId = Number(plan.breakfast.id.slice("recipe-".length));
-      const recipe = Number.isFinite(recipeId) ? getRecipeById(recipeId) : undefined;
-      if (recipe) items.push(...recipe.ingredients);
-      else items.push({ name: plan.breakfast.name, amount: "1 portion" });
-    } else if (plan.breakfast.id === "bf-yaourt") {
-      items.push(
-        { name: "Yaourt grec", amount: "1 pot" },
-        { name: "Granola", amount: "40 g" },
-      );
-    } else {
-      items.push({ name: plan.breakfast.name, amount: "1 portion" });
-    }
-  }
-
-  for (const recipeId of [plan.lunchId, plan.dinnerId]) {
-    if (recipeId == null) continue;
-    const recipe = getRecipeById(recipeId);
-    if (recipe) items.push(...recipe.ingredients);
-  }
-
-  return items;
-}
-
-function collectIngredientsFromDayOnward(
-  fromDay: Date,
-  currentWeekStart: Date,
-  currentWeekPlans: Record<string, DayPlan>,
-  plansByWeek: Record<string, Record<string, DayPlan>>,
-): RecipeIngredient[] {
-  const weeks: Record<string, Record<string, DayPlan>> = {
-    ...plansByWeek,
-    [dayKey(currentWeekStart)]: currentWeekPlans,
-  };
-
-  const collected: RecipeIngredient[] = [];
-  const fromTs = fromDay.getTime();
-
-  for (const plans of Object.values(weeks)) {
-    for (const [key, plan] of Object.entries(plans)) {
-      const day = parseDayKey(key);
-      if (!day || day.getTime() < fromTs) continue;
-      collected.push(...ingredientsFromDayPlan(plan));
-    }
-  }
-
-  return collected;
-}
-
-function ClockIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" />
-      <polyline points="12 6 12 12 16 14" />
-    </svg>
-  );
-}
-
-function FlameIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
-    </svg>
-  );
-}
-
-function ProteinIcon() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M12 22V12M12 12C12 12 8 10 8 6a4 4 0 0 1 8 0c0 4-4 6-4 6z" />
-      <path d="M8 22h8" />
-    </svg>
-  );
-}
 
 function MacroBar({
   label,
@@ -435,9 +300,7 @@ export default function PlanningPage() {
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[#4A7C59] transition-colors hover:bg-[#EBF2EC] active:scale-95"
               aria-label="Semaine précédente"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="m15 18-6-6 6-6" />
-              </svg>
+              <ChevronLeftIcon size={18} />
             </button>
             <p className="min-w-0 flex-1 text-center text-sm font-bold text-[#1C2B1E]">
               {formatWeekLabel(weekStart, MONTHS_FR)}
@@ -448,9 +311,7 @@ export default function PlanningPage() {
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[#4A7C59] transition-colors hover:bg-[#EBF2EC] active:scale-95"
               aria-label="Semaine suivante"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="m9 18 6-6-6-6" />
-              </svg>
+              <ChevronRightIcon size={18} />
             </button>
           </div>
         </header>
@@ -633,7 +494,7 @@ export default function PlanningPage() {
                     style={{ background: "rgba(255,255,255,0.90)", backdropFilter: "blur(6px)" }}
                   >
                     <span className="text-[#4A7C59]">
-                      <ClockIcon />
+                      <ClockIcon size={13} />
                     </span>
                     <span className="text-xs font-bold text-[#1C2B1E]">{lunch.time}</span>
                   </div>
@@ -650,13 +511,13 @@ export default function PlanningPage() {
                   <div className="mb-4 flex items-center gap-2.5">
                     <div className="flex items-center gap-1.5 rounded-xl bg-[#FFF7ED] px-3 py-1.5">
                       <span className="text-[#F97316]">
-                        <FlameIcon />
+                        <FlameIcon size={13} />
                       </span>
                       <span className="text-xs font-bold text-[#C2410C]">{lunch.calories} kcal</span>
                     </div>
                     <div className="flex items-center gap-1.5 rounded-xl bg-[#EBF2EC] px-3 py-1.5">
                       <span className="text-[#4A7C59]">
-                        <ProteinIcon />
+                        <ProteinIcon size={13} />
                       </span>
                       <span className="text-xs font-bold text-[#2E5C3A]">{lunch.proteins}g protéines</span>
                     </div>
@@ -719,7 +580,7 @@ export default function PlanningPage() {
                     style={{ background: "rgba(255,255,255,0.90)", backdropFilter: "blur(6px)" }}
                   >
                     <span className="text-[#4A7C59]">
-                      <ClockIcon />
+                      <ClockIcon size={13} />
                     </span>
                     <span className="text-xs font-bold text-[#1C2B1E]">{dinner.time}</span>
                   </div>
@@ -735,13 +596,13 @@ export default function PlanningPage() {
                   <div className="mb-4 flex items-center gap-2.5">
                     <div className="flex items-center gap-1.5 rounded-xl bg-[#FFF7ED] px-3 py-1.5">
                       <span className="text-[#F97316]">
-                        <FlameIcon />
+                        <FlameIcon size={13} />
                       </span>
                       <span className="text-xs font-bold text-[#C2410C]">{dinner.calories} kcal</span>
                     </div>
                     <div className="flex items-center gap-1.5 rounded-xl bg-[#EBF2EC] px-3 py-1.5">
                       <span className="text-[#4A7C59]">
-                        <ProteinIcon />
+                        <ProteinIcon size={13} />
                       </span>
                       <span className="text-xs font-bold text-[#2E5C3A]">{dinner.proteins}g protéines</span>
                     </div>
