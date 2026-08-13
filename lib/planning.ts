@@ -11,7 +11,7 @@ import {
   sameDay,
   startOfWeek,
 } from "@/lib/date-paris";
-import { getRecipeById, type RecipeIngredient } from "@/lib/recipes";
+import { getRecipeById, ing, type RecipeIngredient } from "@/lib/recipes";
 
 const LUNCH_RECIPE = getRecipeById(6)!;
 
@@ -88,14 +88,11 @@ function ingredientsFromDayPlan(plan: DayPlan): RecipeIngredient[] {
       const recipeId = Number(plan.breakfast.id.slice("recipe-".length));
       const recipe = Number.isFinite(recipeId) ? getRecipeById(recipeId) : undefined;
       if (recipe) items.push(...recipe.ingredients);
-      else items.push({ name: plan.breakfast.name, amount: "1 portion" });
+      else items.push(ing(plan.breakfast.name, 1, "unite"));
     } else if (plan.breakfast.id === "bf-yaourt") {
-      items.push(
-        { name: "Yaourt grec", amount: "1 pot" },
-        { name: "Granola", amount: "40 g" },
-      );
+      items.push(ing("Yaourt grec", 1, "unite"), ing("Granola", 40, "g"));
     } else {
-      items.push({ name: plan.breakfast.name, amount: "1 portion" });
+      items.push(ing(plan.breakfast.name, 1, "unite"));
     }
   }
 

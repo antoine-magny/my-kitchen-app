@@ -4,13 +4,24 @@ import {
   type FridgeItem,
   type FridgeStorageLocation,
 } from "@/lib/fridge";
+import type { UnitCode } from "@/lib/units";
 
 export type TabId = FridgeStorageLocation;
 export type Ingredient = FridgeItem;
 
+/** Saisie du modal d'ajout : l'identité canonique est dérivée à la création. */
+export type NewFridgeItem = {
+  customName: string;
+  amount: number;
+  unit: UnitCode;
+  category: TabId;
+  emoji?: string;
+  expirationDate?: string | null;
+};
+
 export const TABS = FRIDGE_TABS;
 
-export function dlcLabel(dlc: string | null): string {
+export function dlcLabel(dlc: string | null | undefined): string {
   if (!dlc) return "";
   const diff = daysUntilDlc(dlc);
   if (diff < 0) {

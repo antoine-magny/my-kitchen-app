@@ -7,9 +7,10 @@ import {
   getGeminiModel,
 } from "@/lib/ai/gemini";
 import type { ParsedRecipe } from "@/lib/recipe-import";
-import { DEFAULT_UNIT, UNITS, type UnitCode } from "@/lib/units";
+import { normalizeUnit, UNITS } from "@/lib/units";
 
 export type { ParsedRecipe } from "@/lib/recipe-import";
+export { normalizeUnit } from "@/lib/units";
 
 export class ParseRecipeError extends Error {
   constructor(message: string) {
@@ -18,7 +19,7 @@ export class ParseRecipeError extends Error {
   }
 }
 
-const UNIT_CODES = new Set<string>(UNITS.map((u) => u.code));
+const UNIT_CODES_HINT = UNITS.map((u) => u.code).join(" | ");
 
 const PARSE_RESPONSE_SCHEMA = {
   type: Type.OBJECT,
@@ -38,7 +39,7 @@ const PARSE_RESPONSE_SCHEMA = {
           amount: { type: Type.NUMBER },
           unit: {
             type: Type.STRING,
-            description: "g | kg | ml | l | unite | cas | cac | pincee | tranche | botte",
+            description: UNIT_CODES_HINT,
           },
         },
         required: ["name", "amount", "unit"],
@@ -66,8 +67,9 @@ const SYSTEM_INSTRUCTION = [
   "Réponds uniquement en JSON strict (pas de markdown).",
   "Langue : français.",
   "prep_time et cook_time : chaînes courtes du type \"15 min\". Si inconnu, estime raisonnablement.",
-  "ingredients.unit doit être l’un de : g, kg, ml, l, unite, cas, cac, pincee, tranche, botte.",
+  `ingredients.unit doit être l’un de : ${UNIT_CODES_HINT}.`,
   "amount est un nombre positif (pas de fraction textuelle).",
+  "Utilise l’unité « qs » avec amount 0 pour les quantités non chiffrables (sel, poivre, herbes à volonté).",
   "instructions : liste ordonnée d’étapes actionnables (une phrase claire par étape).",
   "calories_per_serving et protein_per_serving : estimations réalistes si absentes de la source.",
 ].join(" ");
@@ -250,8 +252,8 @@ function coerceParsedRecipe(raw: string | undefined): ParsedRecipe {
     const ing = item as Record<string, unknown>;
     const name = asNonEmptyString(ing.name);
     if (!name) continue;
-    const amount = asPositiveNumber(ing.amount, 1);
     const unit = normalizeUnit(ing.unit);
+    const amount = unit === "qs" ? 0 : asPositiveNumber(ing.amount, 1);
     ingredients.push({ name, amount, unit });
   }
 
@@ -297,49 +299,3 @@ function asPositiveNumber(value: unknown, fallback: number): number {
   return n;
 }
 
-/** Normalise les unités libres vers les codes `unit_domain`. */
-export function normalizeUnit(value: unknown): UnitCode {
-  if (typeof value !== "string") return DEFAULT_UNIT;
-  const raw = value.trim().toLowerCase();
-  if (UNIT_CODES.has(raw)) return raw as UnitCode;
-
-  const aliases: Record<string, UnitCode> = {
-    "c.à.s": "cas",
-    "c.a.s": "cas",
-    "cas": "cas",
-    "càs": "cas",
-    "tbsp": "cas",
-    "c.à.c": "cac",
-    "c.a.c": "cac",
-    "cac": "cac",
-    "càc": "cac",
-    "tsp": "cac",
-    "ml": "ml",
-    "cl": "ml",
-    "l": "l",
-    "litre": "l",
-    "litres": "l",
-    "g": "g",
-    "gr": "g",
-    "gramme": "g",
-    "grammes": "g",
-    "kg": "kg",
-    "pincée": "pincee",
-    "pincee": "pincee",
-    "tranche": "tranche",
-    "tranches": "tranche",
-    "botte": "botte",
-    "bottes": "botte",
-    "unité": "unite",
-    "unite": "unite",
-    "unités": "unite",
-    "unites": "unite",
-    "pièce": "unite",
-    "piece": "unite",
-    "pièces": "unite",
-    "pce": "unite",
-    "pc": "unite",
-  };
-
-  return aliases[raw] ?? DEFAULT_UNIT;
-}

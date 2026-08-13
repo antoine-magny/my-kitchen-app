@@ -1,15 +1,15 @@
 import "server-only";
 
-import { normalizeUnit } from "@/lib/ai/parse-recipe";
 import type { ParsedRecipe } from "@/lib/recipe-import";
 import {
+  ing,
   tagToLabel,
   type NewRecipeInput,
   type RecipeIngredient,
   type RecipeStep,
 } from "@/lib/recipes";
 import { createAdminClient, getOwnerId } from "@/lib/supabase/admin";
-import { DEFAULT_UNIT, type UnitCode, unitLabel } from "@/lib/units";
+import { DEFAULT_UNIT, normalizeUnit, type UnitCode } from "@/lib/units";
 
 export type RecipeFormIngredient = {
   name: string;
@@ -41,12 +41,15 @@ export async function saveRecipeToSupabase(
   if (!title) throw new Error("Le titre est obligatoire.");
 
   const cleanedIngredients = payload.ingredients
-    .map((ing) => ({
-      name: ing.name.trim(),
-      amount: toPositiveAmount(ing.amount),
-      unit: normalizeUnit(ing.unit),
-    }))
-    .filter((ing) => ing.name.length > 0);
+    .map((row) => {
+      const unit = normalizeUnit(row.unit);
+      return {
+        name: row.name.trim(),
+        amount: unit === "qs" ? 0 : toPositiveAmount(row.amount),
+        unit,
+      };
+    })
+    .filter((row) => row.name.length > 0);
 
   const instructions = payload.instructions
     .map((step) => step.trim())
@@ -189,10 +192,9 @@ export function toNewRecipeInput(
         ? prep
         : cook;
 
-  const recipeIngredients: RecipeIngredient[] = ingredients.map((ing) => ({
-    name: ing.name,
-    amount: formatAmount(ing.amount, ing.unit),
-  }));
+  const recipeIngredients: RecipeIngredient[] = ingredients.map((row) =>
+    ing(row.name, row.amount, row.unit),
+  );
 
   const steps: RecipeStep[] = instructions.map((detail, index) => ({
     title: `Étape ${index + 1}`,
@@ -214,11 +216,6 @@ export function toNewRecipeInput(
     ingredients: recipeIngredients,
     steps,
   };
-}
-
-function formatAmount(amount: number, unit: UnitCode): string {
-  const rounded = Number.isInteger(amount) ? String(amount) : amount.toFixed(1).replace(/\.0$/, "");
-  return `${rounded} ${unitLabel(unit)}`;
 }
 
 function toPositiveAmount(value: number | string): number {

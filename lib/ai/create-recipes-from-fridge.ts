@@ -13,10 +13,13 @@ import {
 } from "@/lib/meal-types";
 import {
   DIFFICULTIES,
+  ing,
+  ingFromText,
   RECIPE_TAGS,
   type NewRecipeInput,
   type RecipeFilter,
 } from "@/lib/recipes";
+import { normalizeUnit, UNITS } from "@/lib/units";
 
 export type AiRecipeCreation = {
   draft: NewRecipeInput;
@@ -39,6 +42,7 @@ const DEFAULT_PHOTO =
 
 const DIFFICULTY_SET = new Set<string>(DIFFICULTIES);
 const TAG_SET = new Set<string>(RECIPE_TAGS);
+const UNIT_CODES_HINT = UNITS.map((u) => u.code).join(" | ");
 
 const RECIPE_RESPONSE_SCHEMA = {
   type: Type.OBJECT,
@@ -69,9 +73,10 @@ const RECIPE_RESPONSE_SCHEMA = {
               type: Type.OBJECT,
               properties: {
                 name: { type: Type.STRING },
-                amount: { type: Type.STRING },
+                amount: { type: Type.NUMBER },
+                unit: { type: Type.STRING, description: UNIT_CODES_HINT },
               },
-              required: ["name", "amount"],
+              required: ["name", "amount", "unit"],
             },
           },
           steps: {
@@ -170,7 +175,8 @@ export async function createRecipesFromFridge(
     `Retourne exactement ${mealCount} recette${mealCount > 1 ? "s" : ""} distincte${mealCount > 1 ? "s" : ""} dans le tableau recipes.`,
     "Chaque recette doit inclure title, time, calories, proteins, servings, difficulty,",
     "tag (Express|Végétarien|Riche en protéines|Desserts|null), tagLabel optionnel,",
-    "ingredients[{name,amount}], steps[{title,detail,duration?}]",
+    `ingredients[{name, amount (nombre), unit (${UNIT_CODES_HINT})}], steps[{title,detail,duration?}]`,
+    "Pour une quantité non chiffrable (sel, poivre, herbes à volonté) : unit « qs » et amount 0.",
     "matchedIngredients, missing_ingredients et reason.",
     MEAL_TYPE_PROMPT[mealType],
     "Tu dois proposer des recettes réalisables avec les ingrédients actuels du frigo.",
@@ -317,8 +323,17 @@ function coerceIngredients(value: unknown): NewRecipeInput["ingredients"] {
     if (!item || typeof item !== "object") continue;
     const row = item as Record<string, unknown>;
     const name = asNonEmptyString(row.name);
-    const amount = asNonEmptyString(row.amount) ?? "q.s.";
-    if (name) out.push({ name, amount });
+    if (!name) continue;
+
+    // Tolère l'ancien format où la quantité arrivait en toutes lettres.
+    if (typeof row.amount === "string") {
+      out.push(ingFromText(name, row.amount));
+      continue;
+    }
+
+    const unit = normalizeUnit(row.unit);
+    const amount = unit === "qs" ? 0 : asPositiveAmount(row.amount, 1);
+    out.push(ing(name, amount, unit));
   }
   return out;
 }
@@ -348,6 +363,13 @@ function asPositiveInt(value: unknown, fallback: number): number {
   const n = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
   if (!Number.isFinite(n) || n < 0) return fallback;
   return Math.round(n);
+}
+
+/** Comme `asPositiveInt` mais sans arrondi : « 0,5 oignon » reste 0,5. */
+function asPositiveAmount(value: unknown, fallback: number): number {
+  const n = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
+  if (!Number.isFinite(n) || n < 0) return fallback;
+  return n;
 }
 
 function asDifficulty(value: unknown): NewRecipeInput["difficulty"] {

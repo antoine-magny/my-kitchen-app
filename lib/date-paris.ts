@@ -88,3 +88,13 @@ export function formatTodayLongFr(now: Date = new Date()): string {
   });
   return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 }
+
+/** Abréviation FR du jour (Lun, Mar, …) pour une date calendaire UTC midi. */
+export function formatDayShortFr(date: Date): string {
+  const raw = date.toLocaleDateString("fr-FR", {
+    weekday: "short",
+    timeZone: "UTC",
+  });
+  const cleaned = raw.replace(/\.$/, "").trim();
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1, 3);
+}

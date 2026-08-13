@@ -6,6 +6,7 @@ import {
   isFridgeStorageLocation,
   type FridgeSnapshotItem,
 } from "@/lib/fridge";
+import { resolveIngredientId } from "@/lib/ingredients";
 import { createAdminClient, getOwnerId } from "@/lib/supabase/admin";
 import { DEFAULT_UNIT, isUnitCode } from "@/lib/units";
 
@@ -52,6 +53,7 @@ export async function getSupabaseFridgeSnapshot(): Promise<FridgeSnapshotItem[]>
 
     items.push({
       name,
+      ingredientId: resolveIngredientId(name),
       quantity: row.quantity,
       unit,
       location,

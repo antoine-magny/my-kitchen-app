@@ -9,7 +9,12 @@
 import type { FridgeItem, FridgeSnapshotItem } from "@/lib/fridge";
 import { getFridgeSnapshot, toFridgeSnapshotItem } from "@/lib/fridge";
 import { type MealType } from "@/lib/meal-types";
-import { getAllRecipes, type NewRecipeInput, type Recipe } from "@/lib/recipes";
+import {
+  getAllRecipes,
+  type NewRecipeInput,
+  type Recipe,
+  type RecipeIngredient,
+} from "@/lib/recipes";
 import { normalizeProductName } from "@/lib/shopping-categories";
 
 export type GenerateFromFridgeMode = "match_existing" | "ai_create";
@@ -129,11 +134,18 @@ export function ingredientNamesMatch(a: string, b: string): boolean {
   return significantTokens(b).some((t) => ta.has(t));
 }
 
+/**
+ * Cherche l'article de frigo correspondant à un ingrédient de recette.
+ * L'identifiant canonique prime : il est exact et résiste aux renommages.
+ * Le rapprochement flou par nom ne sert que de filet de sécurité.
+ */
 function findFridgeMatch(
-  ingredientName: string,
+  ingredient: RecipeIngredient,
   fridge: FridgeSnapshotItem[],
 ): FridgeSnapshotItem | undefined {
-  return fridge.find((item) => ingredientNamesMatch(ingredientName, item.name));
+  const byId = fridge.find((item) => item.ingredientId === ingredient.ingredientId);
+  if (byId) return byId;
+  return fridge.find((item) => ingredientNamesMatch(ingredient.name, item.name));
 }
 
 function scoreRecipeAgainstFridge(
@@ -154,7 +166,7 @@ function scoreRecipeAgainstFridge(
     const weight = staple ? 0.35 : 1;
     weightedTotal += weight;
 
-    const hit = findFridgeMatch(ing.name, fridge);
+    const hit = findFridgeMatch(ing, fridge);
     if (hit) {
       matched.push(ing.name);
       weightedMatched += weight;
@@ -249,7 +261,7 @@ export function suggestRecipesFromFridge(options?: {
 }): GenerateFromFridgeResult {
   const snapshot =
     options?.items != null
-      ? options.items.filter((i) => i.quantity > 0).map((i) => toFridgeSnapshotItem(i))
+      ? options.items.filter((i) => i.amount > 0).map((i) => toFridgeSnapshotItem(i))
       : getFridgeSnapshot();
 
   const suggestions = matchRecipesFromFridge(snapshot, getAllRecipes(), {

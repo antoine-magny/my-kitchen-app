@@ -30,15 +30,15 @@ const FALLBACK_FRIDGE_RECIPES = [getRecipeById(3)!, getRecipeById(4)!, getRecipe
 type Urgency = "red" | "orange" | "green";
 
 function fridgeUrgency(item: FridgeItem): Urgency {
-  const status = dlcStatus(item.dlc);
+  const status = dlcStatus(item.expirationDate);
   if (status === "urgent") return "red";
   if (status === "soon") return "orange";
   return "green";
 }
 
 function fridgeDetail(item: FridgeItem): string {
-  if (!item.dlc) return "Sans DLC";
-  const days = daysUntilDlc(item.dlc);
+  if (!item.expirationDate) return "Sans DLC";
+  const days = daysUntilDlc(item.expirationDate);
   if (days < 0) {
     const n = Math.abs(days);
     return `Périmé depuis ${n} jour${n > 1 ? "s" : ""}`;
@@ -317,7 +317,7 @@ export default function Home() {
                     />
 
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-bold text-[#1C2B1E]">{item.name}</p>
+                      <p className="truncate text-sm font-bold text-[#1C2B1E]">{item.customName}</p>
                       <p className="mt-0.5 text-xs font-medium text-[#7A8F7D]">{fridgeDetail(item)}</p>
                     </div>
 

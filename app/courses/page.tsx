@@ -6,13 +6,16 @@ import { groupByShoppingCategory } from "@/lib/shopping-categories";
 import {
   clearCheckedShoppingItems,
   clearShoppingList,
+  formatShoppingAmount,
   getShoppingList,
   peekExportBanner,
   removeShoppingItem,
   toggleShoppingItem,
   updateShoppingItem,
-  type ShoppingListItem,
+  type ShoppingItem,
+  type ShoppingItemPatch,
 } from "@/lib/shopping-list";
+import { parseAmount } from "@/lib/units";
 
 const inputNameClass =
   "w-full bg-transparent text-sm font-bold text-[#1C2B1E] outline-none rounded-lg px-1.5 py-0.5 -mx-1.5 transition-colors hover:bg-[#F0F4EF] focus:bg-[#F0F4EF] focus:ring-2 focus:ring-[#C8E0CF]";
@@ -26,35 +29,40 @@ function ShoppingItemRow({
   onRemove,
   onUpdate,
 }: {
-  item: ShoppingListItem;
+  item: ShoppingItem;
   isLast: boolean;
   onToggle: (id: string) => void;
   onRemove: (id: string) => void;
-  onUpdate: (id: string, patch: Partial<Pick<ShoppingListItem, "name" | "amount">>) => void;
+  onUpdate: (id: string, patch: ShoppingItemPatch) => void;
 }) {
-  const [nameDraft, setNameDraft] = useState(item.name);
-  const [amountDraft, setAmountDraft] = useState(item.amount);
+  const displayedAmount = formatShoppingAmount(item);
+  const [nameDraft, setNameDraft] = useState(item.customName);
+  const [amountDraft, setAmountDraft] = useState(displayedAmount);
 
   useEffect(() => {
-    setNameDraft(item.name);
-  }, [item.name]);
+    setNameDraft(item.customName);
+  }, [item.customName]);
 
   useEffect(() => {
-    setAmountDraft(item.amount);
-  }, [item.amount]);
+    setAmountDraft(displayedAmount);
+  }, [displayedAmount]);
 
   function commitName() {
     const trimmed = nameDraft.trim();
     if (!trimmed) {
-      setNameDraft(item.name);
+      setNameDraft(item.customName);
       return;
     }
-    if (trimmed !== item.name) onUpdate(item.id, { name: trimmed });
+    if (trimmed !== item.customName) onUpdate(item.id, { customName: trimmed });
   }
 
+  // La saisie reste libre (« 400 g », « 2 gousses », « q.s. ») puis est
+  // convertie vers le modèle structuré { amount, unit }.
   function commitAmount() {
     const next = amountDraft.trim();
-    if (next !== item.amount) onUpdate(item.id, { amount: next });
+    if (next === displayedAmount) return;
+    const { amount, unit } = parseAmount(next);
+    onUpdate(item.id, { amount, unit });
   }
 
   return (
@@ -62,7 +70,7 @@ function ShoppingItemRow({
       className="flex items-center gap-3 px-4 py-3.5"
       style={{
         borderBottom: isLast ? "none" : "1px solid #F0F4EF",
-        opacity: item.checked ? 0.55 : 1,
+        opacity: item.isChecked ? 0.55 : 1,
       }}
     >
       <button
@@ -70,15 +78,21 @@ function ShoppingItemRow({
         onClick={() => onToggle(item.id)}
         className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-all active:scale-95"
         style={{
-          background: item.checked ? "#4A7C59" : "#F0F4EF",
-          color: item.checked ? "#fff" : "transparent",
-          border: item.checked ? "none" : "1.5px solid #C8E0CF",
+          background: item.isChecked ? "#4A7C59" : "#F0F4EF",
+          color: item.isChecked ? "#fff" : "transparent",
+          border: item.isChecked ? "none" : "1.5px solid #C8E0CF",
         }}
-        aria-label={item.checked ? `Décocher ${item.name}` : `Cocher ${item.name}`}
-        aria-pressed={item.checked}
+        aria-label={item.isChecked ? `Décocher ${item.customName}` : `Cocher ${item.customName}`}
+        aria-pressed={item.isChecked}
       >
         <CheckIcon size={14} />
       </button>
+
+      {item.emoji && (
+        <span className="shrink-0 text-lg select-none" aria-hidden>
+          {item.emoji}
+        </span>
+      )}
 
       <div className="min-w-0 flex-1">
         <input
@@ -89,12 +103,12 @@ function ShoppingItemRow({
           onKeyDown={(e) => {
             if (e.key === "Enter") e.currentTarget.blur();
             if (e.key === "Escape") {
-              setNameDraft(item.name);
+              setNameDraft(item.customName);
               e.currentTarget.blur();
             }
           }}
-          className={`${inputNameClass} ${item.checked ? "line-through" : ""}`}
-          aria-label={`Nom de ${item.name}`}
+          className={`${inputNameClass} ${item.isChecked ? "line-through" : ""}`}
+          aria-label={`Nom de ${item.customName}`}
         />
         <input
           type="text"
@@ -104,13 +118,13 @@ function ShoppingItemRow({
           onKeyDown={(e) => {
             if (e.key === "Enter") e.currentTarget.blur();
             if (e.key === "Escape") {
-              setAmountDraft(item.amount);
+              setAmountDraft(displayedAmount);
               e.currentTarget.blur();
             }
           }}
           placeholder="Quantité"
           className={inputAmountClass}
-          aria-label={`Quantité de ${item.name}`}
+          aria-label={`Quantité de ${item.customName}`}
         />
       </div>
 
@@ -118,7 +132,7 @@ function ShoppingItemRow({
         type="button"
         onClick={() => onRemove(item.id)}
         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[#9CA3AF] transition-colors hover:bg-[#FEF2F2] hover:text-[#B91C1C] active:scale-95"
-        aria-label={`Supprimer ${item.name}`}
+        aria-label={`Supprimer ${item.customName}`}
       >
         <TrashIcon size={14} />
       </button>
@@ -127,7 +141,7 @@ function ShoppingItemRow({
 }
 
 export default function CoursesPage() {
-  const [items, setItems] = useState<ShoppingListItem[]>([]);
+  const [items, setItems] = useState<ShoppingItem[]>([]);
   const [ready, setReady] = useState(false);
   const [banner, setBanner] = useState<string | null>(null);
 
@@ -137,7 +151,7 @@ export default function CoursesPage() {
     setReady(true);
   }, []);
 
-  const remaining = useMemo(() => items.filter((i) => !i.checked).length, [items]);
+  const remaining = useMemo(() => items.filter((i) => !i.isChecked).length, [items]);
   const checkedCount = items.length - remaining;
   const grouped = useMemo(() => groupByShoppingCategory(items), [items]);
 
@@ -149,7 +163,7 @@ export default function CoursesPage() {
     setItems(removeShoppingItem(id));
   }
 
-  function handleUpdate(id: string, patch: Partial<Pick<ShoppingListItem, "name" | "amount">>) {
+  function handleUpdate(id: string, patch: ShoppingItemPatch) {
     setItems(updateShoppingItem(id, patch));
   }
 

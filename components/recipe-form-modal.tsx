@@ -11,14 +11,21 @@ import {
 import { inputClass, inputStyle, labelClass } from "@/components/recipe-form-styles";
 import {
   DIFFICULTIES,
+  ingFromText,
   RECIPE_TAGS,
   tagToLabel,
   type NewRecipeInput,
   type Recipe,
   type RecipeFilter,
-  type RecipeIngredient,
   type RecipeStep,
 } from "@/lib/recipes";
+import { formatAmount } from "@/lib/units";
+
+/**
+ * Ligne d'édition : la quantité reste une saisie libre (« 200 g », « q.s. »),
+ * convertie vers { amount, unit } à l'enregistrement.
+ */
+type IngredientRow = { name: string; amount: string };
 
 type Difficulty = (typeof DIFFICULTIES)[number];
 
@@ -53,8 +60,13 @@ export function RecipeFormModal({
   const [servings, setServings] = useState(String(recipe?.servings ?? 2));
   const [difficulty, setDifficulty] = useState<Difficulty>(toDifficulty(recipe?.difficulty ?? "Facile"));
   const [tag, setTag] = useState<Exclude<RecipeFilter, "Tout"> | "">(toTag(recipe?.tag));
-  const [ingredients, setIngredients] = useState<RecipeIngredient[]>(
-    recipe?.ingredients.length ? recipe.ingredients.map((ing) => ({ ...ing })) : [{ name: "", amount: "" }],
+  const [ingredients, setIngredients] = useState<IngredientRow[]>(
+    recipe?.ingredients.length
+      ? recipe.ingredients.map((ing) => ({
+          name: ing.name,
+          amount: formatAmount(ing.amount, ing.unit),
+        }))
+      : [{ name: "", amount: "" }],
   );
   const [steps, setSteps] = useState<RecipeStep[]>(
     recipe?.steps.length
@@ -69,7 +81,7 @@ export function RecipeFormModal({
     titleRef.current?.focus();
   }, []);
 
-  const updateIngredient = (index: number, field: keyof RecipeIngredient, value: string) => {
+  const updateIngredient = (index: number, field: keyof IngredientRow, value: string) => {
     setIngredients((prev) => prev.map((ing, i) => (i === index ? { ...ing, [field]: value } : ing)));
   };
 
@@ -125,8 +137,8 @@ export function RecipeFormModal({
     }
 
     const cleanedIngredients = ingredients
-      .map((ing) => ({ name: ing.name.trim(), amount: ing.amount.trim() || "q.s." }))
-      .filter((ing) => ing.name.length > 0);
+      .filter((row) => row.name.trim().length > 0)
+      .map((row) => ingFromText(row.name.trim(), row.amount.trim()));
 
     const cleanedSteps = steps
       .map((step) => ({

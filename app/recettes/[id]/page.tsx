@@ -23,6 +23,7 @@ import {
   type NewRecipeInput,
   type Recipe,
 } from "@/lib/recipes";
+import { formatAmount } from "@/lib/units";
 
 const FAVORITES_KEY = "my-kitchen-favorite-recipes";
 
@@ -357,19 +358,24 @@ export default function RecipeStepsPage({
                 );
                 return (
                 <div
-                  key={ing.name}
+                  key={`${ing.ingredientId}-${idx}`}
                   className="flex items-center justify-between gap-3 px-5 py-3.5"
                   style={{
                     borderBottom: idx < recipe.ingredients.length - 1 ? "1px solid #F0F4EF" : "none",
                     background: missing ? "#FFF7ED" : undefined,
                   }}
                 >
-                  <span className="text-sm font-semibold text-[#1C2B1E]">{ing.name}</span>
+                  <span className="text-sm font-semibold text-[#1C2B1E]">
+                    {ing.emoji ? <span className="mr-2">{ing.emoji}</span> : null}
+                    {ing.name}
+                  </span>
                   <span className="shrink-0 text-right">
                     {missing ? (
                       <span className="mr-2 text-[11px] font-bold text-[#C2410C]">⚠️ Manque</span>
                     ) : null}
-                    <span className="text-sm font-bold text-[#4A7C59]">{ing.amount}</span>
+                    <span className="text-sm font-bold text-[#4A7C59]">
+                      {formatAmount(ing.amount, ing.unit)}
+                    </span>
                   </span>
                 </div>
                 );

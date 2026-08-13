@@ -1,328 +1,253 @@
-import type { RecipeIngredient } from "@/lib/recipes";
+/**
+ * Liste de courses : copies éphémères et éditables des ingrédients planifiés.
+ *
+ * Chaque article garde l'`ingredientId` de l'ingrédient d'origine. Renommer un
+ * article (« Tomate » → « Tomates cerises bio ») ne touche donc jamais la
+ * recette, mais conserve le lien nécessaire à la fusion et au rangement au frigo.
+ */
+
+import { describeIngredient } from "@/lib/ingredients";
 import {
   classifyProduct,
   isShoppingCategoryId,
   type ShoppingCategoryId,
 } from "@/lib/shopping-categories";
+import {
+  DEFAULT_UNIT,
+  formatAmount,
+  isUnitCode,
+  parseAmount,
+  toBaseQuantity,
+  UNQUANTIFIED_UNIT,
+  type UnitCode,
+} from "@/lib/units";
+import type { RecipeIngredient, ShoppingItem } from "@/types/inventory";
 
-export type ShoppingListItem = {
-  id: string;
-  name: string;
-  amount: string;
-  checked: boolean;
-  /** Rayon magasin — attribué automatiquement via classifyProduct. */
-  category: ShoppingCategoryId;
-};
+export type { ShoppingItem };
 
-const STORAGE_KEY = "my-kitchen-shopping-list";
+const STORAGE_KEY = "my-kitchen-shopping-list-v2";
+/** Ancien format : `{ id, name, amount: string, checked, category }`. */
+const LEGACY_STORAGE_KEY = "my-kitchen-shopping-list";
 
-function normalizeName(name: string) {
-  return name.trim().toLowerCase().replace(/\s+/g, " ");
+function createId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `shop-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-/** Unités canoniques pour l’addition des quantités. */
-type SumUnit = "g" | "ml" | "cas" | "cac" | "unite" | "botte" | "gousse" | "feuille" | "pincee";
-
-type ParsedQuantity =
-  | { kind: "qty"; value: number; unit: SumUnit }
-  | { kind: "text"; raw: string };
-
-const UNIT_TO_BASE_FACTOR: Record<string, { unit: SumUnit; factor: number }> = {
-  g: { unit: "g", factor: 1 },
-  gr: { unit: "g", factor: 1 },
-  gramme: { unit: "g", factor: 1 },
-  grammes: { unit: "g", factor: 1 },
-  kg: { unit: "g", factor: 1000 },
-  kilo: { unit: "g", factor: 1000 },
-  kilos: { unit: "g", factor: 1000 },
-  ml: { unit: "ml", factor: 1 },
-  millilitre: { unit: "ml", factor: 1 },
-  millilitres: { unit: "ml", factor: 1 },
-  l: { unit: "ml", factor: 1000 },
-  litre: { unit: "ml", factor: 1000 },
-  litres: { unit: "ml", factor: 1000 },
-  cl: { unit: "ml", factor: 10 },
-  dl: { unit: "ml", factor: 100 },
-  "c.a.s": { unit: "cas", factor: 1 },
-  "c.à.s": { unit: "cas", factor: 1 },
-  cas: { unit: "cas", factor: 1 },
-  "cuillere a soupe": { unit: "cas", factor: 1 },
-  "cuilleres a soupe": { unit: "cas", factor: 1 },
-  "c.a.c": { unit: "cac", factor: 1 },
-  "c.à.c": { unit: "cac", factor: 1 },
-  cac: { unit: "cac", factor: 1 },
-  "cuillere a cafe": { unit: "cac", factor: 1 },
-  "cuilleres a cafe": { unit: "cac", factor: 1 },
-  piece: { unit: "unite", factor: 1 },
-  pieces: { unit: "unite", factor: 1 },
-  unite: { unit: "unite", factor: 1 },
-  unites: { unit: "unite", factor: 1 },
-  botte: { unit: "botte", factor: 1 },
-  bottes: { unit: "botte", factor: 1 },
-  gousse: { unit: "gousse", factor: 1 },
-  gousses: { unit: "gousse", factor: 1 },
-  feuille: { unit: "feuille", factor: 1 },
-  feuilles: { unit: "feuille", factor: 1 },
-  pincee: { unit: "pincee", factor: 1 },
-  pincees: { unit: "pincee", factor: 1 },
-};
-
-function normalizeUnitToken(unit: string): string {
-  return unit
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
-    .toLowerCase()
-    .replace(/['’]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function parseNumberToken(raw: string): number | null {
-  const t = raw.trim().replace(",", ".");
-  if (!t) return null;
-  const fraction = /^(\d+)\s*\/\s*(\d+)$/.exec(t);
-  if (fraction) {
-    const a = Number(fraction[1]);
-    const b = Number(fraction[2]);
-    if (!Number.isFinite(a) || !Number.isFinite(b) || b === 0) return null;
-    return a / b;
-  }
-  const n = Number(t);
-  return Number.isFinite(n) ? n : null;
-}
-
-/** Parse une quantité libre (« 150 g », « 1/2 », « 2 c.à.s », « q.s. »). */
-export function parseQuantity(amount: string): ParsedQuantity {
-  const raw = amount.trim();
-  if (!raw) return { kind: "text", raw: "" };
-
-  const lowered = raw.toLowerCase();
-  if (
-    lowered === "q.s." ||
-    lowered === "qs" ||
-    lowered === "q.s" ||
-    lowered.startsWith("quelques") ||
-    lowered === "au goût" ||
-    lowered === "au gout"
-  ) {
-    return { kind: "text", raw };
-  }
-
-  const match =
-    /^(\d+(?:[.,]\d+)?(?:\s*\/\s*\d+)?|\d+\s*\/\s*\d+)\s*([a-zA-Zàâäéèêëïîôùûüç.%°].*)?$/u.exec(
-      raw,
-    );
-  if (!match) return { kind: "text", raw };
-
-  const value = parseNumberToken(match[1]);
-  if (value == null) return { kind: "text", raw };
-
-  const unitRaw = (match[2] ?? "").trim();
-  if (!unitRaw) {
-    return { kind: "qty", value, unit: "unite" };
-  }
-
-  const stripped = normalizeUnitToken(unitRaw);
-  const compact = stripped.replace(/\s*\.\s*/g, ".").replace(/\s+/g, " ").trim();
-  const noSpaces = compact.replace(/\s/g, "");
-
-  // c.à.s / c.a.s / cas
-  let lookup = compact;
-  if (/^c\.?a\.?s\.?$/.test(noSpaces) || noSpaces === "cas") lookup = "c.a.s";
-  else if (/^c\.?a\.?c\.?$/.test(noSpaces) || noSpaces === "cac") lookup = "c.a.c";
-  else if (noSpaces === "pieces" || noSpaces === "piece") lookup = "piece";
-
-  const candidates = [lookup, compact, noSpaces, stripped];
-  for (const candidate of candidates) {
-    const mapped = UNIT_TO_BASE_FACTOR[candidate];
-    if (mapped) {
-      return { kind: "qty", value: value * mapped.factor, unit: mapped.unit };
-    }
-  }
-
-  return { kind: "text", raw };
-}
-
-function formatNumber(value: number): string {
-  if (!Number.isFinite(value)) return String(value);
-  const rounded = Math.round(value * 100) / 100;
-  if (Math.abs(rounded - 0.5) < 1e-9) return "1/2";
-  if (Math.abs(rounded - 0.25) < 1e-9) return "1/4";
-  if (Math.abs(rounded - 0.75) < 1e-9) return "3/4";
-  if (Number.isInteger(rounded)) return String(rounded);
-  return String(Math.round(rounded * 10) / 10).replace(".", ",");
-}
-
-function formatQuantity(value: number, unit: SumUnit): string {
-  if (unit === "g") {
-    if (value >= 1000) return `${formatNumber(value / 1000)} kg`;
-    return `${formatNumber(value)} g`;
-  }
-  if (unit === "ml") {
-    if (value >= 1000) return `${formatNumber(value / 1000)} L`;
-    if (value >= 10 && value % 10 === 0) return `${formatNumber(value / 10)} cl`;
-    return `${formatNumber(value)} ml`;
-  }
-  if (unit === "cas") return `${formatNumber(value)} c.à.s`;
-  if (unit === "cac") return `${formatNumber(value)} c.à.c`;
-  if (unit === "botte") return `${formatNumber(value)} botte${value > 1 ? "s" : ""}`;
-  if (unit === "gousse") return `${formatNumber(value)} gousse${value > 1 ? "s" : ""}`;
-  if (unit === "feuille") return `${formatNumber(value)} feuille${value > 1 ? "s" : ""}`;
-  if (unit === "pincee") return `${formatNumber(value)} pincée${value > 1 ? "s" : ""}`;
-  return formatNumber(value);
-}
-
-/**
- * Additionne des quantités compatibles.
- * Ex. ["150 g", "250 g"] → "400 g" ; ["2 c.à.s", "1 c.à.s"] → "3 c.à.s".
- * Si unités incompatibles : concatène avec « + ».
- */
-export function sumAmountStrings(amounts: string[]): string {
-  const cleaned = amounts.map((a) => a.trim()).filter(Boolean);
-  if (cleaned.length === 0) return "";
-  if (cleaned.length === 1) return cleaned[0];
-
-  const parsed = cleaned.map(parseQuantity);
-  const byUnit = new Map<SumUnit, number>();
-  const texts: string[] = [];
-  const seenText = new Set<string>();
-
-  for (const p of parsed) {
-    if (p.kind === "qty") {
-      byUnit.set(p.unit, (byUnit.get(p.unit) ?? 0) + p.value);
-    } else if (p.raw) {
-      const key = p.raw.toLowerCase();
-      if (!seenText.has(key)) {
-        seenText.add(key);
-        texts.push(p.raw);
-      }
-    }
-  }
-
-  const parts: string[] = [];
-  for (const [unit, value] of byUnit) {
-    if (value > 0) parts.push(formatQuantity(value, unit));
-  }
-  parts.push(...texts);
-
-  return parts.join(" + ");
-}
-
-function withCategory(item: Omit<ShoppingListItem, "category"> & { category?: string }): ShoppingListItem {
+function toShoppingItem(input: {
+  id?: string;
+  ingredientId?: string;
+  customName: string;
+  amount: number;
+  unit: UnitCode;
+  category?: string;
+  emoji?: string;
+  isChecked?: boolean;
+  createdAt?: string;
+}): ShoppingItem {
+  const customName = input.customName.trim();
+  const identity = describeIngredient(customName);
   const category =
-    item.category && isShoppingCategoryId(item.category)
-      ? item.category
-      : classifyProduct(item.name);
+    input.category && isShoppingCategoryId(input.category)
+      ? input.category
+      : classifyProduct(customName);
+  const emoji = input.emoji ?? identity.emoji;
+
   return {
-    id: item.id,
-    name: item.name,
-    amount: item.amount,
-    checked: item.checked,
+    id: input.id ?? createId(),
+    ingredientId: input.ingredientId ?? identity.ingredientId,
+    customName,
+    amount: Number.isFinite(input.amount) ? Math.max(0, input.amount) : 0,
+    unit: input.unit,
     category,
+    ...(emoji ? { emoji } : {}),
+    isChecked: input.isChecked ?? false,
+    createdAt: input.createdAt ?? new Date().toISOString(),
   };
 }
 
-function readList(): ShoppingListItem[] {
-  if (typeof window === "undefined") return [];
+function sanitizeItem(raw: unknown): ShoppingItem | null {
+  if (!raw || typeof raw !== "object") return null;
+  const entry = raw as Partial<ShoppingItem> & { name?: unknown; checked?: unknown; amount?: unknown };
+
+  // Format courant.
+  if (typeof entry.customName === "string" && typeof entry.amount === "number") {
+    const name = entry.customName.trim();
+    if (!name) return null;
+    return toShoppingItem({
+      id: typeof entry.id === "string" ? entry.id : undefined,
+      ingredientId: typeof entry.ingredientId === "string" ? entry.ingredientId : undefined,
+      customName: name,
+      amount: entry.amount,
+      unit: typeof entry.unit === "string" && isUnitCode(entry.unit) ? entry.unit : DEFAULT_UNIT,
+      category: typeof entry.category === "string" ? entry.category : undefined,
+      emoji: typeof entry.emoji === "string" ? entry.emoji : undefined,
+      isChecked: Boolean(entry.isChecked),
+      createdAt: typeof entry.createdAt === "string" ? entry.createdAt : undefined,
+    });
+  }
+
+  // Format hérité : nom + quantité en toutes lettres.
+  const legacyName = typeof entry.name === "string" ? entry.name.trim() : "";
+  if (!legacyName) return null;
+  const { amount, unit } = parseAmount(typeof entry.amount === "string" ? entry.amount : "");
+  return toShoppingItem({
+    id: typeof entry.id === "string" ? entry.id : undefined,
+    customName: legacyName,
+    amount,
+    unit,
+    category: typeof entry.category === "string" ? entry.category : undefined,
+    isChecked: Boolean(entry.checked),
+  });
+}
+
+function parseStoredList(raw: string | null): ShoppingItem[] {
+  if (!raw) return [];
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return [];
-    return parsed.map((entry) => {
-      const item = entry as Partial<ShoppingListItem>;
-      return withCategory({
-        id: String(item.id ?? `shop-${Date.now()}`),
-        name: String(item.name ?? ""),
-        amount: String(item.amount ?? ""),
-        checked: Boolean(item.checked),
-        category: item.category,
-      });
-    });
+    return parsed.map(sanitizeItem).filter((item): item is ShoppingItem => item != null);
   } catch {
     return [];
   }
 }
 
-function writeList(items: ShoppingListItem[]) {
+function readList(): ShoppingItem[] {
+  if (typeof window === "undefined") return [];
+
+  const current = window.localStorage.getItem(STORAGE_KEY);
+  if (current != null) return parseStoredList(current);
+
+  // Migration unique depuis l'ancien format, puis on ne relit plus jamais v1.
+  const legacy = parseStoredList(window.localStorage.getItem(LEGACY_STORAGE_KEY));
+  if (legacy.length > 0) {
+    writeList(legacy);
+    window.localStorage.removeItem(LEGACY_STORAGE_KEY);
+  }
+  return legacy;
+}
+
+function writeList(items: ShoppingItem[]) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
 }
 
-export function getShoppingList(): ShoppingListItem[] {
+export function getShoppingList(): ShoppingItem[] {
   return readList();
 }
 
-export function toggleShoppingItem(id: string): ShoppingListItem[] {
+export function toggleShoppingItem(id: string): ShoppingItem[] {
   const next = readList().map((item) =>
-    item.id === id ? { ...item, checked: !item.checked } : item,
+    item.id === id ? { ...item, isChecked: !item.isChecked } : item,
   );
   writeList(next);
   return next;
 }
 
-export function removeShoppingItem(id: string): ShoppingListItem[] {
+export function removeShoppingItem(id: string): ShoppingItem[] {
   const next = readList().filter((item) => item.id !== id);
   writeList(next);
   return next;
 }
 
-export function updateShoppingItem(
-  id: string,
-  patch: Partial<Pick<ShoppingListItem, "name" | "amount" | "category">>,
-): ShoppingListItem[] {
+export type ShoppingItemPatch = Partial<
+  Pick<ShoppingItem, "customName" | "amount" | "unit" | "category">
+>;
+
+/**
+ * Édition libre d'un article. Le rayon est reclassé automatiquement lorsque le
+ * nom change, mais `ingredientId` reste figé : le lien vers la recette survit
+ * au renommage.
+ */
+export function updateShoppingItem(id: string, patch: ShoppingItemPatch): ShoppingItem[] {
   const next = readList().map((item) => {
     if (item.id !== id) return item;
-    const name = patch.name !== undefined ? patch.name : item.name;
-    const amount = patch.amount !== undefined ? patch.amount : item.amount;
-    const category =
-      patch.category !== undefined
-        ? patch.category
-        : patch.name !== undefined
-          ? classifyProduct(name)
-          : item.category;
-    return withCategory({ ...item, name, amount, category });
+
+    const customName = patch.customName?.trim() || item.customName;
+    const renamed = customName !== item.customName;
+    const category = patch.category ?? (renamed ? classifyProduct(customName) : item.category);
+
+    return {
+      ...item,
+      customName,
+      amount: patch.amount ?? item.amount,
+      unit: patch.unit ?? item.unit,
+      category,
+    };
   });
   writeList(next);
   return next;
 }
 
-export function clearCheckedShoppingItems(): ShoppingListItem[] {
-  const next = readList().filter((item) => !item.checked);
+export function clearCheckedShoppingItems(): ShoppingItem[] {
+  const next = readList().filter((item) => !item.isChecked);
   writeList(next);
   return next;
 }
 
-export function clearShoppingList(): ShoppingListItem[] {
+export function clearShoppingList(): ShoppingItem[] {
   writeList([]);
   return [];
 }
 
-/** Fusionne les ingrédients homonymes en additionnant les quantités compatibles. */
-export function mergeIngredients(ingredients: RecipeIngredient[]): ShoppingListItem[] {
-  const map = new Map<string, { name: string; amounts: string[] }>();
+/** Quantité affichable d'un article (« 400 g », « q.s. »). */
+export function formatShoppingAmount(item: Pick<ShoppingItem, "amount" | "unit">): string {
+  return formatAmount(item.amount, item.unit);
+}
+
+/**
+ * Fusionne les ingrédients d'un même aliment en additionnant les quantités
+ * compatibles. Le regroupement se fait sur `ingredientId`, jamais sur le nom :
+ * « Tomate » et « tomates » deviennent une seule ligne.
+ *
+ * Deux unités incompatibles (3 c.à.s d'huile et 20 mL d'huile) produisent deux
+ * lignes distinctes plutôt qu'une addition fausse. Les quantités « q.s. » sont
+ * absorbées dès qu'une quantité chiffrée existe pour le même aliment.
+ */
+export function mergeIngredients(ingredients: RecipeIngredient[]): ShoppingItem[] {
+  const groups = new Map<
+    string,
+    { name: string; category: ShoppingCategoryId; emoji?: string; byUnit: Map<UnitCode, number> }
+  >();
 
   for (const ing of ingredients) {
     const name = ing.name.trim();
     if (!name) continue;
-    const key = normalizeName(name);
-    const amount = ing.amount.trim();
-    const existing = map.get(key);
-    if (!existing) {
-      map.set(key, { name, amounts: amount ? [amount] : [] });
-    } else if (amount) {
-      existing.amounts.push(amount);
+
+    const group = groups.get(ing.ingredientId) ?? {
+      name,
+      category: ing.category,
+      emoji: ing.emoji,
+      byUnit: new Map<UnitCode, number>(),
+    };
+
+    const base = toBaseQuantity(ing.amount, ing.unit);
+    group.byUnit.set(base.unit, (group.byUnit.get(base.unit) ?? 0) + base.amount);
+    groups.set(ing.ingredientId, group);
+  }
+
+  const items: ShoppingItem[] = [];
+  for (const [ingredientId, group] of groups) {
+    const quantified = [...group.byUnit.entries()].filter(([unit]) => unit !== UNQUANTIFIED_UNIT);
+    const units = quantified.length > 0 ? quantified : [...group.byUnit.entries()];
+
+    for (const [unit, amount] of units) {
+      items.push(
+        toShoppingItem({
+          ingredientId,
+          customName: group.name,
+          amount,
+          unit,
+          category: group.category,
+          emoji: group.emoji,
+        }),
+      );
     }
   }
 
-  return [...map.values()].map((entry, index) =>
-    withCategory({
-      id: `shop-${Date.now()}-${index}-${normalizeName(entry.name).replace(/\W+/g, "-")}`,
-      name: entry.name,
-      amount: sumAmountStrings(entry.amounts),
-      checked: false,
-    }),
-  );
+  return items;
 }
 
 const EXPORT_BANNER_KEY = "my-kitchen-shopping-export-banner";
@@ -347,7 +272,7 @@ export function peekExportBanner(): string | null {
 /** Remplace la liste par un nouvel export planning. */
 export function replaceShoppingListFromIngredients(
   ingredients: RecipeIngredient[],
-): ShoppingListItem[] {
+): ShoppingItem[] {
   const items = mergeIngredients(ingredients);
   writeList(items);
   return items;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { Ingredient, TabId } from "@/components/frigo/shared";
+import type { NewFridgeItem, TabId } from "@/components/frigo/shared";
 import { ChevronDownIcon, XIcon } from "@/components/icons";
 import { INGREDIENTS } from "@/lib/ingredients";
 import { DEFAULT_UNIT, UNITS, type UnitCode } from "@/lib/units";
@@ -12,7 +12,7 @@ export function AddModal({
   onClose,
 }: {
   activeTab: TabId;
-  onAdd: (item: Omit<Ingredient, "id">) => void;
+  onAdd: (item: NewFridgeItem) => void;
   onClose: () => void;
 }) {
   const [emoji, setEmoji] = useState("🥚");
@@ -32,10 +32,10 @@ export function AddModal({
     if (!name.trim()) return;
     onAdd({
       emoji,
-      name: name.trim(),
-      quantity: Number(qty) || 1,
+      customName: name.trim(),
+      amount: Number(qty) || 1,
       unit,
-      dlc: dlc || null,
+      expirationDate: dlc || null,
       category: activeTab,
     });
     onClose();

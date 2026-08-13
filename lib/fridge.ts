@@ -1,29 +1,29 @@
 /**
  * Inventaire frigo / congélateur / placards — source partagée
  * pour l’UI Frigo, le planning et la génération de recettes.
+ *
+ * Un article de frigo est un snapshot éditable : `customName` et `amount`
+ * appartiennent à l'utilisateur, tandis que `ingredientId` conserve le lien vers
+ * l'aliment canonique pour le matching avec les recettes et les courses.
  */
 
+import { describeIngredient } from "@/lib/ingredients";
 import { normalizeProductName } from "@/lib/shopping-categories";
 import { DEFAULT_UNIT, isUnitCode, type UnitCode } from "@/lib/units";
+import type { FridgeItem, FridgeStorageLocation } from "@/types/inventory";
 
-export const FRIDGE_STORAGE_LOCATIONS = ["fridge", "freezer", "pantry"] as const;
+export type { FridgeItem, FridgeStorageLocation };
 
-export type FridgeStorageLocation = (typeof FRIDGE_STORAGE_LOCATIONS)[number];
-
-export type FridgeItem = {
-  id: number;
-  emoji: string;
-  name: string;
-  quantity: number;
-  unit: UnitCode;
-  /** ISO date YYYY-MM-DD, ou null si pas de DLC. */
-  dlc: string | null;
-  category: FridgeStorageLocation;
-};
+export const FRIDGE_STORAGE_LOCATIONS = [
+  "fridge",
+  "freezer",
+  "pantry",
+] as const satisfies readonly FridgeStorageLocation[];
 
 /** Payload sérialisable pour API / prompts LLM. */
 export type FridgeSnapshotItem = {
   name: string;
+  ingredientId?: string;
   quantity: number;
   unit: UnitCode;
   location: FridgeStorageLocation;
@@ -32,7 +32,9 @@ export type FridgeSnapshotItem = {
   urgency: "urgent" | "soon" | "ok" | "none";
 };
 
-export const FRIDGE_STORAGE_KEY = "my-kitchen-fridge-items";
+export const FRIDGE_STORAGE_KEY = "my-kitchen-fridge-items-v2";
+/** Ancien format : `{ id: number, name, quantity, dlc }`. */
+const LEGACY_FRIDGE_STORAGE_KEY = "my-kitchen-fridge-items";
 
 /** Minimum d’ingrédients exploitables pour lancer une génération IA. */
 export const MIN_USABLE_FRIDGE_ITEMS = 3;
@@ -69,6 +71,13 @@ export const FRIDGE_TABS: {
   { id: "pantry", label: "Placards", emoji: "🏺" },
 ];
 
+export function createFridgeItemId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `fridge-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 function fmt(d: Date) {
   return d.toISOString().split("T")[0];
 }
@@ -79,32 +88,70 @@ function daysFrom(n: number) {
   return fmt(d);
 }
 
+/** Construit un article de frigo en dérivant l'identité canonique du nom. */
+export function createFridgeItem(input: {
+  customName: string;
+  amount: number;
+  unit: UnitCode;
+  category: FridgeStorageLocation;
+  emoji?: string;
+  expirationDate?: string | null;
+  ingredientId?: string;
+  id?: string;
+  addedAt?: string;
+}): FridgeItem {
+  const customName = input.customName.trim();
+  const identity = describeIngredient(customName);
+  const emoji = input.emoji ?? identity.emoji ?? "🥗";
+
+  return {
+    id: input.id ?? createFridgeItemId(),
+    ingredientId: input.ingredientId ?? identity.ingredientId,
+    customName,
+    amount: Number.isFinite(input.amount) ? Math.max(0, input.amount) : 0,
+    unit: input.unit,
+    category: input.category,
+    emoji,
+    addedAt: input.addedAt ?? new Date().toISOString(),
+    ...(input.expirationDate ? { expirationDate: input.expirationDate } : {}),
+  };
+}
+
 /** Seed utilisé à la première visite (avant toute persistance). */
 export function createDefaultFridgeItems(): FridgeItem[] {
-  return [
-    { id: 1, emoji: "🥚", name: "Œufs", quantity: 6, unit: "unite", dlc: daysFrom(7), category: "fridge" },
-    { id: 2, emoji: "🥛", name: "Lait demi-écrémé", quantity: 1, unit: "l", dlc: daysFrom(2), category: "fridge" },
-    { id: 3, emoji: "🧀", name: "Comté", quantity: 150, unit: "g", dlc: daysFrom(14), category: "fridge" },
-    { id: 4, emoji: "🥩", name: "Poulet fermier", quantity: 500, unit: "g", dlc: daysFrom(0), category: "fridge" },
-    { id: 5, emoji: "🍅", name: "Tomates cerises", quantity: 250, unit: "g", dlc: daysFrom(1), category: "fridge" },
-    { id: 6, emoji: "🥕", name: "Carottes", quantity: 4, unit: "unite", dlc: daysFrom(6), category: "fridge" },
-    { id: 7, emoji: "🧈", name: "Beurre AOP", quantity: 250, unit: "g", dlc: daysFrom(21), category: "fridge" },
-    { id: 8, emoji: "🥗", name: "Mesclun bio", quantity: 100, unit: "g", dlc: daysFrom(2), category: "fridge" },
-    { id: 9, emoji: "🍋", name: "Citrons", quantity: 3, unit: "unite", dlc: daysFrom(8), category: "fridge" },
-    { id: 10, emoji: "🐟", name: "Filets de saumon", quantity: 2, unit: "unite", dlc: daysFrom(60), category: "freezer" },
-    { id: 11, emoji: "🥦", name: "Brocolis surgelés", quantity: 400, unit: "g", dlc: daysFrom(90), category: "freezer" },
-    { id: 12, emoji: "🍦", name: "Sorbet citron", quantity: 500, unit: "g", dlc: daysFrom(45), category: "freezer" },
-    { id: 13, emoji: "🍖", name: "Bœuf haché 5%", quantity: 300, unit: "g", dlc: daysFrom(-2), category: "freezer" },
-    { id: 14, emoji: "🫛", name: "Petits pois", quantity: 800, unit: "g", dlc: daysFrom(120), category: "freezer" },
-    { id: 15, emoji: "🍝", name: "Pâtes linguine", quantity: 500, unit: "g", dlc: null, category: "pantry" },
-    { id: 16, emoji: "🍚", name: "Riz basmati", quantity: 800, unit: "g", dlc: null, category: "pantry" },
-    { id: 17, emoji: "🫒", name: "Huile d'olive", quantity: 750, unit: "ml", dlc: daysFrom(180), category: "pantry" },
-    { id: 18, emoji: "🧂", name: "Fleur de sel", quantity: 200, unit: "g", dlc: null, category: "pantry" },
-    { id: 19, emoji: "🌶️", name: "Paprika fumé", quantity: 50, unit: "g", dlc: daysFrom(300), category: "pantry" },
-    { id: 20, emoji: "🍫", name: "Chocolat noir 70%", quantity: 200, unit: "g", dlc: daysFrom(60), category: "pantry" },
-    { id: 21, emoji: "🧁", name: "Farine T55", quantity: 1, unit: "kg", dlc: daysFrom(180), category: "pantry" },
-    { id: 22, emoji: "☕", name: "Café en grains", quantity: 250, unit: "g", dlc: daysFrom(90), category: "pantry" },
+  const seed: Array<{
+    emoji: string;
+    customName: string;
+    amount: number;
+    unit: UnitCode;
+    expirationDate: string | null;
+    category: FridgeStorageLocation;
+  }> = [
+    { emoji: "🥚", customName: "Œufs", amount: 6, unit: "unite", expirationDate: daysFrom(7), category: "fridge" },
+    { emoji: "🥛", customName: "Lait demi-écrémé", amount: 1, unit: "l", expirationDate: daysFrom(2), category: "fridge" },
+    { emoji: "🧀", customName: "Comté", amount: 150, unit: "g", expirationDate: daysFrom(14), category: "fridge" },
+    { emoji: "🥩", customName: "Poulet fermier", amount: 500, unit: "g", expirationDate: daysFrom(0), category: "fridge" },
+    { emoji: "🍅", customName: "Tomates cerises", amount: 250, unit: "g", expirationDate: daysFrom(1), category: "fridge" },
+    { emoji: "🥕", customName: "Carottes", amount: 4, unit: "unite", expirationDate: daysFrom(6), category: "fridge" },
+    { emoji: "🧈", customName: "Beurre AOP", amount: 250, unit: "g", expirationDate: daysFrom(21), category: "fridge" },
+    { emoji: "🥗", customName: "Mesclun bio", amount: 100, unit: "g", expirationDate: daysFrom(2), category: "fridge" },
+    { emoji: "🍋", customName: "Citrons", amount: 3, unit: "unite", expirationDate: daysFrom(8), category: "fridge" },
+    { emoji: "🐟", customName: "Filets de saumon", amount: 2, unit: "unite", expirationDate: daysFrom(60), category: "freezer" },
+    { emoji: "🥦", customName: "Brocolis surgelés", amount: 400, unit: "g", expirationDate: daysFrom(90), category: "freezer" },
+    { emoji: "🍦", customName: "Sorbet citron", amount: 500, unit: "g", expirationDate: daysFrom(45), category: "freezer" },
+    { emoji: "🍖", customName: "Bœuf haché 5%", amount: 300, unit: "g", expirationDate: daysFrom(-2), category: "freezer" },
+    { emoji: "🫛", customName: "Petits pois", amount: 800, unit: "g", expirationDate: daysFrom(120), category: "freezer" },
+    { emoji: "🍝", customName: "Pâtes linguine", amount: 500, unit: "g", expirationDate: null, category: "pantry" },
+    { emoji: "🍚", customName: "Riz basmati", amount: 800, unit: "g", expirationDate: null, category: "pantry" },
+    { emoji: "🫒", customName: "Huile d'olive", amount: 750, unit: "ml", expirationDate: daysFrom(180), category: "pantry" },
+    { emoji: "🧂", customName: "Fleur de sel", amount: 200, unit: "g", expirationDate: null, category: "pantry" },
+    { emoji: "🌶️", customName: "Paprika fumé", amount: 50, unit: "g", expirationDate: daysFrom(300), category: "pantry" },
+    { emoji: "🍫", customName: "Chocolat noir 70%", amount: 200, unit: "g", expirationDate: daysFrom(60), category: "pantry" },
+    { emoji: "🧁", customName: "Farine T55", amount: 1, unit: "kg", expirationDate: daysFrom(180), category: "pantry" },
+    { emoji: "☕", customName: "Café en grains", amount: 250, unit: "g", expirationDate: daysFrom(90), category: "pantry" },
   ];
+
+  return seed.map((item) => createFridgeItem(item));
 }
 
 export function isFridgeStorageLocation(value: string): value is FridgeStorageLocation {
@@ -118,7 +165,7 @@ export function daysUntilDlc(dlc: string, now: Date = new Date()): number {
 }
 
 export function dlcStatus(
-  dlc: string | null,
+  dlc: string | null | undefined,
   now: Date = new Date(),
 ): "urgent" | "soon" | "ok" | "none" {
   if (!dlc) return "none";
@@ -128,41 +175,77 @@ export function dlcStatus(
   return "ok";
 }
 
-function sanitizeItem(raw: unknown, index: number): FridgeItem | null {
+function sanitizeItem(raw: unknown): FridgeItem | null {
   if (!raw || typeof raw !== "object") return null;
-  const item = raw as Partial<FridgeItem>;
-  const name = typeof item.name === "string" ? item.name.trim() : "";
-  if (!name) return null;
-  const category =
-    typeof item.category === "string" && isFridgeStorageLocation(item.category)
-      ? item.category
-      : "fridge";
-  const unit = typeof item.unit === "string" && isUnitCode(item.unit) ? item.unit : DEFAULT_UNIT;
-  const id = typeof item.id === "number" && Number.isFinite(item.id) ? item.id : index + 1;
-  const quantity =
-    typeof item.quantity === "number" && Number.isFinite(item.quantity)
-      ? Math.max(0, item.quantity)
-      : 1;
-  const dlc =
-    typeof item.dlc === "string" && /^\d{4}-\d{2}-\d{2}$/.test(item.dlc) ? item.dlc : null;
-  const emoji = typeof item.emoji === "string" && item.emoji ? item.emoji : "🥗";
-  return { id, emoji, name, quantity, unit, dlc, category };
+  const entry = raw as Partial<FridgeItem> & {
+    name?: unknown;
+    quantity?: unknown;
+    dlc?: unknown;
+  };
+
+  const customName =
+    typeof entry.customName === "string" && entry.customName.trim()
+      ? entry.customName.trim()
+      : typeof entry.name === "string"
+        ? entry.name.trim()
+        : "";
+  if (!customName) return null;
+
+  const amount =
+    typeof entry.amount === "number"
+      ? entry.amount
+      : typeof entry.quantity === "number"
+        ? entry.quantity
+        : 1;
+
+  const rawExpiration =
+    typeof entry.expirationDate === "string"
+      ? entry.expirationDate
+      : typeof entry.dlc === "string"
+        ? entry.dlc
+        : null;
+
+  return createFridgeItem({
+    id: typeof entry.id === "string" ? entry.id : undefined,
+    ingredientId: typeof entry.ingredientId === "string" ? entry.ingredientId : undefined,
+    customName,
+    amount,
+    unit: typeof entry.unit === "string" && isUnitCode(entry.unit) ? entry.unit : DEFAULT_UNIT,
+    category:
+      typeof entry.category === "string" && isFridgeStorageLocation(entry.category)
+        ? entry.category
+        : "fridge",
+    emoji: typeof entry.emoji === "string" && entry.emoji ? entry.emoji : undefined,
+    expirationDate: rawExpiration && /^\d{4}-\d{2}-\d{2}$/.test(rawExpiration) ? rawExpiration : null,
+    addedAt: typeof entry.addedAt === "string" ? entry.addedAt : undefined,
+  });
+}
+
+function parseStoredItems(raw: string | null): FridgeItem[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map(sanitizeItem).filter((item): item is FridgeItem => item != null);
+  } catch {
+    return [];
+  }
 }
 
 function readRaw(): FridgeItem[] | null {
   if (typeof window === "undefined") return null;
-  try {
-    const raw = window.localStorage.getItem(FRIDGE_STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return null;
-    const items = parsed
-      .map((entry, index) => sanitizeItem(entry, index))
-      .filter((item): item is FridgeItem => item != null);
-    return items;
-  } catch {
-    return null;
+
+  const current = window.localStorage.getItem(FRIDGE_STORAGE_KEY);
+  if (current != null) return parseStoredItems(current);
+
+  // Migration unique depuis l'ancien format (id numériques, name, quantity, dlc).
+  const legacy = parseStoredItems(window.localStorage.getItem(LEGACY_FRIDGE_STORAGE_KEY));
+  if (legacy.length > 0) {
+    setFridgeItems(legacy);
+    window.localStorage.removeItem(LEGACY_FRIDGE_STORAGE_KEY);
+    return legacy;
   }
+  return null;
 }
 
 export function getFridgeItems(): FridgeItem[] {
@@ -180,24 +263,20 @@ export function setFridgeItems(items: FridgeItem[]) {
   window.localStorage.setItem(FRIDGE_STORAGE_KEY, JSON.stringify(items));
 }
 
-export function nextFridgeItemId(items: FridgeItem[] = getFridgeItems()): number {
-  const max = items.reduce((acc, item) => Math.max(acc, item.id), 0);
-  return max + 1;
-}
-
 export function toFridgeSnapshotItem(
   item: FridgeItem,
   now: Date = new Date(),
 ): FridgeSnapshotItem {
-  const urgency = dlcStatus(item.dlc, now);
+  const expiresOn = item.expirationDate ?? null;
   return {
-    name: item.name,
-    quantity: item.quantity,
+    name: item.customName,
+    ...(item.ingredientId ? { ingredientId: item.ingredientId } : {}),
+    quantity: item.amount,
     unit: item.unit,
     location: item.category,
-    expiresOn: item.dlc,
-    daysUntilExpiry: item.dlc ? daysUntilDlc(item.dlc, now) : null,
-    urgency,
+    expiresOn,
+    daysUntilExpiry: expiresOn ? daysUntilDlc(expiresOn, now) : null,
+    urgency: dlcStatus(expiresOn, now),
   };
 }
 
@@ -206,9 +285,7 @@ export function getFridgeSnapshot(
   items: FridgeItem[] = getFridgeItems(),
   now: Date = new Date(),
 ): FridgeSnapshotItem[] {
-  return items
-    .filter((item) => item.quantity > 0)
-    .map((item) => toFridgeSnapshotItem(item, now));
+  return items.filter((item) => item.amount > 0).map((item) => toFridgeSnapshotItem(item, now));
 }
 
 export function getExpiringFridgeItems(
@@ -218,13 +295,12 @@ export function getExpiringFridgeItems(
 ): FridgeItem[] {
   return items
     .filter((item) => {
-      if (!item.dlc || item.quantity <= 0) return false;
-      const days = daysUntilDlc(item.dlc, now);
-      return days <= withinDays;
+      if (!item.expirationDate || item.amount <= 0) return false;
+      return daysUntilDlc(item.expirationDate, now) <= withinDays;
     })
     .sort((a, b) => {
-      const da = a.dlc ? daysUntilDlc(a.dlc, now) : 999;
-      const db = b.dlc ? daysUntilDlc(b.dlc, now) : 999;
+      const da = a.expirationDate ? daysUntilDlc(a.expirationDate, now) : 999;
+      const db = b.expirationDate ? daysUntilDlc(b.expirationDate, now) : 999;
       return da - db;
     });
 }

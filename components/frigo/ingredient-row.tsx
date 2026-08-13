@@ -30,26 +30,26 @@ export function IngredientRow({
   isNew,
 }: {
   item: Ingredient;
-  onAdjust: (id: number, delta: number) => void;
-  onDelete: (id: number) => void;
-  onEditDlc: (id: number) => void;
-  onMove: (id: number, category: TabId) => void;
-  onRename: (id: number, name: string) => void;
+  onAdjust: (id: string, delta: number) => void;
+  onDelete: (id: string) => void;
+  onEditDlc: (id: string) => void;
+  onMove: (id: string, category: TabId) => void;
+  onRename: (id: string, customName: string) => void;
   isNew: boolean;
 }) {
-  const status = dlcStatus(item.dlc);
+  const status = dlcStatus(item.expirationDate);
   const style = STATUS_STYLE[status];
   const [deleting, setDeleting] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPos, setMenuPos] = useState<{ top?: number; bottom?: number; right: number } | null>(null);
-  const [nameDraft, setNameDraft] = useState(item.name);
+  const [nameDraft, setNameDraft] = useState(item.customName);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const destinations = TABS.filter((tab) => tab.id !== item.category);
 
   useEffect(() => {
-    setNameDraft(item.name);
-  }, [item.name]);
+    setNameDraft(item.customName);
+  }, [item.customName]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -137,10 +137,10 @@ export function IngredientRow({
   const commitName = () => {
     const trimmed = nameDraft.trim();
     if (!trimmed) {
-      setNameDraft(item.name);
+      setNameDraft(item.customName);
       return;
     }
-    if (trimmed !== item.name) onRename(item.id, trimmed);
+    if (trimmed !== item.customName) onRename(item.id, trimmed);
   };
 
   return (
@@ -166,18 +166,18 @@ export function IngredientRow({
               e.currentTarget.blur();
             }
             if (e.key === "Escape") {
-              setNameDraft(item.name);
+              setNameDraft(item.customName);
               e.currentTarget.blur();
             }
           }}
           className="w-full bg-transparent text-sm font-bold text-[#1C2B1E] outline-none rounded-lg px-1.5 py-0.5 -mx-1.5 transition-colors hover:bg-[#F0F4EF] focus:bg-[#F0F4EF] focus:ring-2 focus:ring-[#C8E0CF]"
-          aria-label={`Nom de ${item.name}`}
+          aria-label={`Nom de ${item.customName}`}
         />
-        {item.dlc ? (
+        {item.expirationDate ? (
           <div className="mt-0.5 flex items-center gap-1.5">
             <div className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: style.dot }} />
             <span className="text-xs font-medium" style={{ color: style.color }}>
-              {dlcLabel(item.dlc)}
+              {dlcLabel(item.expirationDate)}
             </span>
           </div>
         ) : (
@@ -189,7 +189,7 @@ export function IngredientRow({
         <button
           type="button"
           onClick={() => onAdjust(item.id, -1)}
-          disabled={item.quantity <= 0}
+          disabled={item.amount <= 0}
           className="flex h-8 w-8 items-center justify-center text-[#4A7C59] transition-all hover:bg-[#EBF2EC] disabled:opacity-30"
           aria-label="Diminuer"
         >
@@ -199,7 +199,7 @@ export function IngredientRow({
           className="w-12 border-x text-center text-sm font-extrabold text-[#1C2B1E]"
           style={{ borderColor: "#E2EBE3", lineHeight: "2rem" }}
         >
-          {item.quantity}
+          {item.amount}
         </span>
         <button
           type="button"
@@ -255,7 +255,9 @@ export function IngredientRow({
                 <span className="text-[#4A7C59]">
                   <CalendarIcon size={14} />
                 </span>
-                {item.dlc ? "Modifier la date d'expiration" : "Ajouter une date d'expiration"}
+                {item.expirationDate
+                  ? "Modifier la date d'expiration"
+                  : "Ajouter une date d'expiration"}
               </button>
 
               <div className="mx-3 my-1 h-px bg-[#F0F4EF]" />

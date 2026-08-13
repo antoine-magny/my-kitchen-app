@@ -13,7 +13,7 @@ export function EditDlcModal({
   onSave: (dlc: string | null) => void;
   onClose: () => void;
 }) {
-  const [dlc, setDlc] = useState(item.dlc ?? "");
+  const [dlc, setDlc] = useState(item.expirationDate ?? "");
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -43,7 +43,9 @@ export function EditDlcModal({
             <span className="text-2xl select-none">{item.emoji}</span>
             <div className="min-w-0">
               <p className="text-xs font-semibold tracking-[0.08em] text-[#7A8F7D] uppercase">Date d&apos;expiration</p>
-              <h2 className="font-lora truncate text-xl font-bold text-[#1C2B1E]">{item.name}</h2>
+              <h2 className="font-lora truncate text-xl font-bold text-[#1C2B1E]">
+                {item.customName}
+              </h2>
             </div>
           </div>
           <button
@@ -71,7 +73,7 @@ export function EditDlcModal({
           </div>
 
           <div className="flex gap-3">
-            {item.dlc && (
+            {item.expirationDate && (
               <button
                 type="button"
                 onClick={() => {

@@ -5,8 +5,6 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { GenerateFromFridgeModal } from "@/components/generate-from-fridge-modal";
 import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
   ClockIcon,
   FlameIcon,
   ProteinIcon,
@@ -17,8 +15,7 @@ import {
   addDays,
   calendarDateFromIso,
   dayKey,
-  formatWeekLabel,
-  mondayBasedIndex,
+  formatDayShortFr,
   parisCalendarDate,
   sameDay,
   startOfWeek,
@@ -27,13 +24,23 @@ import { MEAL_TYPE_LABELS, type MealType } from "@/lib/meal-types";
 import {
   buildInitialPlans,
   collectIngredientsFromDayOnward,
-  DAY_SHORT,
-  MONTHS_FR,
   type DayPlan,
   type MealSlot,
 } from "@/lib/planning";
 import { getRecipeById, type Recipe } from "@/lib/recipes";
 import { replaceShoppingListFromIngredients, setExportBannerCount } from "@/lib/shopping-list";
+
+const HORIZON_DAYS = 14;
+const EMPTY_DAY_PLAN: DayPlan = {
+  breakfast: null,
+  lunchId: null,
+  dinnerId: null,
+};
+
+function dayHasMeals(plan: DayPlan | undefined): boolean {
+  if (!plan) return false;
+  return plan.breakfast != null || plan.lunchId != null || plan.dinnerId != null;
+}
 
 function MacroBar({
   label,
@@ -71,8 +78,7 @@ function MacroBar({
 
 export default function PlanningPage() {
   const router = useRouter();
-  const [weekOffset, setWeekOffset] = useState(0);
-  const [selectedIndex, setSelectedIndex] = useState(() => mondayBasedIndex(parisCalendarDate()));
+  const [selectedDate, setSelectedDate] = useState(() => parisCalendarDate());
   const [plansByWeek, setPlansByWeek] = useState<Record<string, Record<string, DayPlan>>>({});
   const [pickerSlot, setPickerSlot] = useState<MealSlot | null>(null);
   const [exportMessage, setExportMessage] = useState<string | null>(null);
@@ -82,26 +88,33 @@ export default function PlanningPage() {
   const today = parisCalendarDate();
   const todayKey = dayKey(today);
 
-  const weekStart = useMemo(() => {
-    return addDays(startOfWeek(today), weekOffset * 7);
+  const days = useMemo(
+    () => Array.from({ length: HORIZON_DAYS }, (_, i) => addDays(today, i)),
     // todayKey force le recalcul si le jour calendaire Paris change
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [weekOffset, todayKey]);
+    [todayKey],
+  );
 
+  const selectedDay = useMemo(() => {
+    const match = days.find((d) => sameDay(d, selectedDate));
+    return match ?? days[0]!;
+  }, [days, selectedDate]);
+
+  const weekStart = startOfWeek(selectedDay);
   const weekId = dayKey(weekStart);
-  const days = useMemo(() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)), [weekStart]);
-  const selectedDay = days[selectedIndex];
   const selectedKey = dayKey(selectedDay);
 
   const weekPlans = useMemo(() => {
     return plansByWeek[weekId] ?? buildInitialPlans(weekStart);
   }, [plansByWeek, weekId, weekStart]);
 
-  const dayPlan = weekPlans[selectedKey] ?? {
-    breakfast: null,
-    lunchId: null,
-    dinnerId: null,
-  };
+  const dayPlan = weekPlans[selectedKey] ?? EMPTY_DAY_PLAN;
+
+  function planForDay(day: Date): DayPlan {
+    const ws = startOfWeek(day);
+    const plans = plansByWeek[dayKey(ws)] ?? buildInitialPlans(ws);
+    return plans[dayKey(day)] ?? EMPTY_DAY_PLAN;
+  }
 
   const lunch = dayPlan.lunchId != null ? getRecipeById(dayPlan.lunchId) : null;
   const dinner = dayPlan.dinnerId != null ? getRecipeById(dayPlan.dinnerId) : null;
@@ -160,11 +173,7 @@ export default function PlanningPage() {
 
     setPlansByWeek((prev) => {
       const currentWeek = prev[targetWeekId] ?? buildInitialPlans(targetWeekStart);
-      const currentDay = currentWeek[key] ?? {
-        breakfast: null,
-        lunchId: null,
-        dinnerId: null,
-      };
+      const currentDay = currentWeek[key] ?? { ...EMPTY_DAY_PLAN };
       const nextDay: DayPlan = { ...currentDay };
       if (slot === "breakfast") {
         nextDay.breakfast = {
@@ -186,12 +195,7 @@ export default function PlanningPage() {
       };
     });
 
-    const currentWeekStart = startOfWeek(today);
-    const offset = Math.round(
-      (targetWeekStart.getTime() - currentWeekStart.getTime()) / (7 * 24 * 60 * 60 * 1000),
-    );
-    setWeekOffset(offset);
-    setSelectedIndex(mondayBasedIndex(date));
+    setSelectedDate(date);
   }
 
   function selectRecipeForSlot(slot: MealSlot, recipeId: number) {
@@ -207,12 +211,6 @@ export default function PlanningPage() {
       return Number.isFinite(parsed) ? parsed : null;
     }
     return null;
-  }
-
-  function shiftWeek(delta: number) {
-    const nextOffset = weekOffset + delta;
-    setWeekOffset(nextOffset);
-    setSelectedIndex(nextOffset === 0 ? mondayBasedIndex(parisCalendarDate()) : 0);
   }
 
   function exportToShoppingList() {
@@ -285,35 +283,6 @@ export default function PlanningPage() {
           <h1 className="font-lora text-2xl leading-tight font-bold text-[#1C2B1E]">
             Planning de la semaine
           </h1>
-
-          <div
-            className="mt-4 flex items-center justify-between gap-2 rounded-2xl px-2 py-2"
-            style={{
-              background: "#FFFFFF",
-              boxShadow: "0 2px 14px rgba(74,124,89,0.10)",
-              border: "1.5px solid #E2EBE3",
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => shiftWeek(-1)}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[#4A7C59] transition-colors hover:bg-[#EBF2EC] active:scale-95"
-              aria-label="Semaine précédente"
-            >
-              <ChevronLeftIcon size={18} />
-            </button>
-            <p className="min-w-0 flex-1 text-center text-sm font-bold text-[#1C2B1E]">
-              {formatWeekLabel(weekStart, MONTHS_FR)}
-            </p>
-            <button
-              type="button"
-              onClick={() => shiftWeek(1)}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[#4A7C59] transition-colors hover:bg-[#EBF2EC] active:scale-95"
-              aria-label="Semaine suivante"
-            >
-              <ChevronRightIcon size={18} />
-            </button>
-          </div>
         </header>
 
         {/* Objectifs macro */}
@@ -328,7 +297,7 @@ export default function PlanningPage() {
             <div className="mb-3 flex items-center justify-between">
               <h2 className="font-lora text-base font-bold text-[#1C2B1E]">Objectifs du jour</h2>
               <span className="rounded-lg bg-[#EBF2EC] px-2.5 py-1 text-xs font-bold text-[#2E5C3A]">
-                {DAY_SHORT[selectedIndex]} {selectedDay.getUTCDate()}
+                {formatDayShortFr(selectedDay)} {selectedDay.getUTCDate()}
               </span>
             </div>
             <div className="space-y-3.5">
@@ -352,23 +321,24 @@ export default function PlanningPage() {
           </div>
         </section>
 
-        {/* Jours de la semaine */}
+        {/* Sélecteur de jours — 14 jours depuis aujourd'hui */}
         <section className="fade-up mb-6" style={{ animationDelay: "0.1s" }}>
-          <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {days.map((day, index) => {
-              const selected = index === selectedIndex;
+          <div className="-mx-4 flex gap-3 overflow-x-auto snap-x snap-mandatory px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {days.map((day) => {
+              const selected = sameDay(day, selectedDay);
               const isToday = sameDay(day, today);
+              const hasMeals = dayHasMeals(planForDay(day));
               return (
                 <button
                   key={dayKey(day)}
                   type="button"
-                  onClick={() => setSelectedIndex(index)}
-                  className="flex w-[58px] shrink-0 flex-col items-center gap-1 rounded-2xl px-2 py-3 transition-all active:scale-95"
+                  onClick={() => setSelectedDate(day)}
+                  className="flex w-[58px] shrink-0 snap-start flex-col items-center gap-1 rounded-2xl px-2 py-3 transition-all active:scale-95"
                   style={
                     selected
                       ? {
-                          background: "linear-gradient(160deg, #2E5C3A, #4A7C59)",
-                          boxShadow: "0 4px 14px rgba(46,92,58,0.28)",
+                          background: "linear-gradient(160deg, #2E5B3E, #4A7C59)",
+                          boxShadow: "0 4px 14px rgba(46,91,62,0.28)",
                           color: "#fff",
                         }
                       : {
@@ -379,14 +349,27 @@ export default function PlanningPage() {
                         }
                   }
                   aria-pressed={selected}
+                  aria-label={`${formatDayShortFr(day)} ${day.getUTCDate()}${isToday ? " (aujourd'hui)" : ""}`}
                 >
                   <span
                     className={`text-[11px] font-semibold ${selected ? "text-white/80" : "text-[#7A8F7D]"}`}
                   >
-                    {DAY_SHORT[index]}
+                    {isToday ? "Auj." : formatDayShortFr(day)}
                   </span>
                   <span className="text-base font-extrabold leading-none">{day.getUTCDate()}</span>
-                  {isToday && (
+                  {hasMeals && (
+                    <span
+                      className="mt-0.5 h-1.5 w-1.5 rounded-full"
+                      style={{
+                        background: selected ? "#A7F3D0" : "#4A7C59",
+                        boxShadow: selected
+                          ? "0 0 6px rgba(167,243,208,0.85)"
+                          : "0 0 4px rgba(74,124,89,0.45)",
+                      }}
+                      aria-hidden
+                    />
+                  )}
+                  {!hasMeals && isToday && (
                     <span
                       className="mt-0.5 h-1 w-1 rounded-full"
                       style={{ background: selected ? "#fff" : "#4A7C59" }}
@@ -398,7 +381,6 @@ export default function PlanningPage() {
             })}
           </div>
         </section>
-
         {/* Repas du jour */}
         <section className="fade-up mb-6 space-y-5" style={{ animationDelay: "0.14s" }}>
           {/* Petit-déjeuner */}

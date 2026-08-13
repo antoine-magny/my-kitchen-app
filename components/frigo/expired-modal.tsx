@@ -14,11 +14,11 @@ export function ExpiredModal({
   items: Ingredient[];
   tabLabel: string;
   onClose: () => void;
-  onEditDlc: (id: number) => void;
+  onEditDlc: (id: string) => void;
 }) {
   const sorted = [...items].sort((a, b) => {
-    const da = a.dlc ? daysUntilDlc(a.dlc) : 0;
-    const db = b.dlc ? daysUntilDlc(b.dlc) : 0;
+    const da = a.expirationDate ? daysUntilDlc(a.expirationDate) : 0;
+    const db = b.expirationDate ? daysUntilDlc(b.expirationDate) : 0;
     return da - db;
   });
 
@@ -72,14 +72,14 @@ export function ExpiredModal({
                   {item.emoji}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-bold text-[#1C2B1E]">{item.name}</p>
+                  <p className="truncate text-sm font-bold text-[#1C2B1E]">{item.customName}</p>
                   <p className="mt-0.5 text-xs font-semibold text-[#DC2626]">
-                    {item.dlc ? expiredSinceLabel(item.dlc) : "Date inconnue"}
+                    {item.expirationDate ? expiredSinceLabel(item.expirationDate) : "Date inconnue"}
                   </p>
-                  {item.dlc && (
+                  {item.expirationDate && (
                     <p className="mt-0.5 text-xs font-medium text-[#9CA3AF]">
                       DLC&nbsp;:{" "}
-                      {new Date(item.dlc).toLocaleDateString("fr-FR", {
+                      {new Date(item.expirationDate).toLocaleDateString("fr-FR", {
                         day: "numeric",
                         month: "long",
                         year: "numeric",
@@ -88,7 +88,7 @@ export function ExpiredModal({
                   )}
                 </div>
                 <span className="shrink-0 rounded-lg bg-white px-2 py-1 text-xs font-bold text-[#7A8F7D]">
-                  {item.quantity} {unitLabel(item.unit)}
+                  {item.amount} {unitLabel(item.unit)}
                 </span>
               </button>
             </div>

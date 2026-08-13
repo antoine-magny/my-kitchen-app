@@ -1,8 +1,23 @@
+import { describeIngredient } from "@/lib/ingredients";
+import { isUnitCode, parseAmount, type UnitCode } from "@/lib/units";
+import type { RecipeIngredient } from "@/types/inventory";
+
+export type { RecipeIngredient };
+
 export type RecipeFilter = "Tout" | "Express" | "Végétarien" | "Riche en protéines" | "Desserts";
 
-export interface RecipeIngredient {
-  name: string;
-  amount: string;
+/**
+ * Fabrique un ingrédient de recette : l'identité canonique (ingredientId, rayon,
+ * emoji) est dérivée du nom, seules la quantité et l'unité sont explicites.
+ */
+export function ing(name: string, amount: number, unit: UnitCode): RecipeIngredient {
+  return { ...describeIngredient(name), amount, unit };
+}
+
+/** Variante pour les quantités écrites en toutes lettres (« 150 g », « q.s. »). */
+export function ingFromText(name: string, amount: string): RecipeIngredient {
+  const { amount: value, unit } = parseAmount(amount);
+  return ing(name, value, unit);
 }
 
 export interface RecipeStep {
@@ -43,13 +58,13 @@ export const RECIPES: Recipe[] = [
     tagLabel: "Signature",
     featured: true,
     ingredients: [
-      { name: "Filet de bœuf", amount: "400 g" },
-      { name: "Huile de truffe", amount: "1 c.à.s" },
-      { name: "Carottes", amount: "2" },
-      { name: "Panais", amount: "1" },
-      { name: "Beurre", amount: "30 g" },
-      { name: "Bouillon de bœuf", amount: "20 cl" },
-      { name: "Sel & poivre", amount: "q.s." },
+      ing("Filet de bœuf", 400, "g"),
+      ing("Huile de truffe", 1, "cas"),
+      ing("Carottes", 2, "unite"),
+      ing("Panais", 1, "unite"),
+      ing("Beurre", 30, "g"),
+      ing("Bouillon de bœuf", 200, "ml"),
+      ing("Sel & poivre", 0, "qs"),
     ],
     steps: [
       {
@@ -91,12 +106,12 @@ export const RECIPES: Recipe[] = [
     tag: "Riche en protéines",
     tagLabel: "Léger",
     ingredients: [
-      { name: "Dos de cabillaud", amount: "2 pièces" },
-      { name: "Fenouil", amount: "1" },
-      { name: "Tomates cerises", amount: "150 g" },
-      { name: "Huile d'olive", amount: "3 c.à.s" },
-      { name: "Basilic & ciboulette", amount: "1 botte" },
-      { name: "Citron", amount: "1" },
+      ing("Dos de cabillaud", 2, "unite"),
+      ing("Fenouil", 1, "unite"),
+      ing("Tomates cerises", 150, "g"),
+      ing("Huile d'olive", 3, "cas"),
+      ing("Basilic & ciboulette", 1, "botte"),
+      ing("Citron", 1, "unite"),
     ],
     steps: [
       {
@@ -133,12 +148,12 @@ export const RECIPES: Recipe[] = [
     tag: "Végétarien",
     tagLabel: "Express",
     ingredients: [
-      { name: "Burrata", amount: "1" },
-      { name: "Tomates cerises", amount: "250 g" },
-      { name: "Basilic frais", amount: "10 feuilles" },
-      { name: "Huile d'olive", amount: "2 c.à.s" },
-      { name: "Vinaigre balsamique", amount: "1 c.à.c" },
-      { name: "Fleur de sel", amount: "q.s." },
+      ing("Burrata", 1, "unite"),
+      ing("Tomates cerises", 250, "g"),
+      ing("Basilic frais", 10, "feuille"),
+      ing("Huile d'olive", 2, "cas"),
+      ing("Vinaigre balsamique", 1, "cac"),
+      ing("Fleur de sel", 0, "qs"),
     ],
     steps: [
       {
@@ -170,13 +185,13 @@ export const RECIPES: Recipe[] = [
     tag: "Végétarien",
     tagLabel: "Végétarien",
     ingredients: [
-      { name: "Quinoa", amount: "120 g" },
-      { name: "Pois chiches", amount: "200 g" },
-      { name: "Avocat", amount: "1" },
-      { name: "Concombre", amount: "1/2" },
-      { name: "Yaourt grec", amount: "3 c.à.s" },
-      { name: "Citron", amount: "1/2" },
-      { name: "Paprika", amount: "1 c.à.c" },
+      ing("Quinoa", 120, "g"),
+      ing("Pois chiches", 200, "g"),
+      ing("Avocat", 1, "unite"),
+      ing("Concombre", 0.5, "unite"),
+      ing("Yaourt grec", 3, "cas"),
+      ing("Citron", 0.5, "unite"),
+      ing("Paprika", 1, "cac"),
     ],
     steps: [
       {
@@ -213,12 +228,12 @@ export const RECIPES: Recipe[] = [
     tag: "Riche en protéines",
     tagLabel: "Protéines",
     ingredients: [
-      { name: "Pavés de saumon", amount: "2" },
-      { name: "Crème fraîche", amount: "10 cl" },
-      { name: "Citron", amount: "1" },
-      { name: "Câpres", amount: "2 c.à.s" },
-      { name: "Aneth", amount: "quelques brins" },
-      { name: "Beurre", amount: "20 g" },
+      ing("Pavés de saumon", 2, "unite"),
+      ing("Crème fraîche", 100, "ml"),
+      ing("Citron", 1, "unite"),
+      ing("Câpres", 2, "cas"),
+      ing("Aneth", 0, "qs"),
+      ing("Beurre", 20, "g"),
     ],
     steps: [
       {
@@ -255,12 +270,12 @@ export const RECIPES: Recipe[] = [
     tag: "Express",
     tagLabel: "Express",
     ingredients: [
-      { name: "Hauts de cuisse de poulet", amount: "4" },
-      { name: "Pommes de terre grenaille", amount: "400 g" },
-      { name: "Thym & romarin", amount: "quelques brins" },
-      { name: "Ail", amount: "3 gousses" },
-      { name: "Huile d'olive", amount: "2 c.à.s" },
-      { name: "Bouillon de volaille", amount: "10 cl" },
+      ing("Hauts de cuisse de poulet", 4, "unite"),
+      ing("Pommes de terre grenaille", 400, "g"),
+      ing("Thym & romarin", 0, "qs"),
+      ing("Ail", 3, "gousse"),
+      ing("Huile d'olive", 2, "cas"),
+      ing("Bouillon de volaille", 100, "ml"),
     ],
     steps: [
       {
@@ -297,12 +312,12 @@ export const RECIPES: Recipe[] = [
     tag: "Desserts",
     tagLabel: "Dessert",
     ingredients: [
-      { name: "Chocolat noir 70 %", amount: "150 g" },
-      { name: "Beurre", amount: "100 g" },
-      { name: "Œufs", amount: "3" },
-      { name: "Sucre", amount: "80 g" },
-      { name: "Farine", amount: "40 g" },
-      { name: "Praliné", amount: "60 g" },
+      ing("Chocolat noir 70 %", 150, "g"),
+      ing("Beurre", 100, "g"),
+      ing("Œufs", 3, "unite"),
+      ing("Sucre", 80, "g"),
+      ing("Farine", 40, "g"),
+      ing("Praliné", 60, "g"),
     ],
     steps: [
       {
@@ -339,13 +354,13 @@ export const RECIPES: Recipe[] = [
     tag: "Express",
     tagLabel: "Express",
     ingredients: [
-      { name: "Mesclun", amount: "120 g" },
-      { name: "Concombre", amount: "1/2" },
-      { name: "Radis", amount: "6" },
-      { name: "Feta", amount: "80 g" },
-      { name: "Miel", amount: "1 c.à.c" },
-      { name: "Moutarde", amount: "1 c.à.c" },
-      { name: "Huile d'olive", amount: "3 c.à.s" },
+      ing("Mesclun", 120, "g"),
+      ing("Concombre", 0.5, "unite"),
+      ing("Radis", 6, "unite"),
+      ing("Feta", 80, "g"),
+      ing("Miel", 1, "cac"),
+      ing("Moutarde", 1, "cac"),
+      ing("Huile d'olive", 3, "cas"),
     ],
     steps: [
       {
@@ -377,13 +392,13 @@ export const RECIPES: Recipe[] = [
     tag: "Végétarien",
     tagLabel: "Gastronomique",
     ingredients: [
-      { name: "Filets de poisson blanc", amount: "300 g" },
-      { name: "Courgette", amount: "1" },
-      { name: "Poivron rouge", amount: "1" },
-      { name: "Oignon", amount: "1" },
-      { name: "Crème liquide", amount: "15 cl" },
-      { name: "Vin blanc", amount: "8 cl" },
-      { name: "Persil", amount: "1 c.à.s" },
+      ing("Filets de poisson blanc", 300, "g"),
+      ing("Courgette", 1, "unite"),
+      ing("Poivron rouge", 1, "unite"),
+      ing("Oignon", 1, "unite"),
+      ing("Crème liquide", 150, "ml"),
+      ing("Vin blanc", 80, "ml"),
+      ing("Persil", 1, "cas"),
     ],
     steps: [
       {
@@ -414,13 +429,48 @@ const CUSTOM_RECIPES_KEY = "my-kitchen-custom-recipes";
 const RECIPE_OVERRIDES_KEY = "my-kitchen-recipe-overrides";
 const DELETED_RECIPES_KEY = "my-kitchen-deleted-recipes";
 
+/**
+ * Remet un ingrédient au format structuré.
+ * Les recettes enregistrées avant la refonte stockaient `amount` en toutes
+ * lettres (« 150 g ») et n'avaient ni `ingredientId` ni rayon.
+ */
+function sanitizeIngredient(raw: unknown): RecipeIngredient | null {
+  if (!raw || typeof raw !== "object") return null;
+  const entry = raw as Partial<RecipeIngredient> & { amount?: unknown };
+  const name = typeof entry.name === "string" ? entry.name.trim() : "";
+  if (!name) return null;
+
+  if (typeof entry.amount === "number" && entry.unit && isUnitCode(entry.unit)) {
+    return {
+      ...describeIngredient(name, entry.category),
+      amount: entry.amount,
+      unit: entry.unit,
+    };
+  }
+
+  return ingFromText(name, typeof entry.amount === "string" ? entry.amount : "");
+}
+
+function sanitizeRecipe(raw: unknown): Recipe | null {
+  if (!raw || typeof raw !== "object") return null;
+  const recipe = raw as Recipe;
+  if (typeof recipe.id !== "number" || typeof recipe.title !== "string") return null;
+  const ingredients = Array.isArray(recipe.ingredients)
+    ? recipe.ingredients
+        .map(sanitizeIngredient)
+        .filter((ing): ing is RecipeIngredient => ing != null)
+    : [];
+  return { ...recipe, ingredients };
+}
+
 function readCustomRecipes(): Recipe[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = window.localStorage.getItem(CUSTOM_RECIPES_KEY);
     if (!raw) return [];
-    const parsed = JSON.parse(raw) as Recipe[];
-    return Array.isArray(parsed) ? parsed : [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map(sanitizeRecipe).filter((r): r is Recipe => r != null);
   } catch {
     return [];
   }
@@ -436,8 +486,14 @@ function readOverrides(): Record<string, Recipe> {
   try {
     const raw = window.localStorage.getItem(RECIPE_OVERRIDES_KEY);
     if (!raw) return {};
-    const parsed = JSON.parse(raw) as Record<string, Recipe>;
-    return parsed && typeof parsed === "object" ? parsed : {};
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    if (!parsed || typeof parsed !== "object") return {};
+    const overrides: Record<string, Recipe> = {};
+    for (const [key, value] of Object.entries(parsed)) {
+      const recipe = sanitizeRecipe(value);
+      if (recipe) overrides[key] = recipe;
+    }
+    return overrides;
   } catch {
     return {};
   }

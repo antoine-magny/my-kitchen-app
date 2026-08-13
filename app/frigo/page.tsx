@@ -5,14 +5,9 @@ import { AddModal } from "@/components/frigo/add-modal";
 import { EditDlcModal } from "@/components/frigo/edit-dlc-modal";
 import { ExpiredModal } from "@/components/frigo/expired-modal";
 import { IngredientRow } from "@/components/frigo/ingredient-row";
-import { TABS, type Ingredient, type TabId } from "@/components/frigo/shared";
+import { TABS, type Ingredient, type NewFridgeItem, type TabId } from "@/components/frigo/shared";
 import { CalendarIcon, PlusIcon, SearchIcon } from "@/components/icons";
-import {
-  dlcStatus,
-  getFridgeItems,
-  nextFridgeItemId,
-  setFridgeItems,
-} from "@/lib/fridge";
+import { createFridgeItem, dlcStatus, getFridgeItems, setFridgeItems } from "@/lib/fridge";
 
 export default function FrigoPage() {
   const [activeTab, setActiveTab] = useState<TabId>("fridge");
@@ -20,9 +15,9 @@ export default function FrigoPage() {
   const [ready, setReady] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showExpired, setShowExpired] = useState(false);
-  const [editingDlcId, setEditingDlcId] = useState<number | null>(null);
+  const [editingDlcId, setEditingDlcId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [newIds, setNewIds] = useState<Set<number>>(new Set());
+  const [newIds, setNewIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setItems(getFridgeItems());
@@ -35,32 +30,39 @@ export default function FrigoPage() {
   }, [items, ready]);
 
   const tabItems = items.filter((i) => i.category === activeTab);
-  const filtered = tabItems.filter((i) => i.name.toLowerCase().includes(query.toLowerCase()));
+  const filtered = tabItems.filter((i) =>
+    i.customName.toLowerCase().includes(query.toLowerCase()),
+  );
   const editingItem = editingDlcId != null ? items.find((i) => i.id === editingDlcId) ?? null : null;
-  const expiredItems = tabItems.filter((i) => dlcStatus(i.dlc) === "urgent");
+  const expiredItems = tabItems.filter((i) => dlcStatus(i.expirationDate) === "urgent");
   const activeTabLabel = TABS.find((t) => t.id === activeTab)?.label ?? "";
 
   const priorityOrder = { urgent: 0, soon: 1, ok: 2, none: 3 };
   const sorted = [...filtered].sort(
-    (a, b) => priorityOrder[dlcStatus(a.dlc)] - priorityOrder[dlcStatus(b.dlc)],
+    (a, b) =>
+      priorityOrder[dlcStatus(a.expirationDate)] - priorityOrder[dlcStatus(b.expirationDate)],
   );
 
   const urgentCount = (tab: TabId) =>
-    items.filter((i) => i.category === tab && dlcStatus(i.dlc) === "urgent").length;
+    items.filter((i) => i.category === tab && dlcStatus(i.expirationDate) === "urgent").length;
   const soonCount = (tab: TabId) =>
-    items.filter((i) => i.category === tab && (dlcStatus(i.dlc) === "urgent" || dlcStatus(i.dlc) === "soon")).length;
+    items.filter((i) => {
+      if (i.category !== tab) return false;
+      const status = dlcStatus(i.expirationDate);
+      return status === "urgent" || status === "soon";
+    }).length;
 
-  const handleAdjust = (id: number, delta: number) => {
+  const handleAdjust = (id: string, delta: number) => {
     setItems((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, quantity: Math.max(0, i.quantity + delta) } : i)),
+      prev.map((i) => (i.id === id ? { ...i, amount: Math.max(0, i.amount + delta) } : i)),
     );
   };
 
-  const handleDelete = (id: number) => {
+  const handleDelete = (id: string) => {
     setItems((prev) => prev.filter((i) => i.id !== id));
   };
 
-  const handleMove = (id: number, category: TabId) => {
+  const handleMove = (id: string, category: TabId) => {
     setItems((prev) => prev.map((i) => (i.id === id ? { ...i, category } : i)));
     setActiveTab(category);
     setNewIds((prev) => {
@@ -77,17 +79,26 @@ export default function FrigoPage() {
     });
   };
 
-  const handleRename = (id: number, name: string) => {
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, name } : i)));
+  const handleRename = (id: string, customName: string) => {
+    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, customName } : i)));
   };
 
-  const handleUpdateDlc = (id: number, dlc: string | null) => {
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, dlc } : i)));
+  const handleUpdateDlc = (id: string, expirationDate: string | null) => {
+    setItems((prev) =>
+      prev.map((i) => {
+        if (i.id !== id) return i;
+        const next = { ...i };
+        if (expirationDate) next.expirationDate = expirationDate;
+        else delete next.expirationDate;
+        return next;
+      }),
+    );
   };
 
-  const handleAdd = (item: Omit<Ingredient, "id">) => {
-    const id = nextFridgeItemId(items);
-    setItems((prev) => [...prev, { ...item, id }]);
+  const handleAdd = (draft: NewFridgeItem) => {
+    const item = createFridgeItem(draft);
+    setItems((prev) => [...prev, item]);
+    const id = item.id;
     setNewIds((prev) => {
       const s = new Set(prev);
       s.add(id);
@@ -100,7 +111,7 @@ export default function FrigoPage() {
       }, 600);
       return s;
     });
-    setActiveTab(item.category);
+    setActiveTab(draft.category);
   };
 
   return (
