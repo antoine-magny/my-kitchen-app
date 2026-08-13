@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  quality:
+    name: Lint et build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Installation de Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Installation des dépendances
+        run: npm install
+
+      - name: Vérification du lint
+        run: npm run lint
+
+      - name: Compilation de l'application
+        run: npm run build
