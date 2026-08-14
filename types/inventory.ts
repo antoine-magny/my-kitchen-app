@@ -1,14 +1,15 @@
 /**
- * Modèle de snapshot du cycle de vie d'un aliment.
+ * Modèle Snapshot à référence optionnelle — trialité des aliments.
  *
  * Un aliment traverse trois états successifs, volontairement séparés :
  *   Recette (immuable) ➔ Liste de courses (éphémère) ➔ Frigo (inventaire réel).
  *
- * Le lien entre ces états est `ingredientId`, un identifiant canonique dérivé du
- * référentiel (`lib/ingredients.ts`). Il autorise le matching, la fusion et la
- * déduplication même lorsque l'utilisateur renomme un article : renommer
- * « Tomate » en « Tomates cerises bio » dans les courses ne touche jamais la
- * recette d'origine, seule la copie éphémère est modifiée.
+ * Chaque état possède sa propre identité d'entrée (`id` UUID pour courses/frigo)
+ * et une copie éditable des champs métier (`customName`, `amount`, `unit`).
+ * Le lien optionnel `ingredientId` (référentiel `lib/ingredients.ts`) autorise
+ * matching, fusion via `combineQuantities` et déduplication même après
+ * renommage : éditer « Tomate » → « Tomates cerises bio » dans les courses ne
+ * touche jamais la recette d'origine.
  */
 
 import type { ShoppingCategoryId } from "@/lib/shopping-categories";

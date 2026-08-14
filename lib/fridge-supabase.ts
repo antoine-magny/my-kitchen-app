@@ -8,7 +8,7 @@ import {
 } from "@/lib/fridge";
 import { resolveIngredientId } from "@/lib/ingredients";
 import { createAdminClient, getOwnerId } from "@/lib/supabase/admin";
-import { DEFAULT_UNIT, isUnitCode } from "@/lib/units";
+import { coerceUnitCode, DEFAULT_UNIT } from "@/lib/units";
 
 function ingredientNameFromJoin(value: unknown): string | undefined {
   if (!value) return undefined;
@@ -47,7 +47,7 @@ export async function getSupabaseFridgeSnapshot(): Promise<FridgeSnapshotItem[]>
     const location = isFridgeStorageLocation(row.storage_location)
       ? row.storage_location
       : "fridge";
-    const unit = isUnitCode(row.unit) ? row.unit : DEFAULT_UNIT;
+    const unit = coerceUnitCode(row.unit) ?? DEFAULT_UNIT;
     const expiresOn = row.expiration_date;
     const urgency = dlcStatus(expiresOn, now);
 

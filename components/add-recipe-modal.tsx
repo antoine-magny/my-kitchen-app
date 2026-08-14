@@ -18,7 +18,8 @@ import {
   type RecipeFormIngredientRow,
 } from "@/lib/recipe-import";
 import type { NewRecipeInput } from "@/lib/recipes";
-import { UNITS, type UnitCode } from "@/lib/units";
+import { coerceUnitCode, type UnitCode } from "@/lib/units";
+import { UnitSelect } from "@/components/ui/unit-select";
 
 type AddStep = "menu" | "photo" | "url" | "form";
 
@@ -34,7 +35,7 @@ function parsedToFormState(recipe: ParsedRecipe) {
       ? recipe.ingredients.map((ing) => ({
           name: ing.name,
           amount: String(ing.amount ?? ""),
-          unit: (UNITS.some((u) => u.code === ing.unit) ? ing.unit : "g") as UnitCode,
+          unit: (coerceUnitCode(ing.unit) ?? "g") as UnitCode,
         }))
       : [emptyIngredientRow()],
     instructions: recipe.instructions.length ? recipe.instructions : [""],
@@ -556,18 +557,11 @@ export function AddRecipeModal({
                   style={inputStyle}
                 />
                 <div className="relative">
-                  <select
+                  <UnitSelect
                     value={ing.unit}
-                    onChange={(e) => updateIngredient(idx, "unit", e.target.value)}
+                    onChange={(unit) => updateIngredient(idx, "unit", unit)}
                     className={`${inputClass} appearance-none pr-7`}
-                    style={inputStyle}
-                  >
-                    {UNITS.map((u) => (
-                      <option key={u.code} value={u.code}>
-                        {u.label}
-                      </option>
-                    ))}
-                  </select>
+                  />
                   <span className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-[#7A8F7D]">
                     <ChevronDownIcon size={14} />
                   </span>

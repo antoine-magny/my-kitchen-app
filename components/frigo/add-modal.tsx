@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import type { NewFridgeItem, TabId } from "@/components/frigo/shared";
 import { ChevronDownIcon, XIcon } from "@/components/icons";
 import { INGREDIENTS } from "@/lib/ingredients";
-import { DEFAULT_UNIT, UNITS, type UnitCode } from "@/lib/units";
+import { UnitSelect } from "@/components/ui/unit-select";
+import { DEFAULT_UNIT, type UnitCode } from "@/lib/units";
 
 export function AddModal({
   activeTab,
@@ -141,18 +142,11 @@ export function AddModal({
                 UNITÉ
               </label>
               <div className="relative">
-                <select
+                <UnitSelect
                   value={unit}
-                  onChange={(e) => setUnit(e.target.value as UnitCode)}
-                  className="w-full appearance-none rounded-xl bg-[#FAFBF9] py-3 pr-10 pl-4 text-sm font-semibold text-[#1C2B1E] outline-none transition-all focus:border-[#4A7C59]"
-                  style={{ border: "1.5px solid #E2EBE3" }}
-                >
-                  {UNITS.map((u) => (
-                    <option key={u.code} value={u.code}>
-                      {u.label}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(next) => setUnit(next as UnitCode)}
+                  className="w-full appearance-none rounded-xl border-[1.5px] border-[#E2EBE3] bg-[#FAFBF9] py-3 pr-10 pl-4 text-sm font-semibold text-[#1C2B1E] outline-none transition-all focus:border-[#4A7C59]"
+                />
                 <span className="pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 text-[#7A8F7D]">
                   <ChevronDownIcon size={14} />
                 </span>

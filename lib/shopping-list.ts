@@ -10,15 +10,15 @@ import { describeIngredient } from "@/lib/ingredients";
 import {
   classifyProduct,
   isShoppingCategoryId,
+  normalizeProductName,
   type ShoppingCategoryId,
 } from "@/lib/shopping-categories";
 import {
+  coerceUnitCode,
+  combineQuantities,
   DEFAULT_UNIT,
   formatAmount,
-  isUnitCode,
   parseAmount,
-  toBaseQuantity,
-  UNQUANTIFIED_UNIT,
   type UnitCode,
 } from "@/lib/units";
 import type { RecipeIngredient, ShoppingItem } from "@/types/inventory";
@@ -76,12 +76,14 @@ function sanitizeItem(raw: unknown): ShoppingItem | null {
   if (typeof entry.customName === "string" && typeof entry.amount === "number") {
     const name = entry.customName.trim();
     if (!name) return null;
+    const unit =
+      typeof entry.unit === "string" ? coerceUnitCode(entry.unit) ?? DEFAULT_UNIT : DEFAULT_UNIT;
     return toShoppingItem({
       id: typeof entry.id === "string" ? entry.id : undefined,
       ingredientId: typeof entry.ingredientId === "string" ? entry.ingredientId : undefined,
       customName: name,
       amount: entry.amount,
-      unit: typeof entry.unit === "string" && isUnitCode(entry.unit) ? entry.unit : DEFAULT_UNIT,
+      unit,
       category: typeof entry.category === "string" ? entry.category : undefined,
       emoji: typeof entry.emoji === "string" ? entry.emoji : undefined,
       isChecked: Boolean(entry.isChecked),
@@ -136,6 +138,11 @@ function writeList(items: ShoppingItem[]) {
 
 export function getShoppingList(): ShoppingItem[] {
   return readList();
+}
+
+export function setShoppingList(items: ShoppingItem[]): ShoppingItem[] {
+  writeList(items);
+  return items;
 }
 
 export function toggleShoppingItem(id: string): ShoppingItem[] {
@@ -197,57 +204,103 @@ export function formatShoppingAmount(item: Pick<ShoppingItem, "amount" | "unit">
   return formatAmount(item.amount, item.unit);
 }
 
+function matchesShoppingItem(
+  item: ShoppingItem,
+  ingredientId: string | undefined,
+  cleanName: string,
+): boolean {
+  if (ingredientId && item.ingredientId && item.ingredientId === ingredientId) return true;
+  return normalizeProductName(item.customName) === cleanName;
+}
+
 /**
  * Fusionne les ingrédients d'un même aliment en additionnant les quantités
  * compatibles. Le regroupement se fait sur `ingredientId`, jamais sur le nom :
  * « Tomate » et « tomates » deviennent une seule ligne.
  *
- * Deux unités incompatibles (3 c.à.s d'huile et 20 mL d'huile) produisent deux
- * lignes distinctes plutôt qu'une addition fausse. Les quantités « q.s. » sont
- * absorbées dès qu'une quantité chiffrée existe pour le même aliment.
+ * Deux unités incompatibles produisent deux lignes distinctes. Les quantités
+ * « q.s. » sont absorbées dès qu'une quantité chiffrée existe.
  */
 export function mergeIngredients(ingredients: RecipeIngredient[]): ShoppingItem[] {
-  const groups = new Map<
-    string,
-    { name: string; category: ShoppingCategoryId; emoji?: string; byUnit: Map<UnitCode, number> }
-  >();
+  const items: ShoppingItem[] = [];
 
   for (const ing of ingredients) {
     const name = ing.name.trim();
     if (!name) continue;
 
-    const group = groups.get(ing.ingredientId) ?? {
-      name,
-      category: ing.category,
-      emoji: ing.emoji,
-      byUnit: new Map<UnitCode, number>(),
-    };
+    const cleanName = normalizeProductName(name);
+    const existing = items.find(
+      (item) =>
+        !item.isChecked && matchesShoppingItem(item, ing.ingredientId, cleanName),
+    );
 
-    const base = toBaseQuantity(ing.amount, ing.unit);
-    group.byUnit.set(base.unit, (group.byUnit.get(base.unit) ?? 0) + base.amount);
-    groups.set(ing.ingredientId, group);
-  }
-
-  const items: ShoppingItem[] = [];
-  for (const [ingredientId, group] of groups) {
-    const quantified = [...group.byUnit.entries()].filter(([unit]) => unit !== UNQUANTIFIED_UNIT);
-    const units = quantified.length > 0 ? quantified : [...group.byUnit.entries()];
-
-    for (const [unit, amount] of units) {
-      items.push(
-        toShoppingItem({
-          ingredientId,
-          customName: group.name,
-          amount,
-          unit,
-          category: group.category,
-          emoji: group.emoji,
-        }),
-      );
+    if (existing) {
+      const combined = combineQuantities(existing.amount, existing.unit, ing.amount, ing.unit);
+      if (combined) {
+        existing.amount = combined.amount;
+        existing.unit = combined.unit;
+        continue;
+      }
     }
+
+    items.push(
+      toShoppingItem({
+        ingredientId: ing.ingredientId,
+        customName: name,
+        amount: ing.amount,
+        unit: ing.unit,
+        category: ing.category,
+        emoji: ing.emoji,
+      }),
+    );
   }
 
   return items;
+}
+
+/**
+ * Ajoute (ou fusionne) des ingrédients dans la liste existante.
+ * Ne touche jamais aux articles déjà cochés.
+ */
+export function appendIngredientsToShoppingList(
+  ingredients: RecipeIngredient[],
+): ShoppingItem[] {
+  const list = readList();
+
+  for (const ing of ingredients) {
+    const name = ing.name.trim();
+    if (!name) continue;
+
+    const cleanName = normalizeProductName(name);
+    const existing = list.find(
+      (item) =>
+        !item.isChecked && matchesShoppingItem(item, ing.ingredientId, cleanName),
+    );
+
+    if (existing) {
+      const combined = combineQuantities(existing.amount, existing.unit, ing.amount, ing.unit);
+      if (combined) {
+        existing.amount = combined.amount;
+        existing.unit = combined.unit;
+        continue;
+      }
+      // Unités incompatibles → nouvelle ligne sans écraser l'existant.
+    }
+
+    list.push(
+      toShoppingItem({
+        ingredientId: ing.ingredientId,
+        customName: name,
+        amount: ing.amount,
+        unit: ing.unit,
+        category: ing.category,
+        emoji: ing.emoji,
+      }),
+    );
+  }
+
+  writeList(list);
+  return list;
 }
 
 const EXPORT_BANNER_KEY = "my-kitchen-shopping-export-banner";
@@ -269,11 +322,54 @@ export function peekExportBanner(): string | null {
     : `${count} articles exportés depuis le planning.`;
 }
 
-/** Remplace la liste par un nouvel export planning. */
+/**
+ * Export Planning → Courses : fusionne dans la liste existante
+ * (déduplication + conversion d'unités compatibles).
+ * Conservé pour compatibilité d'appel ; préférer `appendIngredientsToShoppingList`.
+ */
 export function replaceShoppingListFromIngredients(
   ingredients: RecipeIngredient[],
 ): ShoppingItem[] {
-  const items = mergeIngredients(ingredients);
-  writeList(items);
-  return items;
+  return appendIngredientsToShoppingList(ingredients);
+}
+
+/** Nombre d'articles réellement ajoutés ou fusionnés lors d'un export. */
+export function countExportImpact(
+  ingredients: RecipeIngredient[],
+  existing: ShoppingItem[] = readList(),
+): number {
+  let count = 0;
+  const working = existing.map((item) => ({ ...item }));
+
+  for (const ing of ingredients) {
+    const name = ing.name.trim();
+    if (!name) continue;
+    const cleanName = normalizeProductName(name);
+    const match = working.find(
+      (item) =>
+        !item.isChecked && matchesShoppingItem(item, ing.ingredientId, cleanName),
+    );
+    if (match) {
+      const combined = combineQuantities(match.amount, match.unit, ing.amount, ing.unit);
+      if (combined) {
+        match.amount = combined.amount;
+        match.unit = combined.unit;
+        count += 1;
+        continue;
+      }
+    }
+    working.push(
+      toShoppingItem({
+        ingredientId: ing.ingredientId,
+        customName: name,
+        amount: ing.amount,
+        unit: ing.unit,
+        category: ing.category,
+        emoji: ing.emoji,
+      }),
+    );
+    count += 1;
+  }
+
+  return count;
 }

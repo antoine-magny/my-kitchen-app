@@ -1,5 +1,5 @@
 import { describeIngredient } from "@/lib/ingredients";
-import { isUnitCode, parseAmount, type UnitCode } from "@/lib/units";
+import { coerceUnitCode, parseAmount, type UnitCode } from "@/lib/units";
 import type { RecipeIngredient } from "@/types/inventory";
 
 export type { RecipeIngredient };
@@ -59,9 +59,9 @@ export const RECIPES: Recipe[] = [
     featured: true,
     ingredients: [
       ing("Filet de bœuf", 400, "g"),
-      ing("Huile de truffe", 1, "cas"),
-      ing("Carottes", 2, "unite"),
-      ing("Panais", 1, "unite"),
+      ing("Huile de truffe", 1, "c_soupe"),
+      ing("Carottes", 2, "piece"),
+      ing("Panais", 1, "piece"),
       ing("Beurre", 30, "g"),
       ing("Bouillon de bœuf", 200, "ml"),
       ing("Sel & poivre", 0, "qs"),
@@ -106,12 +106,12 @@ export const RECIPES: Recipe[] = [
     tag: "Riche en protéines",
     tagLabel: "Léger",
     ingredients: [
-      ing("Dos de cabillaud", 2, "unite"),
-      ing("Fenouil", 1, "unite"),
+      ing("Dos de cabillaud", 2, "piece"),
+      ing("Fenouil", 1, "piece"),
       ing("Tomates cerises", 150, "g"),
-      ing("Huile d'olive", 3, "cas"),
+      ing("Huile d'olive", 3, "c_soupe"),
       ing("Basilic & ciboulette", 1, "botte"),
-      ing("Citron", 1, "unite"),
+      ing("Citron", 1, "piece"),
     ],
     steps: [
       {
@@ -148,11 +148,11 @@ export const RECIPES: Recipe[] = [
     tag: "Végétarien",
     tagLabel: "Express",
     ingredients: [
-      ing("Burrata", 1, "unite"),
+      ing("Burrata", 1, "piece"),
       ing("Tomates cerises", 250, "g"),
       ing("Basilic frais", 10, "feuille"),
-      ing("Huile d'olive", 2, "cas"),
-      ing("Vinaigre balsamique", 1, "cac"),
+      ing("Huile d'olive", 2, "c_soupe"),
+      ing("Vinaigre balsamique", 1, "c_cafe"),
       ing("Fleur de sel", 0, "qs"),
     ],
     steps: [
@@ -187,11 +187,11 @@ export const RECIPES: Recipe[] = [
     ingredients: [
       ing("Quinoa", 120, "g"),
       ing("Pois chiches", 200, "g"),
-      ing("Avocat", 1, "unite"),
-      ing("Concombre", 0.5, "unite"),
-      ing("Yaourt grec", 3, "cas"),
-      ing("Citron", 0.5, "unite"),
-      ing("Paprika", 1, "cac"),
+      ing("Avocat", 1, "piece"),
+      ing("Concombre", 0.5, "piece"),
+      ing("Yaourt grec", 3, "c_soupe"),
+      ing("Citron", 0.5, "piece"),
+      ing("Paprika", 1, "c_cafe"),
     ],
     steps: [
       {
@@ -228,10 +228,10 @@ export const RECIPES: Recipe[] = [
     tag: "Riche en protéines",
     tagLabel: "Protéines",
     ingredients: [
-      ing("Pavés de saumon", 2, "unite"),
+      ing("Pavés de saumon", 2, "piece"),
       ing("Crème fraîche", 100, "ml"),
-      ing("Citron", 1, "unite"),
-      ing("Câpres", 2, "cas"),
+      ing("Citron", 1, "piece"),
+      ing("Câpres", 2, "c_soupe"),
       ing("Aneth", 0, "qs"),
       ing("Beurre", 20, "g"),
     ],
@@ -270,11 +270,11 @@ export const RECIPES: Recipe[] = [
     tag: "Express",
     tagLabel: "Express",
     ingredients: [
-      ing("Hauts de cuisse de poulet", 4, "unite"),
+      ing("Hauts de cuisse de poulet", 4, "piece"),
       ing("Pommes de terre grenaille", 400, "g"),
       ing("Thym & romarin", 0, "qs"),
       ing("Ail", 3, "gousse"),
-      ing("Huile d'olive", 2, "cas"),
+      ing("Huile d'olive", 2, "c_soupe"),
       ing("Bouillon de volaille", 100, "ml"),
     ],
     steps: [
@@ -314,7 +314,7 @@ export const RECIPES: Recipe[] = [
     ingredients: [
       ing("Chocolat noir 70 %", 150, "g"),
       ing("Beurre", 100, "g"),
-      ing("Œufs", 3, "unite"),
+      ing("Œufs", 3, "piece"),
       ing("Sucre", 80, "g"),
       ing("Farine", 40, "g"),
       ing("Praliné", 60, "g"),
@@ -355,12 +355,12 @@ export const RECIPES: Recipe[] = [
     tagLabel: "Express",
     ingredients: [
       ing("Mesclun", 120, "g"),
-      ing("Concombre", 0.5, "unite"),
-      ing("Radis", 6, "unite"),
+      ing("Concombre", 0.5, "piece"),
+      ing("Radis", 6, "piece"),
       ing("Feta", 80, "g"),
-      ing("Miel", 1, "cac"),
-      ing("Moutarde", 1, "cac"),
-      ing("Huile d'olive", 3, "cas"),
+      ing("Miel", 1, "c_cafe"),
+      ing("Moutarde", 1, "c_cafe"),
+      ing("Huile d'olive", 3, "c_soupe"),
     ],
     steps: [
       {
@@ -393,12 +393,12 @@ export const RECIPES: Recipe[] = [
     tagLabel: "Gastronomique",
     ingredients: [
       ing("Filets de poisson blanc", 300, "g"),
-      ing("Courgette", 1, "unite"),
-      ing("Poivron rouge", 1, "unite"),
-      ing("Oignon", 1, "unite"),
+      ing("Courgette", 1, "piece"),
+      ing("Poivron rouge", 1, "piece"),
+      ing("Oignon", 1, "piece"),
       ing("Crème liquide", 150, "ml"),
       ing("Vin blanc", 80, "ml"),
-      ing("Persil", 1, "cas"),
+      ing("Persil", 1, "c_soupe"),
     ],
     steps: [
       {
@@ -440,11 +440,11 @@ function sanitizeIngredient(raw: unknown): RecipeIngredient | null {
   const name = typeof entry.name === "string" ? entry.name.trim() : "";
   if (!name) return null;
 
-  if (typeof entry.amount === "number" && entry.unit && isUnitCode(entry.unit)) {
+  if (typeof entry.amount === "number" && entry.unit && coerceUnitCode(String(entry.unit))) {
     return {
       ...describeIngredient(name, entry.category),
       amount: entry.amount,
-      unit: entry.unit,
+      unit: coerceUnitCode(String(entry.unit))!,
     };
   }
 

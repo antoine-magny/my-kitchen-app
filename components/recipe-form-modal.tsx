@@ -9,9 +9,11 @@ import {
   XIcon,
 } from "@/components/icons";
 import { inputClass, inputStyle, labelClass } from "@/components/recipe-form-styles";
+import { UnitSelect } from "@/components/ui/unit-select";
+import { emptyIngredientRow, type RecipeFormIngredientRow } from "@/lib/recipe-import";
 import {
   DIFFICULTIES,
-  ingFromText,
+  ing,
   RECIPE_TAGS,
   tagToLabel,
   type NewRecipeInput,
@@ -19,13 +21,9 @@ import {
   type RecipeFilter,
   type RecipeStep,
 } from "@/lib/recipes";
-import { formatAmount } from "@/lib/units";
+import { coerceUnitCode, DEFAULT_UNIT } from "@/lib/units";
 
-/**
- * Ligne d'édition : la quantité reste une saisie libre (« 200 g », « q.s. »),
- * convertie vers { amount, unit } à l'enregistrement.
- */
-type IngredientRow = { name: string; amount: string };
+type IngredientRow = RecipeFormIngredientRow;
 
 type Difficulty = (typeof DIFFICULTIES)[number];
 
@@ -62,11 +60,12 @@ export function RecipeFormModal({
   const [tag, setTag] = useState<Exclude<RecipeFilter, "Tout"> | "">(toTag(recipe?.tag));
   const [ingredients, setIngredients] = useState<IngredientRow[]>(
     recipe?.ingredients.length
-      ? recipe.ingredients.map((ing) => ({
-          name: ing.name,
-          amount: formatAmount(ing.amount, ing.unit),
+      ? recipe.ingredients.map((row) => ({
+          name: row.name,
+          amount: String(row.amount),
+          unit: row.unit,
         }))
-      : [{ name: "", amount: "" }],
+      : [emptyIngredientRow()],
   );
   const [steps, setSteps] = useState<RecipeStep[]>(
     recipe?.steps.length
@@ -82,7 +81,15 @@ export function RecipeFormModal({
   }, []);
 
   const updateIngredient = (index: number, field: keyof IngredientRow, value: string) => {
-    setIngredients((prev) => prev.map((ing, i) => (i === index ? { ...ing, [field]: value } : ing)));
+    setIngredients((prev) =>
+      prev.map((row, i) => {
+        if (i !== index) return row;
+        if (field === "unit") {
+          return { ...row, unit: coerceUnitCode(value) ?? DEFAULT_UNIT };
+        }
+        return { ...row, [field]: value };
+      }),
+    );
   };
 
   const updateStep = (index: number, field: keyof RecipeStep, value: string) => {
@@ -138,7 +145,12 @@ export function RecipeFormModal({
 
     const cleanedIngredients = ingredients
       .filter((row) => row.name.trim().length > 0)
-      .map((row) => ingFromText(row.name.trim(), row.amount.trim()));
+      .map((row) => {
+        const unit = coerceUnitCode(row.unit) ?? DEFAULT_UNIT;
+        const amount =
+          unit === "qs" ? 0 : Number(String(row.amount).trim().replace(",", ".")) || 0;
+        return ing(row.name.trim(), amount, unit);
+      });
 
     const cleanedSteps = steps
       .map((step) => ({
@@ -431,34 +443,46 @@ export function RecipeFormModal({
                 </label>
                 <button
                   type="button"
-                  onClick={() => setIngredients((prev) => [...prev, { name: "", amount: "" }])}
+                  onClick={() => setIngredients((prev) => [...prev, emptyIngredientRow()])}
                   className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold text-[#4A7C59] transition-colors hover:bg-[#EBF2EC]"
                 >
                   <PlusIcon size={12} /> Ajouter
                 </button>
               </div>
-              <div className="mb-2 grid grid-cols-[1fr_7.5rem_auto] gap-2 px-0.5">
+              <div className="mb-2 grid grid-cols-[1fr_4.5rem_5.5rem_auto] gap-2 px-0.5">
                 <span className="text-[10px] font-bold tracking-wide text-[#9CA3AF] uppercase">Nom</span>
-                <span className="text-[10px] font-bold tracking-wide text-[#9CA3AF] uppercase">Quantité</span>
+                <span className="text-[10px] font-bold tracking-wide text-[#9CA3AF] uppercase">Qté</span>
+                <span className="text-[10px] font-bold tracking-wide text-[#9CA3AF] uppercase">Unité</span>
                 <span className="w-10" />
               </div>
               <div className="space-y-2">
-                {ingredients.map((ing, idx) => (
-                  <div key={idx} className="grid grid-cols-[1fr_7.5rem_auto] items-center gap-2">
+                {ingredients.map((row, idx) => (
+                  <div key={idx} className="grid grid-cols-[1fr_4.5rem_5.5rem_auto] items-center gap-2">
                     <input
-                      value={ing.name}
+                      value={row.name}
                       onChange={(e) => updateIngredient(idx, "name", e.target.value)}
                       placeholder="Ex : Myrtilles"
                       className={inputClass}
                       style={inputStyle}
                     />
                     <input
-                      value={ing.amount}
+                      value={row.amount}
                       onChange={(e) => updateIngredient(idx, "amount", e.target.value)}
-                      placeholder="200 g"
+                      placeholder="200"
+                      inputMode="decimal"
                       className={inputClass}
                       style={inputStyle}
                     />
+                    <div className="relative">
+                      <UnitSelect
+                        value={row.unit}
+                        onChange={(unit) => updateIngredient(idx, "unit", unit)}
+                        className={`${inputClass} appearance-none pr-7`}
+                      />
+                      <span className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-[#7A8F7D]">
+                        <ChevronDownIcon size={14} />
+                      </span>
+                    </div>
                     {ingredients.length > 1 ? (
                       <button
                         type="button"

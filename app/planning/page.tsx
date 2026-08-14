@@ -10,6 +10,7 @@ import {
   ProteinIcon,
 } from "@/components/icons";
 import { MissingIngredientsBadges } from "@/components/missing-ingredients-badges";
+import { ExportShoppingModal } from "@/components/planning/export-shopping-modal";
 import { SelectRecipeModal } from "@/components/select-recipe-modal";
 import {
   addDays,
@@ -23,12 +24,17 @@ import {
 import { MEAL_TYPE_LABELS, type MealType } from "@/lib/meal-types";
 import {
   buildInitialPlans,
-  collectIngredientsFromDayOnward,
+  collectIngredientsFromSelectedMeals,
   type DayPlan,
   type MealSlot,
+  type SelectedMealTarget,
 } from "@/lib/planning";
 import { getRecipeById, type Recipe } from "@/lib/recipes";
-import { replaceShoppingListFromIngredients, setExportBannerCount } from "@/lib/shopping-list";
+import {
+  appendIngredientsToShoppingList,
+  countExportImpact,
+  setExportBannerCount,
+} from "@/lib/shopping-list";
 
 const HORIZON_DAYS = 14;
 const EMPTY_DAY_PLAN: DayPlan = {
@@ -81,6 +87,7 @@ export default function PlanningPage() {
   const [selectedDate, setSelectedDate] = useState(() => parisCalendarDate());
   const [plansByWeek, setPlansByWeek] = useState<Record<string, Record<string, DayPlan>>>({});
   const [pickerSlot, setPickerSlot] = useState<MealSlot | null>(null);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
   const [exportMessage, setExportMessage] = useState<string | null>(null);
   const [generateMessage, setGenerateMessage] = useState<string | null>(null);
   const [generateModalOpen, setGenerateModalOpen] = useState(false);
@@ -213,22 +220,24 @@ export default function PlanningPage() {
     return null;
   }
 
-  function exportToShoppingList() {
-    const ingredients = collectIngredientsFromDayOnward(
-      selectedDay,
-      weekStart,
+  function exportSelectedMeals(selectedMeals: SelectedMealTarget[]) {
+    const ingredients = collectIngredientsFromSelectedMeals(
+      selectedMeals,
       weekPlans,
       plansByWeek,
     );
 
     if (ingredients.length === 0) {
-      setExportMessage("Aucun repas à exporter à partir de ce jour.");
+      setExportMessage("Aucun ingrédient à exporter pour ces repas.");
+      setExportModalOpen(false);
       return;
     }
 
-    const items = replaceShoppingListFromIngredients(ingredients);
-    setExportBannerCount(items.length);
+    const impact = countExportImpact(ingredients);
+    appendIngredientsToShoppingList(ingredients);
+    setExportBannerCount(impact);
     setExportMessage(null);
+    setExportModalOpen(false);
     router.push("/courses");
   }
 
@@ -609,7 +618,10 @@ export default function PlanningPage() {
         <section className="fade-up space-y-3" style={{ animationDelay: "0.18s" }}>
           <button
             type="button"
-            onClick={exportToShoppingList}
+            onClick={() => {
+              setExportMessage(null);
+              setExportModalOpen(true);
+            }}
             className="btn-primary flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-center text-sm font-bold"
           >
             <span aria-hidden>🛒</span>
@@ -638,6 +650,15 @@ export default function PlanningPage() {
           )}
         </section>
       </div>
+
+      {exportModalOpen && (
+        <ExportShoppingModal
+          weekStart={weekStart}
+          weekPlans={weekPlans}
+          onClose={() => setExportModalOpen(false)}
+          onConfirm={exportSelectedMeals}
+        />
+      )}
 
       {generateModalOpen && (
         <GenerateFromFridgeModal

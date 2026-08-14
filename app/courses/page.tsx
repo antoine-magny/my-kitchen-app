@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { CheckIcon, TrashIcon } from "@/components/icons";
+import { UnitSelect } from "@/components/ui/unit-select";
+import { transferCheckedShoppingItemsToFridge } from "@/lib/fridge";
 import { groupByShoppingCategory } from "@/lib/shopping-categories";
 import {
   clearCheckedShoppingItems,
   clearShoppingList,
-  formatShoppingAmount,
   getShoppingList,
   peekExportBanner,
   removeShoppingItem,
@@ -15,12 +17,14 @@ import {
   type ShoppingItem,
   type ShoppingItemPatch,
 } from "@/lib/shopping-list";
-import { parseAmount } from "@/lib/units";
+import { coerceUnitCode } from "@/lib/units";
 
 const inputNameClass =
   "w-full bg-transparent text-sm font-bold text-[#1C2B1E] outline-none rounded-lg px-1.5 py-0.5 -mx-1.5 transition-colors hover:bg-[#F0F4EF] focus:bg-[#F0F4EF] focus:ring-2 focus:ring-[#C8E0CF]";
 const inputAmountClass =
-  "mt-0.5 w-full bg-transparent text-xs font-medium text-[#7A8F7D] outline-none rounded-lg px-1.5 py-0.5 -mx-1.5 transition-colors hover:bg-[#F0F4EF] focus:bg-[#F0F4EF] focus:ring-2 focus:ring-[#C8E0CF]";
+  "w-16 shrink-0 bg-transparent text-xs font-medium text-[#7A8F7D] outline-none rounded-lg px-1.5 py-0.5 transition-colors hover:bg-[#F0F4EF] focus:bg-[#F0F4EF] focus:ring-2 focus:ring-[#C8E0CF]";
+const unitSelectClass =
+  "min-w-0 flex-1 appearance-none rounded-lg border border-transparent bg-transparent py-0.5 pl-1.5 pr-1 text-xs font-medium text-[#7A8F7D] outline-none hover:bg-[#F0F4EF] focus:bg-[#F0F4EF] focus:ring-2 focus:ring-[#C8E0CF]";
 
 function ShoppingItemRow({
   item,
@@ -35,17 +39,16 @@ function ShoppingItemRow({
   onRemove: (id: string) => void;
   onUpdate: (id: string, patch: ShoppingItemPatch) => void;
 }) {
-  const displayedAmount = formatShoppingAmount(item);
   const [nameDraft, setNameDraft] = useState(item.customName);
-  const [amountDraft, setAmountDraft] = useState(displayedAmount);
+  const [amountDraft, setAmountDraft] = useState(String(item.amount));
 
   useEffect(() => {
     setNameDraft(item.customName);
   }, [item.customName]);
 
   useEffect(() => {
-    setAmountDraft(displayedAmount);
-  }, [displayedAmount]);
+    setAmountDraft(String(item.amount));
+  }, [item.amount]);
 
   function commitName() {
     const trimmed = nameDraft.trim();
@@ -56,13 +59,14 @@ function ShoppingItemRow({
     if (trimmed !== item.customName) onUpdate(item.id, { customName: trimmed });
   }
 
-  // La saisie reste libre (« 400 g », « 2 gousses », « q.s. ») puis est
-  // convertie vers le modèle structuré { amount, unit }.
   function commitAmount() {
-    const next = amountDraft.trim();
-    if (next === displayedAmount) return;
-    const { amount, unit } = parseAmount(next);
-    onUpdate(item.id, { amount, unit });
+    const raw = amountDraft.trim().replace(",", ".");
+    const amount = Number(raw);
+    if (!Number.isFinite(amount) || amount < 0) {
+      setAmountDraft(String(item.amount));
+      return;
+    }
+    if (amount !== item.amount) onUpdate(item.id, { amount });
   }
 
   return (
@@ -110,22 +114,35 @@ function ShoppingItemRow({
           className={`${inputNameClass} ${item.isChecked ? "line-through" : ""}`}
           aria-label={`Nom de ${item.customName}`}
         />
-        <input
-          type="text"
-          value={amountDraft}
-          onChange={(e) => setAmountDraft(e.target.value)}
-          onBlur={commitAmount}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") e.currentTarget.blur();
-            if (e.key === "Escape") {
-              setAmountDraft(displayedAmount);
-              e.currentTarget.blur();
-            }
-          }}
-          placeholder="Quantité"
-          className={inputAmountClass}
-          aria-label={`Quantité de ${item.customName}`}
-        />
+        <div className="mt-0.5 flex items-center gap-1">
+          <input
+            type="text"
+            inputMode="decimal"
+            value={amountDraft}
+            onChange={(e) => setAmountDraft(e.target.value)}
+            onBlur={commitAmount}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") e.currentTarget.blur();
+              if (e.key === "Escape") {
+                setAmountDraft(String(item.amount));
+                e.currentTarget.blur();
+              }
+            }}
+            placeholder="Qté"
+            className={inputAmountClass}
+            aria-label={`Quantité de ${item.customName}`}
+          />
+          <UnitSelect
+            compact
+            value={item.unit}
+            onChange={(unit) => {
+              const next = coerceUnitCode(unit);
+              if (next && next !== item.unit) onUpdate(item.id, { unit: next });
+            }}
+            className={unitSelectClass}
+            aria-label={`Unité de ${item.customName}`}
+          />
+        </div>
       </div>
 
       <button
@@ -141,6 +158,7 @@ function ShoppingItemRow({
 }
 
 export default function CoursesPage() {
+  const router = useRouter();
   const [items, setItems] = useState<ShoppingItem[]>([]);
   const [ready, setReady] = useState(false);
   const [banner, setBanner] = useState<string | null>(null);
@@ -169,6 +187,19 @@ export default function CoursesPage() {
 
   function handleClearChecked() {
     setItems(clearCheckedShoppingItems());
+  }
+
+  function handleTransferToFridge() {
+    const { transferred } = transferCheckedShoppingItemsToFridge("fridge");
+    setItems(getShoppingList());
+    if (transferred > 0) {
+      setBanner(
+        transferred === 1
+          ? "1 article transféré au frigo."
+          : `${transferred} articles transférés au frigo.`,
+      );
+      router.push("/frigo");
+    }
   }
 
   function handleClearAll() {
@@ -221,13 +252,22 @@ export default function CoursesPage() {
               </p>
               <div className="flex items-center gap-2">
                 {checkedCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={handleClearChecked}
-                    className="rounded-xl px-2.5 py-1.5 text-xs font-bold text-[#4A7C59] transition-colors hover:bg-[#EBF2EC]"
-                  >
-                    Vider cochés
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleTransferToFridge}
+                      className="rounded-xl bg-[#2E5B3E] px-2.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-[#254A32]"
+                    >
+                      Au frigo
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleClearChecked}
+                      className="rounded-xl px-2.5 py-1.5 text-xs font-bold text-[#4A7C59] transition-colors hover:bg-[#EBF2EC]"
+                    >
+                      Vider cochés
+                    </button>
+                  </>
                 )}
                 <button
                   type="button"

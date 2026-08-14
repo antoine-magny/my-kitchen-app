@@ -80,29 +80,37 @@ export function buildInitialPlans(weekStart: Date): Record<string, DayPlan> {
   return plans;
 }
 
-function ingredientsFromDayPlan(plan: DayPlan): RecipeIngredient[] {
-  const items: RecipeIngredient[] = [];
-
-  if (plan.breakfast) {
+/** Ingrédients d'un créneau précis (petit-déj / déjeuner / dîner). */
+export function ingredientsFromMealSlot(
+  plan: DayPlan,
+  mealType: MealSlot,
+): RecipeIngredient[] {
+  if (mealType === "breakfast") {
+    if (!plan.breakfast) return [];
     if (plan.breakfast.id.startsWith("recipe-")) {
       const recipeId = Number(plan.breakfast.id.slice("recipe-".length));
       const recipe = Number.isFinite(recipeId) ? getRecipeById(recipeId) : undefined;
-      if (recipe) items.push(...recipe.ingredients);
-      else items.push(ing(plan.breakfast.name, 1, "unite"));
-    } else if (plan.breakfast.id === "bf-yaourt") {
-      items.push(ing("Yaourt grec", 1, "unite"), ing("Granola", 40, "g"));
-    } else {
-      items.push(ing(plan.breakfast.name, 1, "unite"));
+      if (recipe) return [...recipe.ingredients];
+      return [ing(plan.breakfast.name, 1, "piece")];
     }
+    if (plan.breakfast.id === "bf-yaourt") {
+      return [ing("Yaourt grec", 1, "piece"), ing("Granola", 40, "g")];
+    }
+    return [ing(plan.breakfast.name, 1, "piece")];
   }
 
-  for (const recipeId of [plan.lunchId, plan.dinnerId]) {
-    if (recipeId == null) continue;
-    const recipe = getRecipeById(recipeId);
-    if (recipe) items.push(...recipe.ingredients);
-  }
+  const recipeId = mealType === "lunch" ? plan.lunchId : plan.dinnerId;
+  if (recipeId == null) return [];
+  const recipe = getRecipeById(recipeId);
+  return recipe ? [...recipe.ingredients] : [];
+}
 
-  return items;
+function ingredientsFromDayPlan(plan: DayPlan): RecipeIngredient[] {
+  return [
+    ...ingredientsFromMealSlot(plan, "breakfast"),
+    ...ingredientsFromMealSlot(plan, "lunch"),
+    ...ingredientsFromMealSlot(plan, "dinner"),
+  ];
 }
 
 export function collectIngredientsFromDayOnward(
@@ -128,4 +136,51 @@ export function collectIngredientsFromDayOnward(
   }
 
   return collected;
+}
+
+/** Cible d'export granulaire : un créneau d'un jour donné. */
+export interface SelectedMealTarget {
+  date: string; // "YYYY-MM-DD"
+  mealType: MealSlot;
+}
+
+function resolveDayPlan(
+  date: string,
+  weekPlans: Record<string, DayPlan>,
+  plansByWeek?: Record<string, Record<string, DayPlan>>,
+): DayPlan | undefined {
+  if (weekPlans[date]) return weekPlans[date];
+  if (!plansByWeek) return undefined;
+  for (const plans of Object.values(plansByWeek)) {
+    if (plans[date]) return plans[date];
+  }
+  return undefined;
+}
+
+/**
+ * Extrait la liste plate de `RecipeIngredient[]` pour une sélection précise
+ * de repas (fusion / dédoublonnage délégués à la liste de courses).
+ */
+export function collectIngredientsFromSelectedMeals(
+  selectedMeals: SelectedMealTarget[],
+  weekPlans: Record<string, DayPlan>,
+  plansByWeek?: Record<string, Record<string, DayPlan>>,
+): RecipeIngredient[] {
+  const collected: RecipeIngredient[] = [];
+
+  for (const { date, mealType } of selectedMeals) {
+    const plan = resolveDayPlan(date, weekPlans, plansByWeek);
+    if (!plan) continue;
+    collected.push(...ingredientsFromMealSlot(plan, mealType));
+  }
+
+  return collected;
+}
+
+/** Titre affiché d'un créneau planifié, ou `null` s'il est vide. */
+export function mealSlotTitle(plan: DayPlan, mealType: MealSlot): string | null {
+  if (mealType === "breakfast") return plan.breakfast?.name ?? null;
+  const recipeId = mealType === "lunch" ? plan.lunchId : plan.dinnerId;
+  if (recipeId == null) return null;
+  return getRecipeById(recipeId)?.title ?? null;
 }

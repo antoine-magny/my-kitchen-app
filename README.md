@@ -42,17 +42,26 @@ app/                    Routes App Router (une page par écran)
   frigo/                Inventaire frigo / congélateur / placards
   planning/             Planning hebdomadaire des repas
   recettes/             Liste des recettes + détail dynamique [id]
-  courses/              Liste de courses
+  courses/              Liste de courses (+ transfert vers le frigo)
   api/                  Route Handlers (voir plus bas)
 components/             Composants React partagés
   icons.tsx             Toutes les icônes SVG de l'app (props size / strokeWidth)
   bottom-nav.tsx        Navigation fixe (5 onglets)
+  ui/unit-select.tsx    Sélecteur d'unités par familles (Masse / Volume / Décompte)
   frigo/                Composants propres à la page frigo
+  planning/             Modales propres au planning (export courses)
   generate-from-fridge-modal.tsx  Génération de recettes depuis le planning
   select-recipe-modal.tsx         Choix d'une recette du catalogue
 lib/                    Logique métier, sans JSX
+  units.ts              Familles d'unités + combineQuantities
+  shopping-list.ts      Export Planning → Courses (fusion / déduplication)
+  fridge.ts             Inventaire local + transfert Courses → Frigo
+  ingredients.ts        Référentiel canonique (ingredientId)
+  planning.ts           Construction de semaine + agrégation d'ingrédients
   ai/                   Client Gemini et prompts
   supabase/             Client admin + types générés du schéma
+types/
+  inventory.ts          RecipeIngredient / ShoppingItem / FridgeItem (Snapshot)
 scripts/                Utilitaires ponctuels lancés à la main
 .github/workflows/      CI GitHub Actions (lint + build)
 ```
@@ -76,12 +85,96 @@ Quelques exemples de cette découpe, utiles comme modèles :
 - `app/planning/page.tsx` délègue le choix de recette à
   `components/select-recipe-modal.tsx` et la génération IA à
   `components/generate-from-fridge-modal.tsx`.
+- `app/courses/page.tsx` délègue fusion / transfert à `lib/shopping-list.ts` et
+  `lib/fridge.ts` ; le bouton « Au frigo » appelle
+  `transferCheckedShoppingItemsToFridge`.
 
 ### Icônes
 
 Aucune icône ne doit être redéfinie localement dans une page ou un composant.
 Tout passe par `components/icons.tsx`, qui expose des composants prenant `size`
 et `strokeWidth`. Ajouter une nouvelle icône là, jamais ailleurs.
+
+---
+
+## Trialité des aliments (Snapshot à référence optionnelle)
+
+Modèle central du domaine. Un aliment traverse **trois états séparés**, liés
+par un `ingredientId` optionnel (référentiel `lib/ingredients.ts`) :
+
+| État | Type (`types/inventory.ts`) | Éditable ? | Rôle |
+| --- | --- | --- | --- |
+| Recette | `RecipeIngredient` | Non (immuable) | Référence écrite dans la recette |
+| Courses | `ShoppingItem` | Oui (`customName`, `amount`, `unit`) | Copie éphémère pour les courses |
+| Frigo | `FridgeItem` | Oui | Inventaire réel (stock + DLC) |
+
+Chaque entrée courses / frigo a son propre UUID (`id`). Éditer le nom, l'unité
+ou la quantité **ne modifie jamais** la recette d'origine et **ne supprime
+jamais** l'`ingredientId` : le lien canonique survit au renommage
+(« Tomate » → « Tomates cerises bio »).
+
+### Unités & conversions (`lib/units.ts`)
+
+Les unités sont regroupées en 3 familles (`UnitCategory`) :
+
+| Famille | Base | Codes |
+| --- | --- | --- |
+| Masse | g | `g`, `kg` |
+| Volume | ml | `ml`, `cl`, `l`, `c_cafe` (5 ml), `c_soupe` (15 ml), `verre` (200 ml) |
+| Décompte | 1 | `piece`, `gousse`, `tranche`, `sachet`, `pincee`, `brin`, `poignee`, `botte`, `feuille`, `qs` |
+
+`combineQuantities(a1, u1, a2, u2)` :
+
+- masse / volume compatibles → addition en base, puis remontée (`≥ 1000 g` → kg,
+  `≥ 1000 ml` → L) ;
+- décompte → addition seulement si le code est **strictement identique** ;
+- incompatible ou `qs` non absorbable → `null` (deux lignes séparées).
+
+Alias legacy (`unite` → `piece`, `cas` → `c_soupe`, `cac` → `c_cafe`) via
+`coerceUnitCode` / `normalizeUnit`. Le domaine Postgres `unit_domain` est aligné
+sur ces codes.
+
+Sélecteur UI partagé : `components/ui/unit-select.tsx` (optgroups par famille),
+branché partout où une unité est éditable : ajout / édition de recette, ajout
+frigo, ligne d'inventaire frigo, et liste de courses (mode `compact`).
+
+### Flux Planning → Courses
+
+1. L’utilisateur ouvre `ExportShoppingModal`
+   (`components/planning/export-shopping-modal.tsx`) depuis
+   `app/planning/page.tsx` et choisit les repas à exporter (créneau par créneau,
+   jour entier, ou toute la semaine).
+2. `collectIngredientsFromSelectedMeals` (`lib/planning.ts`) produit la liste
+   plate d’ingrédients des repas cochés.
+3. `appendIngredientsToShoppingList` (`lib/shopping-list.ts`) fusionne dans la
+   liste existante :
+   - pour chaque ingrédient, normaliser le nom (`normalizeProductName`) ;
+   - chercher un `ShoppingItem` **non coché** par `ingredientId` **ou** nom
+     normalisé ;
+   - si trouvé : tenter `combineQuantities` ; si compatible, mettre à jour
+     `amount`/`unit` ; sinon créer une nouvelle ligne ;
+   - si non trouvé : créer un `ShoppingItem` (UUID, `ingredientId`, `customName`,
+     qty, unit).
+4. Persister dans `localStorage` (`my-kitchen-shopping-list-v2`).
+
+Le bandeau d’export utilise `countExportImpact` + `sessionStorage`
+(`my-kitchen-shopping-export-banner`).
+
+`collectIngredientsFromDayOnward` reste disponible pour un export « à partir
+d’un jour », mais l’UI passe désormais par la sélection granulaire.
+
+### Flux Courses → Frigo
+
+Fonction : `transferCheckedShoppingItemsToFridge` (`lib/fridge.ts`), déclenchée
+par le bouton « Au frigo » sur `app/courses/page.tsx`.
+
+1. Isoler les articles `isChecked: true`.
+2. Pour chacun : matcher un `FridgeItem` par `ingredientId` ou nom normalisé ;
+   si compatible → additionner ; sinon / absent → créer une entrée avec
+   `addedAt` du jour (emplacement par défaut : `fridge`).
+3. Supprimer **uniquement** les articles cochés de la liste
+   (`clearCheckedShoppingItems`).
+4. Persister le frigo (`my-kitchen-fridge-items-v2`).
 
 ---
 
@@ -98,17 +191,20 @@ Clés `localStorage` utilisées :
 
 | Clé | Contenu | Module |
 | --- | --- | --- |
-| `my-kitchen-fridge-items` | Inventaire frigo/congélateur/placards | `lib/fridge.ts` |
-| `my-kitchen-shopping-list` | Liste de courses | `lib/shopping-list.ts` |
+| `my-kitchen-fridge-items-v2` | Inventaire frigo/congélateur/placards (snapshot) | `lib/fridge.ts` |
+| `my-kitchen-shopping-list-v2` | Liste de courses (snapshot) | `lib/shopping-list.ts` |
 | `my-kitchen-custom-recipes` | Recettes créées par l'utilisateur | `lib/recipes.ts` |
 | `my-kitchen-recipe-overrides` | Modifications des recettes livrées | `lib/recipes.ts` |
 | `my-kitchen-deleted-recipes` | Recettes livrées masquées | `lib/recipes.ts` |
 | `my-kitchen-favorite-recipes` | Favoris | pages `app/recettes` |
 
-Deux exceptions à ce modèle :
+Migration automatique depuis les clés legacy (`my-kitchen-fridge-items`,
+`my-kitchen-shopping-list`) au premier chargement.
+
+Deux exceptions au modèle `localStorage` :
 
 - Le bandeau « X articles exportés » (`my-kitchen-shopping-export-banner`) vit
-  dans le **`sessionStorage`**, pas le `localStorage` (`lib/shopping-list.ts`).
+  dans le **`sessionStorage`** (`lib/shopping-list.ts`).
 - Le **planning n'est pas persisté** : il reste dans l'état React de
   `app/planning/page.tsx` et disparaît au rechargement. La table
   `meal_plan_entries` existe dans le schéma mais n'est pas utilisée.
@@ -168,8 +264,11 @@ disponibles : `profiles`, `recipes`, `ingredients`, `recipe_ingredients`,
 `shopping_list_items`, `aisles`, `seasonal_produce`, `cooking_tips`, plus la vue
 `v_recipe_nutrition`.
 
-Toutes ne sont pas encore exploitées par le code. Les tables réellement lues ou
-écrites aujourd'hui :
+Le domaine `unit_domain` accepte les codes familles (masse / volume / décompte)
+listés plus haut. Les anciennes valeurs `unite` / `cas` / `cac` ont été migrées
+vers `piece` / `c_soupe` / `c_cafe`.
+
+Tables réellement lues ou écrites aujourd'hui :
 
 - `recipes` et `recipe_ingredients` — enregistrement d'une recette
   (`lib/save-recipe.ts`) ;
@@ -254,5 +353,11 @@ plus référencée nulle part dans le code.
 - Les dates et le calendrier passent par `lib/date-paris.ts`, qui ancre tout sur
   le fuseau Europe/Paris. Ne pas utiliser `new Date()` directement pour du
   calcul de jour ou de semaine.
-- Les unités de mesure sont un ensemble fermé défini dans `lib/units.ts`
-  (`UnitCode`) : un code invalide fait échouer la compilation.
+- Les unités de mesure sont un ensemble fermé (`UnitCode` dans `lib/units.ts`),
+  par familles masse / volume / décompte. Fusion via `combineQuantities` ;
+  code invalide rejeté par Postgres `unit_domain` à l'insertion.
+- **Protection des recettes** : toute édition dans courses ou frigo porte sur le
+  snapshot local uniquement ; `ingredientId` reste figé
+  (`updateShoppingItem`, renommage frigo, transfert).
+- Couleurs de référence UI : vert `#2E5B3E`, fonds proches de `#F6F8F3` /
+  `#F7F9F6`, cartes `rounded-2xl` / `rounded-3xl`.

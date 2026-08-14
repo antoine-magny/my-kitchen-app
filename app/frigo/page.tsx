@@ -83,6 +83,10 @@ export default function FrigoPage() {
     setItems((prev) => prev.map((i) => (i.id === id ? { ...i, customName } : i)));
   };
 
+  const handleChangeUnit = (id: string, unit: Ingredient["unit"]) => {
+    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, unit } : i)));
+  };
+
   const handleUpdateDlc = (id: string, expirationDate: string | null) => {
     setItems((prev) =>
       prev.map((i) => {
@@ -264,6 +268,7 @@ export default function FrigoPage() {
                     <IngredientRow
                       item={item}
                       onAdjust={handleAdjust}
+                      onChangeUnit={handleChangeUnit}
                       onDelete={handleDelete}
                       onEditDlc={setEditingDlcId}
                       onMove={handleMove}

@@ -9,8 +9,14 @@
 
 import { describeIngredient } from "@/lib/ingredients";
 import { normalizeProductName } from "@/lib/shopping-categories";
-import { DEFAULT_UNIT, isUnitCode, type UnitCode } from "@/lib/units";
-import type { FridgeItem, FridgeStorageLocation } from "@/types/inventory";
+import {
+  coerceUnitCode,
+  combineQuantities,
+  DEFAULT_UNIT,
+  type UnitCode,
+} from "@/lib/units";
+import type { FridgeItem, FridgeStorageLocation, ShoppingItem } from "@/types/inventory";
+import { clearCheckedShoppingItems, getShoppingList } from "@/lib/shopping-list";
 
 export type { FridgeItem, FridgeStorageLocation };
 
@@ -127,16 +133,16 @@ export function createDefaultFridgeItems(): FridgeItem[] {
     expirationDate: string | null;
     category: FridgeStorageLocation;
   }> = [
-    { emoji: "🥚", customName: "Œufs", amount: 6, unit: "unite", expirationDate: daysFrom(7), category: "fridge" },
+    { emoji: "🥚", customName: "Œufs", amount: 6, unit: "piece", expirationDate: daysFrom(7), category: "fridge" },
     { emoji: "🥛", customName: "Lait demi-écrémé", amount: 1, unit: "l", expirationDate: daysFrom(2), category: "fridge" },
     { emoji: "🧀", customName: "Comté", amount: 150, unit: "g", expirationDate: daysFrom(14), category: "fridge" },
     { emoji: "🥩", customName: "Poulet fermier", amount: 500, unit: "g", expirationDate: daysFrom(0), category: "fridge" },
     { emoji: "🍅", customName: "Tomates cerises", amount: 250, unit: "g", expirationDate: daysFrom(1), category: "fridge" },
-    { emoji: "🥕", customName: "Carottes", amount: 4, unit: "unite", expirationDate: daysFrom(6), category: "fridge" },
+    { emoji: "🥕", customName: "Carottes", amount: 4, unit: "piece", expirationDate: daysFrom(6), category: "fridge" },
     { emoji: "🧈", customName: "Beurre AOP", amount: 250, unit: "g", expirationDate: daysFrom(21), category: "fridge" },
     { emoji: "🥗", customName: "Mesclun bio", amount: 100, unit: "g", expirationDate: daysFrom(2), category: "fridge" },
-    { emoji: "🍋", customName: "Citrons", amount: 3, unit: "unite", expirationDate: daysFrom(8), category: "fridge" },
-    { emoji: "🐟", customName: "Filets de saumon", amount: 2, unit: "unite", expirationDate: daysFrom(60), category: "freezer" },
+    { emoji: "🍋", customName: "Citrons", amount: 3, unit: "piece", expirationDate: daysFrom(8), category: "fridge" },
+    { emoji: "🐟", customName: "Filets de saumon", amount: 2, unit: "piece", expirationDate: daysFrom(60), category: "freezer" },
     { emoji: "🥦", customName: "Brocolis surgelés", amount: 400, unit: "g", expirationDate: daysFrom(90), category: "freezer" },
     { emoji: "🍦", customName: "Sorbet citron", amount: 500, unit: "g", expirationDate: daysFrom(45), category: "freezer" },
     { emoji: "🍖", customName: "Bœuf haché 5%", amount: 300, unit: "g", expirationDate: daysFrom(-2), category: "freezer" },
@@ -210,7 +216,8 @@ function sanitizeItem(raw: unknown): FridgeItem | null {
     ingredientId: typeof entry.ingredientId === "string" ? entry.ingredientId : undefined,
     customName,
     amount,
-    unit: typeof entry.unit === "string" && isUnitCode(entry.unit) ? entry.unit : DEFAULT_UNIT,
+    unit:
+      typeof entry.unit === "string" ? coerceUnitCode(entry.unit) ?? DEFAULT_UNIT : DEFAULT_UNIT,
     category:
       typeof entry.category === "string" && isFridgeStorageLocation(entry.category)
         ? entry.category
@@ -303,4 +310,69 @@ export function getExpiringFridgeItems(
       const db = b.expirationDate ? daysUntilDlc(b.expirationDate, now) : 999;
       return da - db;
     });
+}
+
+function matchesFridgeItem(
+  item: FridgeItem,
+  ingredientId: string | undefined,
+  cleanName: string,
+): boolean {
+  if (ingredientId && item.ingredientId && item.ingredientId === ingredientId) return true;
+  return normalizeProductName(item.customName) === cleanName;
+}
+
+/**
+ * Transfert Courses → Frigo : fusionne les articles cochés dans l'inventaire,
+ * puis les retire de la liste de courses. `ingredientId` est conservé.
+ *
+ * @param location Emplacement par défaut pour les nouveaux articles.
+ */
+export function transferCheckedShoppingItemsToFridge(
+  location: FridgeStorageLocation = "fridge",
+  checkedItems?: ShoppingItem[],
+): { fridge: FridgeItem[]; transferred: number } {
+  const source = checkedItems ?? getShoppingList().filter((item) => item.isChecked);
+  if (source.length === 0) {
+    return { fridge: getFridgeItems(), transferred: 0 };
+  }
+
+  const fridge = [...getFridgeItems()];
+
+  for (const shop of source) {
+    const cleanName = normalizeProductName(shop.customName);
+    if (!cleanName) continue;
+
+    const existing = fridge.find((item) =>
+      matchesFridgeItem(item, shop.ingredientId, cleanName),
+    );
+
+    if (existing) {
+      const combined = combineQuantities(
+        existing.amount,
+        existing.unit,
+        shop.amount,
+        shop.unit,
+      );
+      if (combined) {
+        existing.amount = combined.amount;
+        existing.unit = combined.unit;
+        continue;
+      }
+    }
+
+    fridge.push(
+      createFridgeItem({
+        customName: shop.customName,
+        amount: shop.amount,
+        unit: shop.unit,
+        category: location,
+        emoji: shop.emoji,
+        ingredientId: shop.ingredientId,
+      }),
+    );
+  }
+
+  setFridgeItems(fridge);
+  clearCheckedShoppingItems();
+  return { fridge, transferred: source.length };
 }

@@ -19,7 +19,7 @@ import {
   type NewRecipeInput,
   type RecipeFilter,
 } from "@/lib/recipes";
-import { normalizeUnit, UNITS } from "@/lib/units";
+import { normalizeUnit, UNIT_LIST } from "@/lib/units";
 
 export type AiRecipeCreation = {
   draft: NewRecipeInput;
@@ -42,7 +42,7 @@ const DEFAULT_PHOTO =
 
 const DIFFICULTY_SET = new Set<string>(DIFFICULTIES);
 const TAG_SET = new Set<string>(RECIPE_TAGS);
-const UNIT_CODES_HINT = UNITS.map((u) => u.code).join(" | ");
+const UNIT_CODES_HINT = UNIT_LIST.map((u) => u.code).join(" | ");
 
 const RECIPE_RESPONSE_SCHEMA = {
   type: Type.OBJECT,

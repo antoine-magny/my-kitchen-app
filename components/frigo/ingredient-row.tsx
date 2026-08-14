@@ -18,11 +18,13 @@ import {
   TrashIcon,
 } from "@/components/icons";
 import { dlcStatus } from "@/lib/fridge";
-import { unitLabel } from "@/lib/units";
+import { coerceUnitCode, type UnitCode } from "@/lib/units";
+import { UnitSelect } from "@/components/ui/unit-select";
 
 export function IngredientRow({
   item,
   onAdjust,
+  onChangeUnit,
   onDelete,
   onEditDlc,
   onMove,
@@ -31,6 +33,7 @@ export function IngredientRow({
 }: {
   item: Ingredient;
   onAdjust: (id: string, delta: number) => void;
+  onChangeUnit: (id: string, unit: UnitCode) => void;
   onDelete: (id: string) => void;
   onEditDlc: (id: string) => void;
   onMove: (id: string, category: TabId) => void;
@@ -211,7 +214,16 @@ export function IngredientRow({
         </button>
       </div>
 
-      <span className="hidden w-12 shrink-0 text-right text-xs font-semibold text-[#9CA3AF] sm:block">{unitLabel(item.unit)}</span>
+      <UnitSelect
+        compact
+        value={item.unit}
+        onChange={(unit) => {
+          const next = coerceUnitCode(unit);
+          if (next && next !== item.unit) onChangeUnit(item.id, next);
+        }}
+        className="hidden w-[4.5rem] shrink-0 appearance-none rounded-lg border border-transparent bg-transparent py-1 text-right text-xs font-semibold text-[#9CA3AF] outline-none hover:bg-[#F0F4EF] focus:bg-[#F0F4EF] focus:ring-2 focus:ring-[#C8E0CF] sm:block"
+        aria-label={`Unité de ${item.customName}`}
+      />
 
       <div className="relative shrink-0">
         <button

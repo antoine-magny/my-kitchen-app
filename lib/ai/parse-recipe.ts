@@ -7,7 +7,7 @@ import {
   getGeminiModel,
 } from "@/lib/ai/gemini";
 import type { ParsedRecipe } from "@/lib/recipe-import";
-import { normalizeUnit, UNITS } from "@/lib/units";
+import { normalizeUnit, UNIT_LIST } from "@/lib/units";
 
 export type { ParsedRecipe } from "@/lib/recipe-import";
 export { normalizeUnit } from "@/lib/units";
@@ -19,7 +19,7 @@ export class ParseRecipeError extends Error {
   }
 }
 
-const UNIT_CODES_HINT = UNITS.map((u) => u.code).join(" | ");
+const UNIT_CODES_HINT = UNIT_LIST.map((u) => u.code).join(" | ");
 
 const PARSE_RESPONSE_SCHEMA = {
   type: Type.OBJECT,
