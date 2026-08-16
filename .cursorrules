@@ -17,9 +17,8 @@
 
 --- RÈGLE : SYNCHRONISATION GITHUB ---
 Quand l'utilisateur écrit "synchro git", "synchro", ou "met à jour github" :
-1. Exécute la commande terminal : git pull --rebase (récupère les modifications distantes d'un collègue ou d'un agent IA et les pose sous les commits locaux).
-2. Si des conflits apparaissent : arrête-toi, liste les fichiers en conflit, et demande à l'utilisateur avant de continuer. N'utilise jamais --force, --force-with-lease, --no-verify ni --no-gpg-sign.
-3. Exécute la commande terminal : git add .
-4. S'il y a des changements locaux : analyse les fichiers modifiés pour rédiger un message de commit concis et clair en français (ex: "Ajout de la page frigo"). Ajoute la date et l'heure à la fin du message (fuseau horaire : Paris). Puis exécute : git commit -m "Message de commit généré". Ne crée pas de commit vide si le working tree est propre.
-5. Exécute la commande terminal : git push
-6. Confirme à l'utilisateur que le PC et GitHub sont alignés, et que la mise à jour Vercel est lancée s'il y a eu un push.
+1. S'il y a des changements locaux : exécute `git add .` puis analyse les fichiers modifiés pour rédiger un message de commit concis et clair en français (ex: "Ajout de la page frigo"). Ajoute la date et l'heure à la fin du message (fuseau horaire : Paris). Puis exécute : `git commit -m "Message de commit généré"`. Ne crée pas de commit vide si le working tree est propre.
+2. Exécute la commande terminal : `git pull --rebase` (récupère les modifications distantes d'un collègue ou d'un agent IA et les pose proprement par-dessus tes commits locaux).
+3. Si des conflits apparaissent : arrête-toi, liste les fichiers en conflit, et demande à l'utilisateur avant de continuer. N'utilise jamais `--force`, `--force-with-lease`, `--no-verify` ni `--no-gpg-sign`.
+4. Une fois le code aligné et sans conflit, exécute la commande terminal : `git push`
+5. Confirme à l'utilisateur que le PC et GitHub sont alignés, et que la mise à jour Vercel est lancée s'il y a eu un push.
