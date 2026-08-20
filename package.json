@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "node scripts/dev-with-open.js",
+    "dev": "node scripts/dev-with-open.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
