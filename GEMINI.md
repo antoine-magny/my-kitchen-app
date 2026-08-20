@@ -13,7 +13,7 @@ Tu es pleinement mandaté pour exécuter proactivement et sans validation préal
 1. **Inspection & Recherche** : `view_file` (lecture), `grep_search` (recherche), `list_dir` (arborescence), consultation de docs web.
 2. **Écriture & Édition** : `replace_file_content` et `multi_replace_file_content` (modifications ciblées de code), `write_to_file` (création de fichiers du workspace).
 3. **Validation & Contrôle** : exécution de tests locaux (`npx tsx scripts/...`), vérification de types (`npx tsc --noEmit`), linters et builds de test.
-4. **Commandes Git non destructives** : `git status`, `git diff`, `git log`.
+4. **Commandes Git & Synchronisation** : `git status`, `git diff`, `git log`, `git add .`, `git commit`, `git pull --rebase`, `git push` (entièrement pré-autorisées sans confirmation).
 *Seules les opérations destructives irréversibles (ex. DROP table, suppression de données de production) nécessitent une confirmation explicite.*
 
 ## RÈGLES DE QUALITÉ DU CODE & ARCHITECTURE
