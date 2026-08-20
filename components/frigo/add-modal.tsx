@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import type { NewFridgeItem, TabId } from "@/components/frigo/shared";
 import { ChevronDownIcon, XIcon } from "@/components/icons";
-import { INGREDIENTS } from "@/lib/ingredients";
+import { getIngredientDefaultUnit, DEFAULT_INGREDIENT_EMOJI, resolveEmoji } from "@/lib/ingredients";
 import { UnitSelect } from "@/components/ui/unit-select";
+import { EmojiPickerPopover } from "@/components/ui/emoji-picker-popover";
 import { DEFAULT_UNIT, type UnitCode } from "@/lib/units";
 
 export function AddModal({
@@ -16,12 +17,11 @@ export function AddModal({
   onAdd: (item: NewFridgeItem) => void;
   onClose: () => void;
 }) {
-  const [emoji, setEmoji] = useState("🥚");
+  const [emoji, setEmoji] = useState(DEFAULT_INGREDIENT_EMOJI);
   const [name, setName] = useState("");
   const [qty, setQty] = useState("1");
   const [unit, setUnit] = useState<UnitCode>(DEFAULT_UNIT);
   const [dlc, setDlc] = useState("");
-  const [showPicker, setShowPicker] = useState(false);
   const nameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -67,45 +67,19 @@ export function AddModal({
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex items-start gap-3">
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setShowPicker((p) => !p)}
-                className="flex h-14 w-14 items-center justify-center rounded-2xl border-2 bg-[#F6F8F3] text-2xl transition-all hover:border-[#4A7C59]"
-                style={{ borderColor: "#E2EBE3" }}
-              >
-                {emoji}
-              </button>
-              {showPicker && (
-                <div
-                  className="slide-down absolute top-16 left-0 z-10 grid max-h-64 gap-1 overflow-y-auto rounded-2xl p-3"
-                  style={{
-                    background: "#FFFFFF",
-                    boxShadow: "0 8px 32px rgba(20,31,22,0.14)",
-                    border: "1px solid #E2EBE3",
-                    gridTemplateColumns: "repeat(6, 1fr)",
-                    width: 216,
-                  }}
-                >
-                  {INGREDIENTS.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      title={item.name}
-                      onClick={() => {
-                        setEmoji(item.emoji);
-                        setName((current) => (current.trim() ? current : item.name));
-                        setShowPicker(false);
-                      }}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-lg transition-all hover:bg-[#EBF2EC]"
-                      style={{ background: emoji === item.emoji ? "#EBF2EC" : "transparent" }}
-                    >
-                      {item.emoji}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            <EmojiPickerPopover
+              size="lg"
+              currentEmoji={emoji}
+              onSelectEmoji={(selectedEmoji, defaultUnit, itemName) => {
+                setEmoji(selectedEmoji);
+                if (itemName && !name.trim()) {
+                  setName(itemName);
+                }
+                if (defaultUnit) {
+                  setUnit(defaultUnit as UnitCode);
+                }
+              }}
+            />
             <div className="flex-1">
               <label className="mb-1.5 block text-xs font-bold tracking-wide text-[#7A8F7D]" style={{ letterSpacing: "0.04em" }}>
                 NOM DE L&apos;INGRÉDIENT
@@ -113,7 +87,16 @@ export function AddModal({
               <input
                 ref={nameRef}
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  const newName = e.target.value;
+                  const prevDefault = getIngredientDefaultUnit(name);
+                  if (unit === prevDefault || unit === "piece") {
+                    setUnit(getIngredientDefaultUnit(newName));
+                  }
+                  const resolvedEmoji = resolveEmoji(newName);
+                  setEmoji(resolvedEmoji ?? DEFAULT_INGREDIENT_EMOJI);
+                  setName(newName);
+                }}
                 placeholder="Ex : Tomates cerises"
                 required
                 className="w-full rounded-xl bg-[#FAFBF9] px-4 py-3 text-sm font-semibold text-[#1C2B1E] outline-none transition-all focus:border-[#4A7C59]"
@@ -141,16 +124,12 @@ export function AddModal({
               <label className="mb-1.5 block text-xs font-bold tracking-wide text-[#7A8F7D]" style={{ letterSpacing: "0.04em" }}>
                 UNITÉ
               </label>
-              <div className="relative">
-                <UnitSelect
-                  value={unit}
-                  onChange={(next) => setUnit(next as UnitCode)}
-                  className="w-full appearance-none rounded-xl border-[1.5px] border-[#E2EBE3] bg-[#FAFBF9] py-3 pr-10 pl-4 text-sm font-semibold text-[#1C2B1E] outline-none transition-all focus:border-[#4A7C59]"
-                />
-                <span className="pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 text-[#7A8F7D]">
-                  <ChevronDownIcon size={14} />
-                </span>
-              </div>
+              <UnitSelect
+                value={unit}
+                ingredientName={name}
+                onChange={(next) => setUnit(next as UnitCode)}
+                className="w-full flex items-center justify-between rounded-xl border-[1.5px] border-[#E2EBE3] bg-[#FAFBF9] py-3 px-4 text-sm font-semibold text-[#1C2B1E] outline-none transition-all hover:border-[#4A7C59] focus:border-[#4A7C59]"
+              />
             </div>
           </div>
 

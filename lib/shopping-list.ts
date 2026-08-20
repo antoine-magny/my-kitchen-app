@@ -160,7 +160,7 @@ export function removeShoppingItem(id: string): ShoppingItem[] {
 }
 
 export type ShoppingItemPatch = Partial<
-  Pick<ShoppingItem, "customName" | "amount" | "unit" | "category">
+  Pick<ShoppingItem, "customName" | "amount" | "unit" | "category" | "emoji">
 >;
 
 /**
@@ -182,6 +182,7 @@ export function updateShoppingItem(id: string, patch: ShoppingItemPatch): Shoppi
       amount: patch.amount ?? item.amount,
       unit: patch.unit ?? item.unit,
       category,
+      ...(patch.emoji ? { emoji: patch.emoji } : {}),
     };
   });
   writeList(next);
@@ -235,7 +236,13 @@ export function mergeIngredients(ingredients: RecipeIngredient[]): ShoppingItem[
     );
 
     if (existing) {
-      const combined = combineQuantities(existing.amount, existing.unit, ing.amount, ing.unit);
+      const combined = combineQuantities(
+        existing.amount,
+        existing.unit,
+        ing.amount,
+        ing.unit,
+        ing.ingredientId || ing.name,
+      );
       if (combined) {
         existing.amount = combined.amount;
         existing.unit = combined.unit;
@@ -278,7 +285,13 @@ export function appendIngredientsToShoppingList(
     );
 
     if (existing) {
-      const combined = combineQuantities(existing.amount, existing.unit, ing.amount, ing.unit);
+      const combined = combineQuantities(
+        existing.amount,
+        existing.unit,
+        ing.amount,
+        ing.unit,
+        ing.ingredientId || ing.name,
+      );
       if (combined) {
         existing.amount = combined.amount;
         existing.unit = combined.unit;
@@ -350,7 +363,13 @@ export function countExportImpact(
         !item.isChecked && matchesShoppingItem(item, ing.ingredientId, cleanName),
     );
     if (match) {
-      const combined = combineQuantities(match.amount, match.unit, ing.amount, ing.unit);
+      const combined = combineQuantities(
+        match.amount,
+        match.unit,
+        ing.amount,
+        ing.unit,
+        ing.ingredientId || ing.name,
+      );
       if (combined) {
         match.amount = combined.amount;
         match.unit = combined.unit;

@@ -17,6 +17,7 @@ import {
   type ParsedRecipe,
   type RecipeFormIngredientRow,
 } from "@/lib/recipe-import";
+import { getIngredientDefaultUnit } from "@/lib/ingredients";
 import type { NewRecipeInput } from "@/lib/recipes";
 import { coerceUnitCode, type UnitCode } from "@/lib/units";
 import { UnitSelect } from "@/components/ui/unit-select";
@@ -155,7 +156,17 @@ export function AddRecipeModal({
 
   const updateIngredient = (index: number, field: keyof RecipeFormIngredientRow, value: string) => {
     setIngredients((prev) =>
-      prev.map((ing, i) => (i === index ? { ...ing, [field]: value } : ing)),
+      prev.map((ing, i) => {
+        if (i !== index) return ing;
+        const updated = { ...ing, [field]: value };
+        if (field === "name" && value.trim()) {
+          const prevDefault = getIngredientDefaultUnit(ing.name);
+          if (ing.unit === prevDefault || ing.unit === "piece") {
+            updated.unit = getIngredientDefaultUnit(value);
+          }
+        }
+        return updated;
+      }),
     );
   };
 
@@ -556,16 +567,12 @@ export function AddRecipeModal({
                   className={inputClass}
                   style={inputStyle}
                 />
-                <div className="relative">
-                  <UnitSelect
-                    value={ing.unit}
-                    onChange={(unit) => updateIngredient(idx, "unit", unit)}
-                    className={`${inputClass} appearance-none pr-7`}
-                  />
-                  <span className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-[#7A8F7D]">
-                    <ChevronDownIcon size={14} />
-                  </span>
-                </div>
+                <UnitSelect
+                  value={ing.unit}
+                  ingredientName={ing.name}
+                  onChange={(unit) => updateIngredient(idx, "unit", unit)}
+                  className={`${inputClass} flex items-center justify-between pr-3.5`}
+                />
                 {ingredients.length > 1 ? (
                   <button
                     type="button"

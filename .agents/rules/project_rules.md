@@ -1,0 +1,39 @@
+# Règles du Projet
+
+## RÈGLES DE CONVERSATION
+- Réponds toujours par défaut en français.
+- Sois concis, direct et pédagogique dans tes explications.
+
+## RÈGLES D'ENVIRONNEMENT & ÉDITEUR
+- Travaille toujours en arrière-plan sans forcer l'ouverture ou le focus des fichiers dans l'éditeur de l'utilisateur.
+- Maintiens `"explorer.autoReveal": false` dans la configuration VS Code pour éviter de dérouler l'arborescence de l'explorateur sur son écran.
+
+## RÈGLES D'AUTONOMIE & ACTIONS COURANTES SÉCURISÉES
+Tu es pleinement mandaté pour exécuter proactivement et sans validation préalable toutes les actions courantes et sans risque pour produire du code :
+1. **Inspection & Recherche** : `view_file` (lecture), `grep_search` (recherche), `list_dir` (arborescence), consultation de docs web.
+2. **Écriture & Édition** : `replace_file_content` et `multi_replace_file_content` (modifications ciblées de code), `write_to_file` (création de fichiers du workspace).
+3. **Validation & Contrôle** : exécution de tests locaux (`npx tsx scripts/...`), vérification de types (`npx tsc --noEmit`), linters et builds de test.
+4. **Commandes Git non destructives** : `git status`, `git diff`, `git log`.
+*Seules les opérations destructives irréversibles (ex. DROP table, suppression de données de production) nécessitent une confirmation explicite.*
+
+## RÈGLES DE QUALITÉ DU CODE & ARCHITECTURE
+- Écris un code clair, minimaliste (DRY - Don't Repeat Yourself) et facile à maintenir.
+- Respecte strictement la stack technique du projet : Next.js 16 (App Router), React 19, Tailwind CSS v4, Supabase et Google Gemini.
+- Respecte la séparation des responsabilités : le dossier `lib/` ne doit jamais contenir de JSX. Le dossier `app/` orchestre le rendu mais délègue la logique métier complexe à `lib/`.
+- Utilise toujours l'alias `@/` pour les imports absolus depuis la racine.
+- Priorise le `localStorage` pour l'état applicatif hybride (inventaire, listes) avant de synchroniser avec Supabase en arrière-plan. N'essaie pas de "corriger" les avertissements ESLint liés à ce pattern d'hydratation.
+- Ne crée pas de nouvelles icônes SVG à la volée. Utilise ou enrichis exclusivement le composant centralisé `components/icons.tsx`.
+- **RÈGLE EMOJIS & CATALOGUE :** Un même emoji peut représenter plusieurs ingrédients distincts (ex. 🥒 pour Courgette et Concombre). Toute grille/sélecteur d'emojis dans l'interface doit obligatoirement utiliser `UNIQUE_EMOJI_INGREDIENTS` de `@/lib/ingredients` (ou filtrer par `Set`) afin d'éliminer les doublons d'icônes identiques côte à côte.
+- Ajoute la directive `'use client'` uniquement lorsque c'est strictement nécessaire (utilisation de hooks comme useState, useEffect ou d'événements interactifs).
+
+## RÈGLE : MAINTENANCE DU README (DOCUMENTATION AUTOMATIQUE)
+- Le fichier `README.md` est le manuel d'architecture du projet.
+- Si notre conversation aboutit à la création d'une nouvelle table Supabase, d'une nouvelle variable d'environnement, ou d'une modification structurelle majeure (ex: refactoring important, nouvelle route API logicielle) : mets automatiquement à jour le fichier `README.md` à la fin de ta réponse pour refléter ces changements, sans que j'aie besoin de te le demander.
+
+## RÈGLE : SYNCHRONISATION GITHUB
+Quand l'utilisateur écrit "synchro git", "synchro", ou "met à jour github" :
+1. S'il y a des changements locaux : exécute `git add .` puis analyse les fichiers modifiés pour rédiger un message de commit concis et clair en français (ex: "Ajout de la page frigo"). Ajoute la date et l'heure à la fin du message (fuseau horaire : Paris). Puis exécute : `git commit -m "Message de commit généré"`. Ne crée pas de commit vide si le working tree est propre.
+2. Exécute la commande terminal : `git pull --rebase` (récupère les modifications distantes d'un collègue ou d'un agent IA et les pose proprement par-dessus tes commits locaux).
+3. Si des conflits apparaissent : arrête-toi, liste les fichiers en conflit, et demande à l'utilisateur avant de continuer. N'utilise jamais `--force`, `--force-with-lease`, `--no-verify` ni `--no-gpg-sign`.
+4. Une fois le code aligné et sans conflit, exécute la commande terminal : `git push`
+5. Confirme à l'utilisateur que le PC et GitHub sont alignés, et que la mise à jour Vercel est lancée s'il y a eu un push.

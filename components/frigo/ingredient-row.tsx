@@ -20,11 +20,13 @@ import {
 import { dlcStatus } from "@/lib/fridge";
 import { coerceUnitCode, type UnitCode } from "@/lib/units";
 import { UnitSelect } from "@/components/ui/unit-select";
+import { EmojiPickerPopover } from "@/components/ui/emoji-picker-popover";
 
 export function IngredientRow({
   item,
   onAdjust,
   onChangeUnit,
+  onChangeEmoji,
   onDelete,
   onEditDlc,
   onMove,
@@ -34,6 +36,7 @@ export function IngredientRow({
   item: Ingredient;
   onAdjust: (id: string, delta: number) => void;
   onChangeUnit: (id: string, unit: UnitCode) => void;
+  onChangeEmoji?: (id: string, emoji: string) => void;
   onDelete: (id: string) => void;
   onEditDlc: (id: string) => void;
   onMove: (id: string, category: TabId) => void;
@@ -156,7 +159,13 @@ export function IngredientRow({
         animation: isNew ? "slideDown 0.22s ease both" : "none",
       }}
     >
-      <span className="w-8 shrink-0 text-center text-xl select-none">{item.emoji}</span>
+      <EmojiPickerPopover
+        size="sm"
+        currentEmoji={item.emoji}
+        onSelectEmoji={(newEmoji) => {
+          onChangeEmoji?.(item.id, newEmoji);
+        }}
+      />
 
       <div className="min-w-0 flex-1">
         <input
@@ -217,11 +226,12 @@ export function IngredientRow({
       <UnitSelect
         compact
         value={item.unit}
+        ingredientName={item.customName}
         onChange={(unit) => {
           const next = coerceUnitCode(unit);
           if (next && next !== item.unit) onChangeUnit(item.id, next);
         }}
-        className="hidden w-[4.5rem] shrink-0 appearance-none rounded-lg border border-transparent bg-transparent py-1 text-right text-xs font-semibold text-[#9CA3AF] outline-none hover:bg-[#F0F4EF] focus:bg-[#F0F4EF] focus:ring-2 focus:ring-[#C8E0CF] sm:block"
+        className="hidden max-w-[6.5rem] shrink-0 truncate rounded-lg border border-transparent bg-transparent py-1 px-1.5 text-right text-xs font-semibold text-[#7A8F7D] outline-none hover:bg-[#F0F4EF] hover:text-[#1C2B1E] focus:bg-[#F0F4EF] focus:ring-2 focus:ring-[#C8E0CF] sm:block cursor-pointer transition-all"
         aria-label={`Unité de ${item.customName}`}
       />
 

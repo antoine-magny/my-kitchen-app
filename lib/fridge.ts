@@ -7,7 +7,7 @@
  * l'aliment canonique pour le matching avec les recettes et les courses.
  */
 
-import { describeIngredient } from "@/lib/ingredients";
+import { describeIngredient, DEFAULT_INGREDIENT_EMOJI } from "@/lib/ingredients";
 import { normalizeProductName } from "@/lib/shopping-categories";
 import {
   coerceUnitCode,
@@ -108,7 +108,7 @@ export function createFridgeItem(input: {
 }): FridgeItem {
   const customName = input.customName.trim();
   const identity = describeIngredient(customName);
-  const emoji = input.emoji ?? identity.emoji ?? "🥗";
+  const emoji = input.emoji ?? identity.emoji ?? DEFAULT_INGREDIENT_EMOJI;
 
   return {
     id: input.id ?? createFridgeItemId(),
@@ -352,6 +352,7 @@ export function transferCheckedShoppingItemsToFridge(
         existing.unit,
         shop.amount,
         shop.unit,
+        shop.ingredientId || shop.customName,
       );
       if (combined) {
         existing.amount = combined.amount;

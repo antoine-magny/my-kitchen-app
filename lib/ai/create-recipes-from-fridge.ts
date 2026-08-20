@@ -175,7 +175,7 @@ export async function createRecipesFromFridge(
     `Retourne exactement ${mealCount} recette${mealCount > 1 ? "s" : ""} distincte${mealCount > 1 ? "s" : ""} dans le tableau recipes.`,
     "Chaque recette doit inclure title, time, calories, proteins, servings, difficulty,",
     "tag (Express|Végétarien|Riche en protéines|Desserts|null), tagLabel optionnel,",
-    `ingredients[{name, amount (nombre), unit (${UNIT_CODES_HINT})}], steps[{title,detail,duration?}]`,
+    `ingredients[{name, amount (nombre), unit (${UNIT_CODES_HINT})}]. Utilise g/kg pour les solides au poids, ml/cl/l/c_soupe/c_cafe pour les liquides, l'unité naturelle (gousse, tranche, feuille...) ou « piece » par défaut pour les décomptes/inconnus.`,
     "Pour une quantité non chiffrable (sel, poivre, herbes à volonté) : unit « qs » et amount 0.",
     "matchedIngredients, missing_ingredients et reason.",
     MEAL_TYPE_PROMPT[mealType],

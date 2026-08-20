@@ -67,7 +67,7 @@ const SYSTEM_INSTRUCTION = [
   "Réponds uniquement en JSON strict (pas de markdown).",
   "Langue : français.",
   "prep_time et cook_time : chaînes courtes du type \"15 min\". Si inconnu, estime raisonnablement.",
-  `ingredients.unit doit être l’un de : ${UNIT_CODES_HINT}.`,
+  `ingredients.unit doit être l’un de : ${UNIT_CODES_HINT}. Pour les liquides utilise ml, cl, l, c_soupe ou c_cafe. Pour les solides au poids utilise g ou kg. Pour les décomptes utilise l'unité naturelle (ex: gousse pour l'ail, tranche pour le melon/pain, feuille pour les herbes) ou « piece » par défaut pour tout ingrédient dénombrable ou inconnu.`,
   "amount est un nombre positif (pas de fraction textuelle).",
   "Utilise l’unité « qs » avec amount 0 pour les quantités non chiffrables (sel, poivre, herbes à volonté).",
   "instructions : liste ordonnée d’étapes actionnables (une phrase claire par étape).",

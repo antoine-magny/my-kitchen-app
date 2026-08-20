@@ -87,6 +87,10 @@ export default function FrigoPage() {
     setItems((prev) => prev.map((i) => (i.id === id ? { ...i, unit } : i)));
   };
 
+  const handleChangeEmoji = (id: string, emoji: string) => {
+    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, emoji } : i)));
+  };
+
   const handleUpdateDlc = (id: string, expirationDate: string | null) => {
     setItems((prev) =>
       prev.map((i) => {
@@ -269,6 +273,7 @@ export default function FrigoPage() {
                       item={item}
                       onAdjust={handleAdjust}
                       onChangeUnit={handleChangeUnit}
+                      onChangeEmoji={handleChangeEmoji}
                       onDelete={handleDelete}
                       onEditDlc={setEditingDlcId}
                       onMove={handleMove}

@@ -1,3 +1,5 @@
+import { getIngredientEquivalence } from "@/lib/ingredients";
+
 /**
  * Unités regroupées par familles (Masse, Volume, Décompte).
  * Les quantités compatibles peuvent être additionnées via `combineQuantities`.
@@ -28,7 +30,7 @@ export const UNITS: Record<string, UnitDefinition> = {
   verre: { code: "verre", label: "verre (20 cl)", category: "volume", baseRatio: 200 },
 
   // --- DÉCOMPTE & UNITÉS (Base : unité) ---
-  piece: { code: "piece", label: "pièce(s)", category: "count", baseRatio: 1 },
+  piece: { code: "piece", label: "Pièce", category: "count", baseRatio: 1 },
   gousse: { code: "gousse", label: "gousse(s)", category: "count", baseRatio: 1 },
   tranche: { code: "tranche", label: "tranche(s)", category: "count", baseRatio: 1 },
   sachet: { code: "sachet", label: "sachet(s)", category: "count", baseRatio: 1 },
@@ -37,8 +39,8 @@ export const UNITS: Record<string, UnitDefinition> = {
   poignee: { code: "poignee", label: "poignée(s)", category: "count", baseRatio: 1 },
   botte: { code: "botte", label: "botte(s)", category: "count", baseRatio: 1 },
   feuille: { code: "feuille", label: "feuille(s)", category: "count", baseRatio: 1 },
-  /** Quantité non chiffrée (« q.s. ») — jamais additionnée avec une autre unité. */
-  qs: { code: "qs", label: "q.s.", category: "count", baseRatio: 1 },
+  /** Quantité non chiffrée (« Quantité suffisante ») — jamais additionnée avec une autre unité. */
+  qs: { code: "qs", label: "Quantité suffisante", category: "count", baseRatio: 1 },
 };
 
 export type UnitCode = keyof typeof UNITS;
@@ -80,7 +82,7 @@ export function unitLabel(code: UnitCode): string {
     c_cafe: "c.à.c",
     c_soupe: "c.à.s",
     verre: "verre",
-    piece: "pce",
+    piece: "Pièce",
     gousse: "gousse",
     tranche: "tranche",
     sachet: "sachet",
@@ -89,7 +91,7 @@ export function unitLabel(code: UnitCode): string {
     poignee: "poignée",
     botte: "botte",
     feuille: "feuille",
-    qs: "q.s.",
+    qs: "Quantité suffisante",
   };
   return short[code] ?? UNITS[code]?.label ?? code;
 }
@@ -103,7 +105,7 @@ export function getUnitCategory(code: string): UnitCategory | null {
  * Combine deux quantités d'un même ingrédient si leurs unités sont compatibles.
  * - Masse : ramené en g, additionné, converti en kg si >= 1000g.
  * - Volume : ramené en ml, additionné, converti en L si >= 1000ml.
- * - Décompte : additionné si unité strictement identique.
+ * - Décompte : additionné si unité strictement identique, ou converti via le ratio d'équivalence.
  * - Incompatible / q.s. : retourne null pour forcer 2 lignes séparées.
  */
 export function combineQuantities(
@@ -111,6 +113,7 @@ export function combineQuantities(
   unitCode1: string,
   amount2: number,
   unitCode2: string,
+  ingredientNameOrId?: string,
 ): { amount: number; unit: UnitCode } | null {
   const code1 = coerceUnitCode(unitCode1);
   const code2 = coerceUnitCode(unitCode2);
@@ -135,6 +138,26 @@ export function combineQuantities(
     return { amount: amount1, unit: code1 };
   }
 
+  if (code1 === code2) {
+    if (u1.category === "mass") {
+      const total = amount1 + amount2;
+      if (code1 === "g" && total >= 1000) {
+        return { amount: Number((total / 1000).toFixed(2)), unit: "kg" };
+      }
+      return { amount: total, unit: code1 };
+    }
+    if (u1.category === "volume") {
+      const total = amount1 + amount2;
+      if (code1 === "ml" && total >= 1000) {
+        return { amount: Number((total / 1000).toFixed(2)), unit: "l" };
+      }
+      return { amount: total, unit: code1 };
+    }
+    if (u1.category === "count") {
+      return { amount: amount1 + amount2, unit: code1 };
+    }
+  }
+
   if (u1.category === "mass" && u2.category === "mass") {
     const totalGrams = amount1 * u1.baseRatio + amount2 * u2.baseRatio;
     if (totalGrams >= 1000) {
@@ -151,8 +174,38 @@ export function combineQuantities(
     return { amount: Math.round(totalMl), unit: "ml" };
   }
 
-  if (u1.category === "count" && code1 === code2) {
-    return { amount: amount1 + amount2, unit: code1 };
+  // Équivalence masse/volume <-> décompte si un ratio est connu pour l'ingrédient
+  if (ingredientNameOrId) {
+    const eq = getIngredientEquivalence(ingredientNameOrId);
+    if (eq?.gramsPerCountUnit && eq.gramsPerCountUnit > 0) {
+      if (u1.category === "mass" && u2.category === "count") {
+        const grams1 = amount1 * u1.baseRatio;
+        const countFromGrams = grams1 / eq.gramsPerCountUnit;
+        const total = Math.round((amount2 + countFromGrams) * 100) / 100;
+        return { amount: total, unit: code2 };
+      }
+      if (u1.category === "count" && u2.category === "mass") {
+        const grams2 = amount2 * u2.baseRatio;
+        const countFromGrams = grams2 / eq.gramsPerCountUnit;
+        const total = Math.round((amount1 + countFromGrams) * 100) / 100;
+        return { amount: total, unit: code1 };
+      }
+    }
+
+    if (eq?.mlPerCountUnit && eq.mlPerCountUnit > 0) {
+      if (u1.category === "volume" && u2.category === "count") {
+        const ml1 = amount1 * u1.baseRatio;
+        const countFromMl = ml1 / eq.mlPerCountUnit;
+        const total = Math.round((amount2 + countFromMl) * 100) / 100;
+        return { amount: total, unit: code2 };
+      }
+      if (u1.category === "count" && u2.category === "volume") {
+        const ml2 = amount2 * u2.baseRatio;
+        const countFromMl = ml2 / eq.mlPerCountUnit;
+        const total = Math.round((amount1 + countFromMl) * 100) / 100;
+        return { amount: total, unit: code1 };
+      }
+    }
   }
 
   return null;
@@ -170,8 +223,8 @@ export function toBaseQuantity(
 }
 
 /** Deux quantités ne sont additionnables que si `combineQuantities` réussirait. */
-export function areUnitsCompatible(a: UnitCode, b: UnitCode): boolean {
-  return combineQuantities(1, a, 1, b) != null;
+export function areUnitsCompatible(a: UnitCode, b: UnitCode, ingredientNameOrId?: string): boolean {
+  return combineQuantities(1, a, 1, b, ingredientNameOrId) != null;
 }
 
 /** Unités dénombrables qui prennent un « s » au pluriel à l'affichage. */
@@ -203,7 +256,7 @@ function formatNumber(value: number): string {
  */
 export function formatAmount(amount: number, unit: UnitCode): string {
   const code = coerceUnitCode(unit) ?? unit;
-  if (code === "qs") return "q.s.";
+  if (code === "qs") return "Quantité suffisante";
 
   if (code === "g" && amount >= 1000) return `${formatNumber(amount / 1000)} kg`;
   if (code === "ml") {
@@ -286,6 +339,11 @@ const UNIT_ALIASES: Record<string, { unit: UnitCode; factor: number }> = {
   feuille: { unit: "feuille", factor: 1 },
   feuilles: { unit: "feuille", factor: 1 },
   qs: { unit: "qs", factor: 1 },
+  "quantite suffisante": { unit: "qs", factor: 1 },
+  "quantite_suffisante": { unit: "qs", factor: 1 },
+  "quantitesuffisante": { unit: "qs", factor: 1 },
+  "au besoin": { unit: "qs", factor: 1 },
+  "au gout": { unit: "qs", factor: 1 },
 };
 
 /** Minuscules, sans accents ni ponctuation d'abréviation (« c.à.s » → « c a s »). */
@@ -315,10 +373,14 @@ export function normalizeUnit(value: unknown): UnitCode {
 const UNQUANTIFIED_MARKERS = [
   "qs",
   "q s",
+  "quantite suffisante",
+  "quantitesuffisante",
+  "au besoin",
   "quelques",
   "au gout",
   "a volonte",
   "selon gout",
+  "selon les gouts",
 ] as const;
 
 function parseNumberToken(raw: string): number | null {

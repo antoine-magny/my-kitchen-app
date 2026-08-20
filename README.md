@@ -113,7 +113,7 @@ ou la quantité **ne modifie jamais** la recette d'origine et **ne supprime
 jamais** l'`ingredientId` : le lien canonique survit au renommage
 (« Tomate » → « Tomates cerises bio »).
 
-### Unités & conversions (`lib/units.ts`)
+### Unités & conversions (`lib/units.ts` & `lib/ingredients.ts`)
 
 Les unités sont regroupées en 3 familles (`UnitCategory`) :
 
@@ -123,20 +123,25 @@ Les unités sont regroupées en 3 familles (`UnitCategory`) :
 | Volume | ml | `ml`, `cl`, `l`, `c_cafe` (5 ml), `c_soupe` (15 ml), `verre` (200 ml) |
 | Décompte | 1 | `piece`, `gousse`, `tranche`, `sachet`, `pincee`, `brin`, `poignee`, `botte`, `feuille`, `qs` |
 
-`combineQuantities(a1, u1, a2, u2)` :
+**Unités variables par aliment & Règle par défaut :**
+- Chaque aliment du référentiel (`lib/ingredients.ts`) possède une unité par défaut `defaultUnit` (ex: `gousse` pour Ail, `g` pour Farine/Viande, `ml` pour Lait, `tranche` pour Melon/Pain) et une unité de décompte dédiée `countUnit`.
+- Si un ingrédient ou une unité n'est pas reconnu par l'IA ou la saisie libre, l'application et l'IA attribuent par défaut l'unité **`piece`** (`DEFAULT_UNIT = "piece"`).
+- Les équivalences nutritionnelles moyennes (`gramsPerCountUnit`, `mlPerCountUnit`) permettent la conversion automatique (ex: `1 gousse d'ail = 5 g`).
+- **Correction orthographique intelligente (`lib/fuzzy-search.ts`) :** Algorithme hybride basé sur la distance de Levenshtein et la réduction des consonnes doubles pour matcher les aliments même avec des fautes de frappe ou d'orthographe (ex: « mozarella » → `Mozzarella`, « courgete » → `Courgette`, « echalotte » → `Échalote`).
 
-- masse / volume compatibles → addition en base, puis remontée (`≥ 1000 g` → kg,
-  `≥ 1000 ml` → L) ;
-- décompte → addition seulement si le code est **strictement identique** ;
+`combineQuantities(a1, u1, a2, u2, ingredientNameOrId?)` :
+
+- unités identiques → addition directe (avec auto-conversion `≥ 1000 g` → kg, `≥ 1000 ml` → L) ;
+- masse / volume compatibles → addition en base ml / g ;
+- décompte $\leftrightarrow$ masse/volume → conversion automatique sans doublon si l'aliment a une équivalence connue (ex: 10g d'ail + 1 gousse = 3 gousses d'ail) ;
 - incompatible ou `qs` non absorbable → `null` (deux lignes séparées).
 
 Alias legacy (`unite` → `piece`, `cas` → `c_soupe`, `cac` → `c_cafe`) via
 `coerceUnitCode` / `normalizeUnit`. Le domaine Postgres `unit_domain` est aligné
 sur ces codes.
 
-Sélecteur UI partagé : `components/ui/unit-select.tsx` (optgroups par famille),
-branché partout où une unité est éditable : ajout / édition de recette, ajout
-frigo, ligne d'inventaire frigo, et liste de courses (mode `compact`).
+Sélecteur UI partagé : `components/ui/unit-select.tsx` (menu déroulant interactif stylisé avec popover par familles Masse / Volume / Décompte),
+qui adapte dynamiquement la section **Décompte** à l'ingrédient actif (proposant son unité naturelle + `Pièce` + `Quantité suffisante`). Auto-sélection intelligente de l'unité lors de la saisie d'un ingrédient dans l'ajout/édition de recette et le frigo.
 
 ### Flux Planning → Courses
 

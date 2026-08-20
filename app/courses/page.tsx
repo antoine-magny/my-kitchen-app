@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckIcon, TrashIcon } from "@/components/icons";
 import { UnitSelect } from "@/components/ui/unit-select";
+import { EmojiPickerPopover } from "@/components/ui/emoji-picker-popover";
 import { transferCheckedShoppingItemsToFridge } from "@/lib/fridge";
 import { groupByShoppingCategory } from "@/lib/shopping-categories";
 import {
@@ -24,7 +25,7 @@ const inputNameClass =
 const inputAmountClass =
   "w-16 shrink-0 bg-transparent text-xs font-medium text-[#7A8F7D] outline-none rounded-lg px-1.5 py-0.5 transition-colors hover:bg-[#F0F4EF] focus:bg-[#F0F4EF] focus:ring-2 focus:ring-[#C8E0CF]";
 const unitSelectClass =
-  "min-w-0 flex-1 appearance-none rounded-lg border border-transparent bg-transparent py-0.5 pl-1.5 pr-1 text-xs font-medium text-[#7A8F7D] outline-none hover:bg-[#F0F4EF] focus:bg-[#F0F4EF] focus:ring-2 focus:ring-[#C8E0CF]";
+  "min-w-0 max-w-[7.5rem] truncate rounded-lg border border-transparent bg-transparent py-0.5 px-1.5 text-xs font-semibold text-[#7A8F7D] outline-none transition-colors hover:bg-[#F0F4EF] hover:text-[#1C2B1E] focus:bg-[#F0F4EF] focus:ring-2 focus:ring-[#C8E0CF] cursor-pointer text-left";
 
 function ShoppingItemRow({
   item,
@@ -92,11 +93,13 @@ function ShoppingItemRow({
         <CheckIcon size={14} />
       </button>
 
-      {item.emoji && (
-        <span className="shrink-0 text-lg select-none" aria-hidden>
-          {item.emoji}
-        </span>
-      )}
+      <EmojiPickerPopover
+        size="sm"
+        currentEmoji={item.emoji}
+        onSelectEmoji={(newEmoji) => {
+          onUpdate(item.id, { emoji: newEmoji });
+        }}
+      />
 
       <div className="min-w-0 flex-1">
         <input
@@ -135,6 +138,7 @@ function ShoppingItemRow({
           <UnitSelect
             compact
             value={item.unit}
+            ingredientName={item.customName}
             onChange={(unit) => {
               const next = coerceUnitCode(unit);
               if (next && next !== item.unit) onUpdate(item.id, { unit: next });

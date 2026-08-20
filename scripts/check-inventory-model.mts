@@ -20,23 +20,24 @@ function check(label: string, actual: unknown, expected: unknown) {
 
 console.log("\n--- Conversion des quantités écrites ---");
 check("« 150 g »", parseAmount("150 g"), { amount: 150, unit: "g" });
-check("« 20 cl »", parseAmount("20 cl"), { amount: 200, unit: "ml" });
-check("« 2 c.à.s »", parseAmount("2 c.à.s"), { amount: 2, unit: "cas" });
+check("« 20 cl »", parseAmount("20 cl"), { amount: 20, unit: "cl" });
+check("« 2 c.à.s »", parseAmount("2 c.à.s"), { amount: 2, unit: "c_soupe" });
 check("« 3 gousses »", parseAmount("3 gousses"), { amount: 3, unit: "gousse" });
 check("« 10 feuilles »", parseAmount("10 feuilles"), { amount: 10, unit: "feuille" });
-check("« 1/2 »", parseAmount("1/2"), { amount: 0.5, unit: "unite" });
+check("« 1/2 »", parseAmount("1/2"), { amount: 0.5, unit: "piece" });
 check("« q.s. »", parseAmount("q.s."), { amount: 0, unit: "qs" });
+check("« Quantité suffisante »", parseAmount("Quantité suffisante"), { amount: 0, unit: "qs" });
 check("« quelques brins »", parseAmount("quelques brins"), { amount: 0, unit: "qs" });
-check("« 1 pot »", parseAmount("1 pot"), { amount: 1, unit: "unite" });
+check("« 1 pot »", parseAmount("1 pot"), { amount: 1, unit: "piece" });
 
 console.log("\n--- Affichage ---");
 check("400 g", formatAmount(400, "g"), "400 g");
 check("1500 g", formatAmount(1500, "g"), "1,5 kg");
 check("200 ml", formatAmount(200, "ml"), "20 cl");
-check("0 qs", formatAmount(0, "qs"), "q.s.");
+check("0 qs", formatAmount(0, "qs"), "Quantité suffisante");
 check("3 gousse", formatAmount(3, "gousse"), "3 gousses");
 check("1 gousse", formatAmount(1, "gousse"), "1 gousse");
-check("0,5 unite", formatAmount(0.5, "unite"), "1/2");
+check("0,5 piece", formatAmount(0.5, "piece"), "1/2");
 
 console.log("\n--- Identités canoniques ---");
 check("Tomate", resolveIngredientId("Tomate"), "ing_tomate");

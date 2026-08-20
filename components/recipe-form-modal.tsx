@@ -21,6 +21,7 @@ import {
   type RecipeFilter,
   type RecipeStep,
 } from "@/lib/recipes";
+import { getIngredientDefaultUnit } from "@/lib/ingredients";
 import { coerceUnitCode, DEFAULT_UNIT } from "@/lib/units";
 
 type IngredientRow = RecipeFormIngredientRow;
@@ -87,7 +88,14 @@ export function RecipeFormModal({
         if (field === "unit") {
           return { ...row, unit: coerceUnitCode(value) ?? DEFAULT_UNIT };
         }
-        return { ...row, [field]: value };
+        const updated = { ...row, [field]: value };
+        if (field === "name" && value.trim()) {
+          const prevDefault = getIngredientDefaultUnit(row.name);
+          if (row.unit === prevDefault || row.unit === "piece") {
+            updated.unit = getIngredientDefaultUnit(value);
+          }
+        }
+        return updated;
       }),
     );
   };
@@ -473,16 +481,12 @@ export function RecipeFormModal({
                       className={inputClass}
                       style={inputStyle}
                     />
-                    <div className="relative">
-                      <UnitSelect
-                        value={row.unit}
-                        onChange={(unit) => updateIngredient(idx, "unit", unit)}
-                        className={`${inputClass} appearance-none pr-7`}
-                      />
-                      <span className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-[#7A8F7D]">
-                        <ChevronDownIcon size={14} />
-                      </span>
-                    </div>
+                    <UnitSelect
+                      value={row.unit}
+                      ingredientName={row.name}
+                      onChange={(unit) => updateIngredient(idx, "unit", unit)}
+                      className={`${inputClass} flex items-center justify-between pr-3.5`}
+                    />
                     {ingredients.length > 1 ? (
                       <button
                         type="button"
