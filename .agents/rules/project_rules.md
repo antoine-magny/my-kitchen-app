@@ -30,6 +30,11 @@ Tu es pleinement mandaté pour exécuter proactivement et sans validation préal
 - Le fichier `README.md` est le manuel d'architecture du projet.
 - Si notre conversation aboutit à la création d'une nouvelle table Supabase, d'une nouvelle variable d'environnement, ou d'une modification structurelle majeure (ex: refactoring important, nouvelle route API logicielle) : mets automatiquement à jour le fichier `README.md` à la fin de ta réponse pour refléter ces changements, sans que j'aie besoin de te le demander.
 
+## RÈGLE : COLLABORATION MULTI-IA
+- Ce dépôt est modifié en parallèle par **Cursor** et **Antigravity** (local + GitHub). Aucun agent n'est le seul auteur des fichiers.
+- Ne jamais partir du principe d'être le seul à avoir touché le code : vérifier `git status` / historique distant avant d'écraser ou de « corriger » du travail.
+- En synchro : `pull --rebase` obligatoire ; jamais de force-push ; en cas de conflit, s'arrêter et demander à l'utilisateur.
+
 ## RÈGLE : SYNCHRONISATION GITHUB
 Quand l'utilisateur écrit "synchro git", "synchro", ou "met à jour github" :
 1. S'il y a des changements locaux : exécute `git add .` puis analyse les fichiers modifiés pour rédiger un message de commit concis et clair en français (ex: "Ajout de la page frigo"). Ajoute la date et l'heure à la fin du message (fuseau horaire : Paris). Puis exécute : `git commit -m "Message de commit généré"`. Ne crée pas de commit vide si le working tree est propre.

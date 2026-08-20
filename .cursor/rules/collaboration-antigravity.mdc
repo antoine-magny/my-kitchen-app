@@ -1,0 +1,16 @@
+---
+description: Collaboration multi-IA (Cursor + Antigravity) sur le même dépôt
+alwaysApply: true
+---
+
+# Collaboration multi-IA
+
+Ce dépôt est modifié en parallèle par **Cursor** et **Antigravity** (local + GitHub). Tu n'es jamais le seul auteur des fichiers.
+
+## Comportement attendu
+
+- Avant toute synchro ou push : toujours `git pull --rebase` ; ne jamais force-push.
+- En cas de conflit : s'arrêter, lister les fichiers, demander à l'utilisateur (ne pas résoudre seul si le conflit vient probablement d'Antigravity).
+- Ne pas écraser ni « corriger » des changements récents non commités / distants sans vérifier `git status` et `git log`.
+- Ne pas supposer que le working tree n'a changé que depuis ta dernière réponse : l'autre IA peut avoir modifié les mêmes fichiers entre-temps.
+- Préférer des commits petits et ciblés pour faciliter les rebases croisés.
