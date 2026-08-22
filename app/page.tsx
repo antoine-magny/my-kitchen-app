@@ -9,6 +9,7 @@ import {
   FlameIcon,
   ProteinIcon,
   SearchIcon,
+  SettingsIcon,
   StarIcon,
 } from "@/components/icons";
 import { formatTodayLongFr } from "@/lib/date-paris";
@@ -100,11 +101,27 @@ export default function Home() {
                 <span className="text-[#4A7C59]">Prêt à cuisiner ?</span>
               </h1>
             </div>
-            <div
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-lg font-extrabold text-white shadow-md"
-              style={{ background: "linear-gradient(135deg, #4A7C59, #6FAE82)" }}
-            >
-              A
+            <div className="flex shrink-0 items-center gap-2.5">
+              <Link
+                href="/parametres"
+                className="flex h-11 w-11 items-center justify-center rounded-full text-[#4A7C59] transition-all hover:opacity-80 active:scale-95"
+                style={{
+                  background: "#FFFFFF",
+                  border: "1.5px solid #E2EBE3",
+                  boxShadow: "0 2px 12px rgba(74,124,89,0.10)",
+                }}
+                aria-label="Profil et paramètres"
+              >
+                <SettingsIcon size={19} />
+              </Link>
+              <Link
+                href="/parametres"
+                className="flex h-12 w-12 items-center justify-center rounded-full text-lg font-extrabold text-white shadow-md transition-transform active:scale-95"
+                style={{ background: "linear-gradient(135deg, #4A7C59, #6FAE82)" }}
+                aria-label="Mon profil"
+              >
+                A
+              </Link>
             </div>
           </div>
 

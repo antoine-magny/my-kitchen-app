@@ -43,6 +43,7 @@ app/                    Routes App Router (une page par écran)
   planning/             Planning hebdomadaire des repas
   recettes/             Liste des recettes + détail dynamique [id]
   courses/              Liste de courses (+ transfert vers le frigo)
+  parametres/           Profil & réglages (préférences, objectifs, équipements)
   api/                  Route Handlers (voir plus bas)
 components/             Composants React partagés
   icons.tsx             Toutes les icônes SVG de l'app (props size / strokeWidth)
@@ -50,10 +51,12 @@ components/             Composants React partagés
   ui/unit-select.tsx    Sélecteur d'unités par familles (Masse / Volume / Décompte)
   frigo/                Composants propres à la page frigo
   planning/             Modales propres au planning (export courses)
+  parametres/           Cartes de la page Profil & Paramètres
   generate-from-fridge-modal.tsx  Génération de recettes depuis le planning
   select-recipe-modal.tsx         Choix d'une recette du catalogue
 lib/                    Logique métier, sans JSX
   units.ts              Familles d'unités + combineQuantities
+  profile.ts            Données du profil utilisateur (démo, non persistées)
   shopping-list.ts      Export Planning → Courses (fusion / déduplication)
   fridge.ts             Inventaire local + transfert Courses → Frigo
   ingredients.ts        Référentiel canonique (ingredientId)
@@ -119,6 +122,26 @@ affiche la grille de sélection. Points d'architecture :
 - Fermeture automatique au clic extérieur, scroll extérieur et resize.
 - Utilisé dans : `app/courses/page.tsx`, `components/frigo/ingredient-row.tsx`,
   `components/frigo/add-modal.tsx`.
+
+### Profil & Paramètres (`/parametres`)
+
+Écran de réglages accessible depuis l'engrenage de l'en-tête d'accueil. **À ce
+stade, l'interface seule est en place** : aucune valeur n'est persistée ni
+envoyée à Supabase.
+
+- `app/parametres/page.tsx` est un **Server Component** : il assemble les
+  sections sans état propre.
+- Les données affichées (préférences, objectifs, équipements, entrées de menu)
+  sont des constantes de démonstration dans `lib/profile.ts`.
+- Seules les cartes réellement interactives sont `'use client'` :
+  `preference-card.tsx` (tags), `goals-card.tsx` (objectif + kcal/protéines),
+  `equipment-card.tsx` (matériel disponible) et `settings-menu.tsx` (thème).
+  Chacune garde son état dans un `useState` local, perdu au rechargement.
+- Boutons encore inertes, en attente de la logique métier : statistiques, test
+  de profil culinaire, gestion du compte, notifications, aide, déconnexion.
+
+Quand la persistance arrivera, elle devra suivre le modèle hybride du projet :
+`localStorage` d'abord, Supabase en arrière-plan.
 
 ---
 

@@ -30,13 +30,18 @@ export function BottomNav() {
       }}
       aria-label="Navigation principale"
     >
-      <div
-        className="mr-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-extrabold text-white"
-        style={{ background: "#1C2B1E" }}
-        aria-hidden
+      <Link
+        href="/parametres"
+        className="mr-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-extrabold text-white transition-transform active:scale-95"
+        style={{
+          background: "#1C2B1E",
+          boxShadow: isActive("/parametres") ? "0 0 0 2.5px #4A7C59" : "none",
+        }}
+        aria-label="Profil et paramètres"
+        aria-current={isActive("/parametres") ? "page" : undefined}
       >
         A
-      </div>
+      </Link>
 
       <div className="flex min-w-0 flex-1 items-center justify-around">
         {NAV_ITEMS.map((item) => {
