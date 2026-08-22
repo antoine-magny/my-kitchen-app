@@ -10,14 +10,6 @@
       "env": {
         "PATH": "C:\\Program Files\\nodejs;${env:PATH}"
       }
-    },
-    {
-      "type": "chrome",
-      "request": "launch",
-      "name": "Ouvrir http://localhost:3000",
-      "url": "http://localhost:3000",
-      "webRoot": "${workspaceFolder}",
-      "preLaunchTask": "dev"
     }
   ]
 }

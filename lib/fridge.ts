@@ -108,7 +108,10 @@ export function createFridgeItem(input: {
 }): FridgeItem {
   const customName = input.customName.trim();
   const identity = describeIngredient(customName);
-  const emoji = input.emoji ?? identity.emoji ?? DEFAULT_INGREDIENT_EMOJI;
+  const emoji =
+    input.emoji && input.emoji !== DEFAULT_INGREDIENT_EMOJI
+      ? input.emoji
+      : identity.emoji ?? input.emoji ?? DEFAULT_INGREDIENT_EMOJI;
 
   return {
     id: input.id ?? createFridgeItemId(),

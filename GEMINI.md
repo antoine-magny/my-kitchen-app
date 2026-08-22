@@ -42,3 +42,10 @@ Quand l'utilisateur écrit "synchro git", "synchro", ou "met à jour github" :
 3. Si des conflits apparaissent : arrête-toi, liste les fichiers en conflit, et demande à l'utilisateur avant de continuer. N'utilise jamais `--force`, `--force-with-lease`, `--no-verify` ni `--no-gpg-sign`.
 4. Une fois le code aligné et sans conflit, exécute la commande terminal : `git push`
 5. Confirme à l'utilisateur que le PC et GitHub sont alignés, et que la mise à jour Vercel est lancée s'il y a eu un push.
+
+## RÈGLE : COMMANDE "VISU" / "VISUALISATION"
+Quand l'utilisateur écrit "visu", "visualisation" ou "Visualisation" :
+1. Démarre le serveur de développement via `npm run dev` en arrière-plan (processus daemon) s'il n'est pas déjà actif.
+2. Lance la prévisualisation dans l'onglet interne "Jetski Preview" d'Antigravity (à côté des fichiers de code sur `http://localhost:3000`), sans jamais ouvrir de nouvel onglet ou fenêtre dans les navigateurs externes de la machine.
+3. Confirme que le serveur et la prévisualisation interne Jetski Preview sont opérationnels.
+

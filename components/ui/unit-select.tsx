@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { CheckIcon, ChevronDownIcon } from "@/components/icons";
 import { getIngredientCountUnit } from "@/lib/ingredients";
 import { UNIT_LIST, unitLabel, type UnitCode } from "@/lib/units";
@@ -75,8 +76,10 @@ export function UnitSelect({
   ...rest
 }: UnitSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [popoverPos, setPopoverPos] = useState<{ top: number; left: number; width: number; maxHeight: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
   const generatedId = useId();
   const selectId = id || generatedId;
 
@@ -100,14 +103,45 @@ export function UnitSelect({
 
   const count = UNIT_LIST.filter((u) => countCodes.includes(u.code));
 
-  // Fermeture au clic extérieur
+  function openPopover() {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const GAP = 6;
+    const BOTTOM_NAV_HEIGHT = 80; // Marge pour la barre de navigation
+    const POPOVER_MAX_HEIGHT = 288;
+
+    let width = compact ? 210 : Math.max(240, rect.width);
+    let top = rect.bottom + GAP + window.scrollY;
+    let left = compact ? rect.right - width + window.scrollX : rect.left + window.scrollX;
+    
+    // Empêcher débordement à droite
+    if (left + width > window.innerWidth - 8) {
+      left = window.innerWidth - width - 8;
+    }
+
+    let maxHeight = POPOVER_MAX_HEIGHT;
+    const spaceBelow = window.innerHeight - rect.bottom - GAP - BOTTOM_NAV_HEIGHT;
+    const spaceAbove = rect.top - GAP;
+
+    if (spaceBelow < POPOVER_MAX_HEIGHT && spaceAbove > spaceBelow) {
+      maxHeight = Math.min(POPOVER_MAX_HEIGHT, spaceAbove - 8);
+      top = rect.top - maxHeight - GAP + window.scrollY;
+    } else {
+      maxHeight = Math.min(POPOVER_MAX_HEIGHT, Math.max(120, spaceBelow - 8));
+    }
+
+    setPopoverPos({ top, left, width, maxHeight });
+    setIsOpen(true);
+  }
+
+  // Fermeture au clic extérieur et au scroll
   useEffect(() => {
     if (!isOpen) return;
 
     function handleClickOutside(event: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
+      const target = event.target as Node;
+      if (triggerRef.current?.contains(target) || popoverRef.current?.contains(target)) return;
+      setIsOpen(false);
     }
 
     function handleKeyDown(event: KeyboardEvent) {
@@ -117,11 +151,23 @@ export function UnitSelect({
       }
     }
 
+    function handleScroll(event: Event) {
+      // Si le scroll vient de l'intérieur du popover, on le laisse passer
+      if (popoverRef.current?.contains(event.target as Node)) return;
+      setIsOpen(false);
+    }
+    const handleResize = () => setIsOpen(false);
+
     document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("scroll", handleScroll, true);
+    window.addEventListener("resize", handleResize);
+    
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("scroll", handleScroll, true);
+      window.removeEventListener("resize", handleResize);
     };
   }, [isOpen]);
 
@@ -152,7 +198,11 @@ export function UnitSelect({
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-label={rest["aria-label"] ?? "Choisir l'unité"}
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (isOpen) setIsOpen(false);
+          else openPopover();
+        }}
         className={
           className ||
           (compact
@@ -172,16 +222,24 @@ export function UnitSelect({
         )}
       </button>
 
-      {isOpen && (
+      {isOpen && popoverPos && createPortal(
         <div
+          ref={popoverRef}
           role="listbox"
           aria-label="Unités de mesure"
-          className={`slide-down absolute top-full z-50 mt-1.5 max-h-72 overflow-y-auto rounded-2xl border border-[#E2EBE3] bg-white/95 p-1.5 shadow-2xl backdrop-blur-md transition-all ${
-            compact ? "right-0 min-w-[210px]" : "left-0 w-full min-w-[240px]"
-          }`}
+          className="slide-down overflow-y-auto rounded-2xl border border-[#E2EBE3] bg-white/95 p-1.5 shadow-2xl backdrop-blur-md transition-all"
           style={{
+            position: "fixed",
+            top: popoverPos.top - window.scrollY,
+            left: popoverPos.left - window.scrollX,
+            width: popoverPos.width,
+            maxHeight: popoverPos.maxHeight,
+            zIndex: 9999,
             boxShadow: "0 12px 32px rgba(20, 31, 22, 0.16)",
+            scrollbarWidth: "thin",
+            scrollbarColor: "#C8E0CF transparent",
           }}
+          onClick={(e) => e.stopPropagation()}
         >
           {/* Groupe Masse */}
           <div>
@@ -363,7 +421,8 @@ export function UnitSelect({
               })()}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

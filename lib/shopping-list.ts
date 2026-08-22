@@ -6,7 +6,11 @@
  * recette, mais conserve le lien nécessaire à la fusion et au rangement au frigo.
  */
 
-import { describeIngredient } from "@/lib/ingredients";
+import {
+  describeIngredient,
+  DEFAULT_INGREDIENT_EMOJI,
+  resolveEmoji,
+} from "@/lib/ingredients";
 import {
   classifyProduct,
   isShoppingCategoryId,
@@ -53,7 +57,10 @@ function toShoppingItem(input: {
     input.category && isShoppingCategoryId(input.category)
       ? input.category
       : classifyProduct(customName);
-  const emoji = input.emoji ?? identity.emoji;
+  const emoji =
+    input.emoji && input.emoji !== DEFAULT_INGREDIENT_EMOJI
+      ? input.emoji
+      : identity.emoji ?? input.emoji;
 
   return {
     id: input.id ?? createId(),
@@ -175,6 +182,11 @@ export function updateShoppingItem(id: string, patch: ShoppingItemPatch): Shoppi
     const customName = patch.customName?.trim() || item.customName;
     const renamed = customName !== item.customName;
     const category = patch.category ?? (renamed ? classifyProduct(customName) : item.category);
+    const resolvedEmoji =
+      renamed || !item.emoji || item.emoji === DEFAULT_INGREDIENT_EMOJI
+        ? resolveEmoji(customName)
+        : item.emoji;
+    const nextEmoji = patch.emoji ?? resolvedEmoji ?? item.emoji;
 
     return {
       ...item,
@@ -182,7 +194,7 @@ export function updateShoppingItem(id: string, patch: ShoppingItemPatch): Shoppi
       amount: patch.amount ?? item.amount,
       unit: patch.unit ?? item.unit,
       category,
-      ...(patch.emoji ? { emoji: patch.emoji } : {}),
+      ...(nextEmoji ? { emoji: nextEmoji } : {}),
     };
   });
   writeList(next);

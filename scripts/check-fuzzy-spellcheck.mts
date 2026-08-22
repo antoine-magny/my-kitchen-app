@@ -22,6 +22,14 @@ const TEST_CASES: TestCase[] = [
   { input: "tranches de jombom blanc", expectedId: "ing_jambon_blanc", expectedEmoji: "🥓", expectedDefaultUnit: "tranche" },
   { input: "Pave de saumon", expectedId: "ing_pave_de_saumon", expectedEmoji: "🐟", expectedDefaultUnit: "piece" },
   { input: "Gousse d ail", expectedId: "ing_ail", expectedEmoji: "🧄", expectedDefaultUnit: "gousse" },
+  { input: "Huile d'olive", expectedId: "ing_huile_d_olive", expectedEmoji: "🫒", expectedDefaultUnit: "c_soupe" },
+  { input: "Granola", expectedId: "ing_granola", expectedEmoji: "🥣", expectedDefaultUnit: "g" },
+  { input: "Beurre AOP", expectedId: "ing_beurre", expectedEmoji: "🧈", expectedDefaultUnit: "g" },
+  { input: "Lait demi-écrémé", expectedId: "ing_lait", expectedEmoji: "🥛", expectedDefaultUnit: "ml" },
+  { input: "Pâtes linguine", expectedId: "ing_pates", expectedEmoji: "🍝", expectedDefaultUnit: "g" },
+  { input: "Riz basmati", expectedId: "ing_riz", expectedEmoji: "🍚", expectedDefaultUnit: "g" },
+  { input: "Farine", expectedId: "ing_farine", expectedEmoji: "🌾", expectedDefaultUnit: "g" },
+  { input: "Chocolat noir 70%", expectedId: "ing_chocolat", expectedEmoji: "🍫", expectedDefaultUnit: "g" },
 ];
 
 console.log("=== Test de correction orthographique intelligente ===");
@@ -34,12 +42,12 @@ for (const t of TEST_CASES) {
   const emoji = resolveEmoji(t.input);
   const unit = getIngredientDefaultUnit(t.input);
 
-  const ok = id === t.expectedId && unit === t.expectedDefaultUnit;
+  const ok = id === t.expectedId && unit === t.expectedDefaultUnit && emoji === t.expectedEmoji;
   if (ok) {
     console.log(`OK   « ${t.input} » → ${id} (${emoji}) [unit: ${unit}]`);
     passed++;
   } else {
-    console.error(`FAIL « ${t.input} » → obtenu ${id} [unit: ${unit}], attendu ${t.expectedId} [unit: ${t.expectedDefaultUnit}]`);
+    console.error(`FAIL « ${t.input} » → obtenu ${id} (${emoji}) [unit: ${unit}], attendu ${t.expectedId} (${t.expectedEmoji}) [unit: ${t.expectedDefaultUnit}]`);
     failed++;
   }
 }

@@ -95,6 +95,31 @@ Aucune icône ne doit être redéfinie localement dans une page ou un composant.
 Tout passe par `components/icons.tsx`, qui expose des composants prenant `size`
 et `strokeWidth`. Ajouter une nouvelle icône là, jamais ailleurs.
 
+### Emojis ingrédients (`lib/ingredients.ts` → `components/ui/emoji-picker-popover.tsx`)
+
+Chaque ingrédient du catalogue possède un emoji visuel (🍅, 🧀, 🥕…). Plusieurs
+ingrédients peuvent partager le même emoji (ex. 🥒 → Courgette *et* Concombre).
+
+**`UNIQUE_EMOJI_INGREDIENTS`** (`lib/ingredients.ts`) : liste dédupliquée du
+catalogue, un seul ingrédient par emoji visuel unique. **Obligatoire** dans tout
+sélecteur ou grille d'emojis afin d'éliminer les icônes identiques côte à côte.
+
+**`DEFAULT_INGREDIENT_EMOJI`** (`🍽️`) : emoji neutre par défaut quand aucun
+ingrédient n'est reconnu ou quand l'utilisateur reset le choix.
+
+Le composant partagé **`EmojiPickerPopover`** (`components/ui/emoji-picker-popover.tsx`)
+affiche la grille de sélection. Points d'architecture :
+
+- **Rendu via `createPortal`** dans `document.body` pour échapper aux
+  `overflow: hidden` et contextes d'empilement des parents.
+- **Position `fixed`** calculée dynamiquement via `getBoundingClientRect()` au
+  clic, avec anti-débordement droite et ouverture vers le haut si nécessaire.
+- **Scroll interne préservé** : le listener `scroll` (capture) distingue le
+  scroll intérieur à la grille (autorisé) du scroll extérieur (ferme le popover).
+- Fermeture automatique au clic extérieur, scroll extérieur et resize.
+- Utilisé dans : `app/courses/page.tsx`, `components/frigo/ingredient-row.tsx`,
+  `components/frigo/add-modal.tsx`.
+
 ---
 
 ## Trialité des aliments (Snapshot à référence optionnelle)

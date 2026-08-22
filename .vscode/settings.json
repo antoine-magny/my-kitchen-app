@@ -1,4 +1,10 @@
 {
   "explorer.autoReveal": false,
-  "workbench.editor.revealIfOpen": false
+  "workbench.editor.revealIfOpen": false,
+  "remote.portsAttributes": {
+    "3000": {
+      "label": "My Kitchen App",
+      "onAutoForward": "openPreview"
+    }
+  }
 }
