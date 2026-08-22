@@ -1,20 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {
-  ChevronDownIcon,
-  ImageIcon,
-  PlusIcon,
-  TrashIcon,
-  XIcon,
-} from "@/components/icons";
-import { inputClass, inputStyle, labelClass } from "@/components/recipe-form-styles";
-import { UnitSelect } from "@/components/ui/unit-select";
+import { XIcon } from "@/components/icons";
 import { emptyIngredientRow, type RecipeFormIngredientRow } from "@/lib/recipe-import";
 import {
   DIFFICULTIES,
   ing,
-  RECIPE_TAGS,
   tagToLabel,
   type NewRecipeInput,
   type Recipe,
@@ -23,6 +14,11 @@ import {
 } from "@/lib/recipes";
 import { getIngredientDefaultUnit } from "@/lib/ingredients";
 import { coerceUnitCode, DEFAULT_UNIT } from "@/lib/units";
+
+import { ImageSection } from "./recipe-form/image-section";
+import { MetaSection } from "./recipe-form/meta-section";
+import { IngredientsSection } from "./recipe-form/ingredients-section";
+import { StepsSection } from "./recipe-form/steps-section";
 
 type IngredientRow = RecipeFormIngredientRow;
 
@@ -223,349 +219,40 @@ export function RecipeFormModal({
 
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col" noValidate>
           <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
-            <div>
-              <label className={labelClass} style={{ letterSpacing: "0.04em" }}>
-                IMAGE
-              </label>
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleFileChange}
-              />
+            <ImageSection
+              photo={photo}
+              setPhoto={setPhoto}
+              showUrlInput={showUrlInput}
+              setShowUrlInput={setShowUrlInput}
+              photoUrlDraft={photoUrlDraft}
+              setPhotoUrlDraft={setPhotoUrlDraft}
+              fileRef={fileRef}
+              handleFileChange={handleFileChange}
+              applyPhotoUrl={applyPhotoUrl}
+            />
 
-              {photo ? (
-                <div
-                  className="overflow-hidden rounded-2xl"
-                  style={{ border: "1.5px solid #E2EBE3" }}
-                >
-                  <div className="relative h-40 bg-[#D4EDD9]">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={photo} alt="Aperçu de la recette" className="h-full w-full object-cover" />
-                  </div>
-                  <div className="flex gap-2 bg-[#FAFBF9] p-3">
-                    <button
-                      type="button"
-                      onClick={() => fileRef.current?.click()}
-                      className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#EBF2EC] py-2.5 text-xs font-bold text-[#4A7C59] transition-all hover:opacity-90"
-                    >
-                      Modifier
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowUrlInput((v) => !v);
-                        setPhotoUrlDraft(photo.startsWith("data:") ? "" : photo);
-                      }}
-                      className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#C8E0CF] bg-white py-2.5 text-xs font-bold text-[#4A7C59] transition-all hover:border-[#4A7C59]"
-                    >
-                      URL
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setPhoto("");
-                        setShowUrlInput(false);
-                        setPhotoUrlDraft("");
-                      }}
-                      className="flex items-center justify-center rounded-xl px-3 py-2.5 text-[#9CA3AF] transition-colors hover:bg-[#FEF2F2] hover:text-[#EF4444]"
-                      aria-label="Retirer l'image"
-                    >
-                      <TrashIcon size={14} />
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div
-                  className="flex flex-col items-center justify-center gap-3 rounded-2xl px-4 py-8"
-                  style={{ background: "#FAFBF9", border: "1.5px dashed #C8E0CF" }}
-                >
-                  <span className="text-[#7A8F7D]">
-                    <ImageIcon size={22} />
-                  </span>
-                  <p className="text-center text-xs font-medium text-[#7A8F7D]">Aucune image — optionnel</p>
-                  <div className="flex flex-wrap items-center justify-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => fileRef.current?.click()}
-                      className="flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold text-white transition-all hover:opacity-90"
-                      style={{
-                        background: "linear-gradient(135deg, #4A7C59, #5E9E72)",
-                        boxShadow: "0 3px 12px rgba(74,124,89,0.25)",
-                      }}
-                    >
-                      <PlusIcon size={12} /> Ajouter une image
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowUrlInput((v) => !v)}
-                      className="rounded-xl border border-[#C8E0CF] bg-white px-4 py-2.5 text-xs font-bold text-[#4A7C59] transition-all hover:border-[#4A7C59]"
-                    >
-                      Depuis une URL
-                    </button>
-                  </div>
-                </div>
-              )}
+            <MetaSection
+              titleRef={titleRef}
+              title={title} setTitle={setTitle}
+              time={time} setTime={setTime}
+              servings={servings} setServings={setServings}
+              calories={calories} setCalories={setCalories}
+              proteins={proteins} setProteins={setProteins}
+              difficulty={difficulty} setDifficulty={setDifficulty}
+              tag={tag} setTag={setTag}
+            />
 
-              {showUrlInput && (
-                <div className="mt-3 flex gap-2">
-                  <input
-                    value={photoUrlDraft}
-                    onChange={(e) => setPhotoUrlDraft(e.target.value)}
-                    placeholder="https://…"
-                    className={inputClass}
-                    style={inputStyle}
-                  />
-                  <button
-                    type="button"
-                    onClick={applyPhotoUrl}
-                    className="shrink-0 rounded-xl bg-[#EBF2EC] px-4 text-xs font-bold text-[#4A7C59] transition-all hover:opacity-90"
-                  >
-                    OK
-                  </button>
-                </div>
-              )}
-            </div>
+            <IngredientsSection
+              ingredients={ingredients}
+              setIngredients={setIngredients}
+              updateIngredient={updateIngredient}
+            />
 
-            <div>
-              <label className={labelClass} style={{ letterSpacing: "0.04em" }}>
-                TITRE
-              </label>
-              <input
-                ref={titleRef}
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Ex : Salade de quinoa aux légumes"
-                className={inputClass}
-                style={inputStyle}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <div>
-                <label className={labelClass} style={{ letterSpacing: "0.04em" }}>
-                  TEMPS
-                </label>
-                <input
-                  value={time}
-                  onChange={(e) => setTime(e.target.value)}
-                  placeholder="30 min"
-                  className={inputClass}
-                  style={inputStyle}
-                />
-              </div>
-              <div>
-                <label className={labelClass} style={{ letterSpacing: "0.04em" }}>
-                  PORTIONS
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={servings}
-                  onChange={(e) => setServings(e.target.value)}
-                  className={inputClass}
-                  style={inputStyle}
-                />
-              </div>
-              <div>
-                <label className={labelClass} style={{ letterSpacing: "0.04em" }}>
-                  KCAL
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={calories}
-                  onChange={(e) => setCalories(e.target.value)}
-                  className={inputClass}
-                  style={inputStyle}
-                />
-              </div>
-              <div>
-                <label className={labelClass} style={{ letterSpacing: "0.04em" }}>
-                  PROTÉINES (g)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  value={proteins}
-                  onChange={(e) => setProteins(e.target.value)}
-                  className={inputClass}
-                  style={inputStyle}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className={labelClass} style={{ letterSpacing: "0.04em" }}>
-                  DIFFICULTÉ
-                </label>
-                <div className="relative">
-                  <select
-                    value={difficulty}
-                    onChange={(e) => setDifficulty(e.target.value as Difficulty)}
-                    className={`${inputClass} appearance-none pr-10`}
-                    style={inputStyle}
-                  >
-                    {DIFFICULTIES.map((d) => (
-                      <option key={d} value={d}>
-                        {d}
-                      </option>
-                    ))}
-                  </select>
-                  <span className="pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 text-[#7A8F7D]">
-                    <ChevronDownIcon size={14} />
-                  </span>
-                </div>
-              </div>
-              <div>
-                <label className={labelClass} style={{ letterSpacing: "0.04em" }}>
-                  CATÉGORIE
-                </label>
-                <div className="relative">
-                  <select
-                    value={tag}
-                    onChange={(e) => setTag(e.target.value as Exclude<RecipeFilter, "Tout"> | "")}
-                    className={`${inputClass} appearance-none pr-10`}
-                    style={inputStyle}
-                  >
-                    <option value="">Aucune</option>
-                    {RECIPE_TAGS.map((t) => (
-                      <option key={t} value={t}>
-                        {t}
-                      </option>
-                    ))}
-                  </select>
-                  <span className="pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 text-[#7A8F7D]">
-                    <ChevronDownIcon size={14} />
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <div className="mb-2 flex items-center justify-between">
-                <label className="text-xs font-bold tracking-wide text-[#7A8F7D]" style={{ letterSpacing: "0.04em" }}>
-                  INGRÉDIENTS
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setIngredients((prev) => [...prev, emptyIngredientRow()])}
-                  className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold text-[#4A7C59] transition-colors hover:bg-[#EBF2EC]"
-                >
-                  <PlusIcon size={12} /> Ajouter
-                </button>
-              </div>
-              <div className="mb-2 grid grid-cols-[1fr_4.5rem_5.5rem_auto] gap-2 px-0.5">
-                <span className="text-[10px] font-bold tracking-wide text-[#9CA3AF] uppercase">Nom</span>
-                <span className="text-[10px] font-bold tracking-wide text-[#9CA3AF] uppercase">Qté</span>
-                <span className="text-[10px] font-bold tracking-wide text-[#9CA3AF] uppercase">Unité</span>
-                <span className="w-10" />
-              </div>
-              <div className="space-y-2">
-                {ingredients.map((row, idx) => (
-                  <div key={idx} className="grid grid-cols-[1fr_4.5rem_5.5rem_auto] items-center gap-2">
-                    <input
-                      value={row.name}
-                      onChange={(e) => updateIngredient(idx, "name", e.target.value)}
-                      placeholder="Ex : Myrtilles"
-                      className={inputClass}
-                      style={inputStyle}
-                    />
-                    <input
-                      value={row.amount}
-                      onChange={(e) => updateIngredient(idx, "amount", e.target.value)}
-                      placeholder="200"
-                      inputMode="decimal"
-                      className={inputClass}
-                      style={inputStyle}
-                    />
-                    <UnitSelect
-                      value={row.unit}
-                      ingredientName={row.name}
-                      onChange={(unit) => updateIngredient(idx, "unit", unit)}
-                      className={`${inputClass} flex items-center justify-between pr-3.5`}
-                      allowCulinary={true}
-                    />
-                    {ingredients.length > 1 ? (
-                      <button
-                        type="button"
-                        onClick={() => setIngredients((prev) => prev.filter((_, i) => i !== idx))}
-                        className="flex h-11 w-10 shrink-0 items-center justify-center rounded-xl text-[#9CA3AF] transition-colors hover:bg-[#FEF2F2] hover:text-[#EF4444]"
-                        aria-label="Supprimer l'ingrédient"
-                      >
-                        <TrashIcon size={14} />
-                      </button>
-                    ) : (
-                      <span className="w-10" />
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <div className="mb-2 flex items-center justify-between">
-                <label className="text-xs font-bold tracking-wide text-[#7A8F7D]" style={{ letterSpacing: "0.04em" }}>
-                  ÉTAPES
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setSteps((prev) => [...prev, { title: "", detail: "", duration: "" }])}
-                  className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-bold text-[#4A7C59] transition-colors hover:bg-[#EBF2EC]"
-                >
-                  <PlusIcon size={12} /> Ajouter
-                </button>
-              </div>
-              <div className="space-y-3">
-                {steps.map((step, idx) => (
-                  <div
-                    key={idx}
-                    className="rounded-2xl p-3"
-                    style={{ background: "#FAFBF9", border: "1.5px solid #E2EBE3" }}
-                  >
-                    <div className="mb-2 flex items-center gap-2">
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-[#EBF2EC] text-xs font-extrabold text-[#4A7C59]">
-                        {idx + 1}
-                      </span>
-                      <input
-                        value={step.title}
-                        onChange={(e) => updateStep(idx, "title", e.target.value)}
-                        placeholder="Titre de l'étape"
-                        className="flex-1 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-[#1C2B1E] outline-none"
-                        style={inputStyle}
-                      />
-                      <input
-                        value={step.duration ?? ""}
-                        onChange={(e) => updateStep(idx, "duration", e.target.value)}
-                        placeholder="5 min"
-                        className="w-20 shrink-0 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-[#1C2B1E] outline-none"
-                        style={inputStyle}
-                      />
-                      {steps.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => setSteps((prev) => prev.filter((_, i) => i !== idx))}
-                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[#9CA3AF] transition-colors hover:bg-[#FEF2F2] hover:text-[#EF4444]"
-                          aria-label="Supprimer l'étape"
-                        >
-                          <TrashIcon size={14} />
-                        </button>
-                      )}
-                    </div>
-                    <textarea
-                      value={step.detail}
-                      onChange={(e) => updateStep(idx, "detail", e.target.value)}
-                      placeholder="Description de l'étape…"
-                      rows={2}
-                      className="w-full resize-none rounded-lg bg-white px-3 py-2 text-sm font-medium text-[#1C2B1E] outline-none"
-                      style={inputStyle}
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
+            <StepsSection
+              steps={steps}
+              setSteps={setSteps}
+              updateStep={updateStep}
+            />
           </div>
 
           <div className="shrink-0 border-t border-[#F0F4EF] px-6 py-4">

@@ -48,39 +48,11 @@ function dayHasMeals(plan: DayPlan | undefined): boolean {
   return plan.breakfast != null || plan.lunchId != null || plan.dinnerId != null;
 }
 
-function MacroBar({
-  label,
-  current,
-  target,
-  unit,
-  color,
-  track,
-}: {
-  label: string;
-  current: number;
-  target: number;
-  unit: string;
-  color: string;
-  track: string;
-}) {
-  const pct = Math.min(100, Math.round((current / target) * 100));
-  return (
-    <div>
-      <div className="mb-1.5 flex items-baseline justify-between gap-2">
-        <span className="text-xs font-bold text-[#1C2B1E]">{label}</span>
-        <span className="text-xs font-semibold text-[#7A8F7D]">
-          {current.toLocaleString("fr-FR")} / {target.toLocaleString("fr-FR")} {unit}
-        </span>
-      </div>
-      <div className="h-2 overflow-hidden rounded-full" style={{ background: track }}>
-        <div
-          className="h-full rounded-full transition-all duration-300"
-          style={{ width: `${pct}%`, background: color }}
-        />
-      </div>
-    </div>
-  );
-}
+import { MacroBar } from "@/components/planning/macro-bar";
+import { DaySelector } from "@/components/planning/day-selector";
+import { BreakfastCard, EmptyMealSlot } from "@/components/planning/breakfast-card";
+import { RecipeCard } from "@/components/planning/recipe-card";
+
 
 export default function PlanningPage() {
   const router = useRouter();
@@ -330,65 +302,14 @@ export default function PlanningPage() {
           </div>
         </section>
 
-        {/* Sélecteur de jours — 14 jours depuis aujourd'hui */}
         <section className="fade-up mb-6" style={{ animationDelay: "0.1s" }}>
-          <div className="-mx-4 flex gap-3 overflow-x-auto snap-x snap-mandatory px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {days.map((day) => {
-              const selected = sameDay(day, selectedDay);
-              const isToday = sameDay(day, today);
-              const hasMeals = dayHasMeals(planForDay(day));
-              return (
-                <button
-                  key={dayKey(day)}
-                  type="button"
-                  onClick={() => setSelectedDate(day)}
-                  className="flex w-[58px] shrink-0 snap-start flex-col items-center gap-1 rounded-2xl px-2 py-3 transition-all active:scale-95"
-                  style={
-                    selected
-                      ? {
-                          background: "linear-gradient(160deg, #2E5B3E, #4A7C59)",
-                          boxShadow: "0 4px 14px rgba(46,91,62,0.28)",
-                          color: "#fff",
-                        }
-                      : {
-                          background: "#FFFFFF",
-                          boxShadow: "0 2px 10px rgba(74,124,89,0.08)",
-                          border: "1.5px solid #E2EBE3",
-                          color: "#1C2B1E",
-                        }
-                  }
-                  aria-pressed={selected}
-                  aria-label={`${formatDayShortFr(day)} ${day.getUTCDate()}${isToday ? " (aujourd'hui)" : ""}`}
-                >
-                  <span
-                    className={`text-[11px] font-semibold ${selected ? "text-white/80" : "text-[#7A8F7D]"}`}
-                  >
-                    {isToday ? "Auj." : formatDayShortFr(day)}
-                  </span>
-                  <span className="text-base font-extrabold leading-none">{day.getUTCDate()}</span>
-                  {hasMeals && (
-                    <span
-                      className="mt-0.5 h-1.5 w-1.5 rounded-full"
-                      style={{
-                        background: selected ? "#A7F3D0" : "#4A7C59",
-                        boxShadow: selected
-                          ? "0 0 6px rgba(167,243,208,0.85)"
-                          : "0 0 4px rgba(74,124,89,0.45)",
-                      }}
-                      aria-hidden
-                    />
-                  )}
-                  {!hasMeals && isToday && (
-                    <span
-                      className="mt-0.5 h-1 w-1 rounded-full"
-                      style={{ background: selected ? "#fff" : "#4A7C59" }}
-                      aria-hidden
-                    />
-                  )}
-                </button>
-              );
-            })}
-          </div>
+          <DaySelector
+            days={days}
+            today={today}
+            selectedDay={selectedDay}
+            planForDay={planForDay}
+            onSelectDay={setSelectedDate}
+          />
         </section>
         {/* Repas du jour */}
         <section className="fade-up mb-6 space-y-5" style={{ animationDelay: "0.14s" }}>
@@ -396,47 +317,12 @@ export default function PlanningPage() {
           <div>
             <h2 className="font-lora mb-2.5 text-lg font-bold text-[#1C2B1E]">Petit-déjeuner</h2>
             {dayPlan.breakfast ? (
-              <div
-                className="overflow-hidden rounded-2xl"
-                style={{
-                  background: "#FFFFFF",
-                  boxShadow: "0 3px 16px rgba(74,124,89,0.09)",
-                }}
-              >
-                <div className="flex items-center gap-3 px-4 py-3.5">
-                  <div
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-lg"
-                    style={{ background: "#EBF2EC" }}
-                    aria-hidden
-                  >
-                    🥣
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold text-[#1C2B1E]">{dayPlan.breakfast.name}</p>
-                    <p className="mt-0.5 text-xs font-medium text-[#7A8F7D]">
-                      {dayPlan.breakfast.detail} · {dayPlan.breakfast.calories} kcal · {dayPlan.breakfast.proteins}g prot.
-                    </p>
-                    <MissingIngredientsBadges names={breakfastRecipe?.missingIngredients} className="mt-2" />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => clearMeal("breakfast")}
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-base transition-colors hover:bg-[#FEF2F2] active:scale-95"
-                    aria-label="Supprimer le petit-déjeuner"
-                  >
-                    ❌
-                  </button>
-                </div>
-                <div className="border-t border-[#F0F4EF] px-4 py-3">
-                  <button
-                    type="button"
-                    onClick={() => setPickerSlot("breakfast")}
-                    className="btn-primary block w-full rounded-2xl py-3 text-center text-sm font-bold"
-                  >
-                    Remplacer
-                  </button>
-                </div>
-              </div>
+              <BreakfastCard
+                breakfast={dayPlan.breakfast}
+                recipe={breakfastRecipe}
+                onClear={() => clearMeal("breakfast")}
+                onReplace={() => setPickerSlot("breakfast")}
+              />
             ) : (
               <EmptyMealSlot label="Ajouter un petit-déjeuner" onClick={() => setPickerSlot("breakfast")} />
             )}
@@ -446,83 +332,12 @@ export default function PlanningPage() {
           <div>
             <h2 className="font-lora mb-2.5 text-lg font-bold text-[#1C2B1E]">Déjeuner</h2>
             {lunch ? (
-              <div
-                className="relative overflow-hidden rounded-3xl"
-                style={{
-                  background: "#FFFFFF",
-                  boxShadow: "0 6px 32px rgba(74,124,89,0.13)",
-                }}
-              >
-                <div className="relative h-44 bg-[#D4EDD9]">
-                  <Link href={`/recettes/${lunch.id}`} className="absolute inset-0 block">
-                    {lunch.photo ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={lunch.photo} alt={lunch.title} className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-5xl">🍽️</div>
-                    )}
-                    <div
-                      className="absolute inset-0"
-                      style={{
-                        background: "linear-gradient(to top, rgba(28,43,30,0.55) 0%, transparent 55%)",
-                      }}
-                    />
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => clearMeal("lunch")}
-                    className="absolute top-3 right-3 z-10 flex h-9 w-9 items-center justify-center rounded-xl text-sm backdrop-blur-sm transition-all active:scale-95"
-                    style={{
-                      background: "rgba(255,255,255,0.90)",
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
-                    }}
-                    aria-label="Supprimer le déjeuner"
-                  >
-                    ❌
-                  </button>
-                  <div
-                    className="pointer-events-none absolute bottom-3 left-3 z-10 flex items-center gap-1.5 rounded-xl px-3 py-1.5"
-                    style={{ background: "rgba(255,255,255,0.90)", backdropFilter: "blur(6px)" }}
-                  >
-                    <span className="text-[#4A7C59]">
-                      <ClockIcon size={13} />
-                    </span>
-                    <span className="text-xs font-bold text-[#1C2B1E]">{lunch.time}</span>
-                  </div>
-                </div>
-
-                <div className="px-5 py-4">
-                  <Link href={`/recettes/${lunch.id}`}>
-                    <h3 className="font-lora mb-3 text-base leading-snug font-bold text-[#1C2B1E]">
-                      {lunch.title}
-                    </h3>
-                  </Link>
-                  <MissingIngredientsBadges names={lunch.missingIngredients} className="mb-3" />
-
-                  <div className="mb-4 flex items-center gap-2.5">
-                    <div className="flex items-center gap-1.5 rounded-xl bg-[#FFF7ED] px-3 py-1.5">
-                      <span className="text-[#F97316]">
-                        <FlameIcon size={13} />
-                      </span>
-                      <span className="text-xs font-bold text-[#C2410C]">{lunch.calories} kcal</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 rounded-xl bg-[#EBF2EC] px-3 py-1.5">
-                      <span className="text-[#4A7C59]">
-                        <ProteinIcon size={13} />
-                      </span>
-                      <span className="text-xs font-bold text-[#2E5C3A]">{lunch.proteins}g protéines</span>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setPickerSlot("lunch")}
-                    className="btn-primary block w-full rounded-2xl py-3.5 text-center text-sm font-bold"
-                  >
-                    Remplacer
-                  </button>
-                </div>
-              </div>
+              <RecipeCard
+                recipe={lunch}
+                slotName="déjeuner"
+                onClear={() => clearMeal("lunch")}
+                onReplace={() => setPickerSlot("lunch")}
+              />
             ) : (
               <EmptyMealSlot label="Ajouter une recette" onClick={() => setPickerSlot("lunch")} />
             )}
@@ -532,82 +347,12 @@ export default function PlanningPage() {
           <div>
             <h2 className="font-lora mb-2.5 text-lg font-bold text-[#1C2B1E]">Dîner</h2>
             {dinner ? (
-              <div
-                className="relative overflow-hidden rounded-3xl"
-                style={{
-                  background: "#FFFFFF",
-                  boxShadow: "0 6px 32px rgba(74,124,89,0.13)",
-                }}
-              >
-                <div className="relative h-44 bg-[#D4EDD9]">
-                  <Link href={`/recettes/${dinner.id}`} className="absolute inset-0 block">
-                    {dinner.photo ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={dinner.photo} alt={dinner.title} className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-5xl">🍽️</div>
-                    )}
-                    <div
-                      className="absolute inset-0"
-                      style={{
-                        background: "linear-gradient(to top, rgba(28,43,30,0.55) 0%, transparent 55%)",
-                      }}
-                    />
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={() => clearMeal("dinner")}
-                    className="absolute top-3 right-3 z-10 flex h-9 w-9 items-center justify-center rounded-xl text-sm backdrop-blur-sm transition-all active:scale-95"
-                    style={{
-                      background: "rgba(255,255,255,0.90)",
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
-                    }}
-                    aria-label="Supprimer le dîner"
-                  >
-                    ❌
-                  </button>
-                  <div
-                    className="pointer-events-none absolute bottom-3 left-3 z-10 flex items-center gap-1.5 rounded-xl px-3 py-1.5"
-                    style={{ background: "rgba(255,255,255,0.90)", backdropFilter: "blur(6px)" }}
-                  >
-                    <span className="text-[#4A7C59]">
-                      <ClockIcon size={13} />
-                    </span>
-                    <span className="text-xs font-bold text-[#1C2B1E]">{dinner.time}</span>
-                  </div>
-                </div>
-                <div className="px-5 py-4">
-                  <Link href={`/recettes/${dinner.id}`}>
-                    <h3 className="font-lora mb-3 text-base leading-snug font-bold text-[#1C2B1E]">
-                      {dinner.title}
-                    </h3>
-                  </Link>
-                  <MissingIngredientsBadges names={dinner.missingIngredients} className="mb-3" />
-
-                  <div className="mb-4 flex items-center gap-2.5">
-                    <div className="flex items-center gap-1.5 rounded-xl bg-[#FFF7ED] px-3 py-1.5">
-                      <span className="text-[#F97316]">
-                        <FlameIcon size={13} />
-                      </span>
-                      <span className="text-xs font-bold text-[#C2410C]">{dinner.calories} kcal</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 rounded-xl bg-[#EBF2EC] px-3 py-1.5">
-                      <span className="text-[#4A7C59]">
-                        <ProteinIcon size={13} />
-                      </span>
-                      <span className="text-xs font-bold text-[#2E5C3A]">{dinner.proteins}g protéines</span>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setPickerSlot("dinner")}
-                    className="btn-primary block w-full rounded-2xl py-3.5 text-center text-sm font-bold"
-                  >
-                    Remplacer
-                  </button>
-                </div>
-              </div>
+              <RecipeCard
+                recipe={dinner}
+                slotName="dîner"
+                onClear={() => clearMeal("dinner")}
+                onReplace={() => setPickerSlot("dinner")}
+              />
             ) : (
               <EmptyMealSlot label="Ajouter une recette" onClick={() => setPickerSlot("dinner")} />
             )}
@@ -681,14 +426,3 @@ export default function PlanningPage() {
   );
 }
 
-function EmptyMealSlot({ label, onClick }: { label: string; onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="btn-primary flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-bold"
-    >
-      {label.startsWith("+") ? label : `+ ${label}`}
-    </button>
-  );
-}
