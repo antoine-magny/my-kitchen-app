@@ -486,6 +486,7 @@ export function RecipeFormModal({
                       ingredientName={row.name}
                       onChange={(unit) => updateIngredient(idx, "unit", unit)}
                       className={`${inputClass} flex items-center justify-between pr-3.5`}
+                      allowCulinary={true}
                     />
                     {ingredients.length > 1 ? (
                       <button

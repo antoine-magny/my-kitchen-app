@@ -23,6 +23,7 @@ import {
   DEFAULT_UNIT,
   formatAmount,
   parseAmount,
+  toBaseQuantity,
   type UnitCode,
 } from "@/lib/units";
 import type { RecipeIngredient, ShoppingItem } from "@/types/inventory";
@@ -62,12 +63,21 @@ function toShoppingItem(input: {
       ? input.emoji
       : identity.emoji ?? input.emoji;
 
+  let finalAmount = input.amount;
+  let finalUnit = input.unit;
+
+  if (finalUnit === "c_cafe" || finalUnit === "c_soupe" || finalUnit === "verre") {
+    const converted = toBaseQuantity(finalAmount, finalUnit);
+    finalAmount = converted.amount;
+    finalUnit = converted.unit;
+  }
+
   return {
     id: input.id ?? createId(),
     ingredientId: input.ingredientId ?? identity.ingredientId,
     customName,
-    amount: Number.isFinite(input.amount) ? Math.max(0, input.amount) : 0,
-    unit: input.unit,
+    amount: Number.isFinite(finalAmount) ? Math.max(0, finalAmount) : 0,
+    unit: finalUnit,
     category,
     ...(emoji ? { emoji } : {}),
     isChecked: input.isChecked ?? false,

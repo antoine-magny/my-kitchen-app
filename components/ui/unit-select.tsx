@@ -18,6 +18,8 @@ export interface UnitSelectProps {
   /** Libellés courts (idéal pour les lignes courses / frigo). */
   compact?: boolean;
   "aria-label"?: string;
+  /** Affiche les unités culinaires spécifiques aux recettes (c.a.c, c.a.s, verre). */
+  allowCulinary?: boolean;
 }
 
 const MASS_CODES = new Set(["g", "kg"]);
@@ -58,7 +60,7 @@ const UNIT_DISPLAY_CONFIG: Record<string, UnitDisplayInfo> = {
   poignee: { label: "Poignée", shortLabel: "poignée" },
   botte: { label: "Botte", shortLabel: "botte" },
   feuille: { label: "Feuille", shortLabel: "feuille" },
-  qs: { label: "Quantité suffisante", shortLabel: "Quantité suffisante", detail: "au goût" },
+  qs: { label: "Quantité suffisante", shortLabel: "Quantité suffisante", detail: "q.s." },
 };
 
 /**
@@ -73,6 +75,7 @@ export function UnitSelect({
   ingredientName,
   countUnit,
   compact = false,
+  allowCulinary = false,
   ...rest
 }: UnitSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -85,7 +88,11 @@ export function UnitSelect({
 
   // Filtrage des unités
   const mass = UNIT_LIST.filter((u) => MASS_CODES.has(u.code));
-  const volume = UNIT_LIST.filter((u) => VOLUME_CODES.has(u.code));
+  const volume = UNIT_LIST.filter((u) => {
+    if (!VOLUME_CODES.has(u.code)) return false;
+    if (!allowCulinary && (u.code === "c_cafe" || u.code === "c_soupe" || u.code === "verre")) return false;
+    return true;
+  });
 
   let countCodes: string[] = ALL_COUNT_CODES;
   const targetCountUnit = countUnit ?? (ingredientName ? getIngredientCountUnit(ingredientName) : undefined);
@@ -112,7 +119,7 @@ export function UnitSelect({
 
     let width = compact ? 210 : Math.max(240, rect.width);
     let top = rect.bottom + GAP + window.scrollY;
-    let left = compact ? rect.right - width + window.scrollX : rect.left + window.scrollX;
+    let left = rect.left + window.scrollX;
     
     // Empêcher débordement à droite
     if (left + width > window.innerWidth - 8) {
@@ -242,12 +249,7 @@ export function UnitSelect({
           onClick={(e) => e.stopPropagation()}
         >
           {/* Groupe Masse */}
-          <div>
-            <div className="flex items-center gap-1 px-2.5 pt-1.5 pb-1 text-[10px] font-extrabold tracking-wider text-[#7A8F7D] uppercase">
-              <span>⚖️</span>
-              <span>Masse</span>
-            </div>
-            <div className="space-y-0.5">
+          <div className="space-y-0.5">
               {mass.map((u) => {
                 const info = UNIT_DISPLAY_CONFIG[u.code] || { label: u.label, shortLabel: u.code };
                 const isSelected = value === u.code;
@@ -264,7 +266,8 @@ export function UnitSelect({
                         : "text-[#1C2B1E] hover:bg-[#F0F5F1] hover:text-[#2E5B3E]"
                     }`}
                   >
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">⚖️</span>
                       <span>{info.label}</span>
                       {info.detail && (
                         <span
@@ -285,18 +288,12 @@ export function UnitSelect({
                 );
               })}
             </div>
-          </div>
 
           {/* Séparateur */}
           <div className="my-1 border-t border-[#F0F4EF]" />
 
           {/* Groupe Volume */}
-          <div>
-            <div className="flex items-center gap-1 px-2.5 pt-1 pb-1 text-[10px] font-extrabold tracking-wider text-[#7A8F7D] uppercase">
-              <span>💧</span>
-              <span>Volume</span>
-            </div>
-            <div className="space-y-0.5">
+          <div className="space-y-0.5">
               {volume.map((u) => {
                 const info = UNIT_DISPLAY_CONFIG[u.code] || { label: u.label, shortLabel: u.code };
                 const isSelected = value === u.code;
@@ -313,7 +310,8 @@ export function UnitSelect({
                         : "text-[#1C2B1E] hover:bg-[#F0F5F1] hover:text-[#2E5B3E]"
                     }`}
                   >
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">💧</span>
                       <span>{info.label}</span>
                       {info.detail && (
                         <span
@@ -334,18 +332,12 @@ export function UnitSelect({
                 );
               })}
             </div>
-          </div>
 
           {/* Séparateur */}
           <div className="my-1 border-t border-[#F0F4EF]" />
 
           {/* Groupe Décompte */}
-          <div>
-            <div className="flex items-center gap-1 px-2.5 pt-1 pb-1 text-[10px] font-extrabold tracking-wider text-[#7A8F7D] uppercase">
-              <span>🔢</span>
-              <span>Décompte</span>
-            </div>
-            <div className="space-y-0.5">
+          <div className="space-y-0.5">
               {count.map((u) => {
                 const info = UNIT_DISPLAY_CONFIG[u.code] || { label: u.label, shortLabel: u.code };
                 const isSelected = value === u.code;
@@ -362,7 +354,8 @@ export function UnitSelect({
                         : "text-[#1C2B1E] hover:bg-[#F0F5F1] hover:text-[#2E5B3E]"
                     }`}
                   >
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">🔢</span>
                       <span>{info.label}</span>
                       {info.detail && (
                         <span
@@ -399,7 +392,8 @@ export function UnitSelect({
                         : "text-[#1C2B1E] hover:bg-[#F0F5F1] hover:text-[#2E5B3E]"
                     }`}
                   >
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">🪄</span>
                       <span>{info.label}</span>
                       {info.detail && (
                         <span
@@ -420,7 +414,6 @@ export function UnitSelect({
                 );
               })()}
             </div>
-          </div>
         </div>,
         document.body
       )}
