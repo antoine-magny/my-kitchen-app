@@ -71,7 +71,7 @@ check("Pavés de saumon", describeIngredient("Pavés de saumon"), {
   ingredientId: "ing_pave_de_saumon",
   name: "Pavés de saumon",
   category: "laitiers_viandes_poisson",
-  icon: "1F41F",
+  icon: "🐟",
 });
 
 console.log("\n--- Recettes seed converties ---");

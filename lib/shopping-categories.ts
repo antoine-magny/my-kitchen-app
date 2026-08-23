@@ -119,6 +119,19 @@ const MAISON_HYGIENE = [
   "rasoir",
   "apres shampoing",
   "apres-shampoing",
+  "pansement",
+  "pansements",
+  "pensement",
+  "pensements",
+  "medicament",
+  "medicaments",
+  "doliprane",
+  "paracetamol",
+  "aspirine",
+  "sparadrap",
+  "compresse",
+  "compresses",
+  "pharmacie",
 ] as const;
 
 /** Conserves / bocaux → épicerie (avant fruits/protéines frais). */

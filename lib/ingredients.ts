@@ -88,7 +88,6 @@ export const INGREDIENTS: readonly IngredientCatalogItem[] = [
   { id: "ing_navet", name: "Navet", icon: "1F954", emoji: "🥔", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 100, iconKeywords: ["navets"] },
   { id: "ing_betterave", name: "Betterave", icon: "1F360", emoji: "🍠", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 150, iconKeywords: ["betteraves", "betterave cuite"] },
   { id: "ing_artichaut", name: "Artichaut", icon: "1F96C", emoji: "🥬", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 300, iconKeywords: ["artichauts", "coeur d artichaut"] },
-  { id: "ing_asperge", name: "Asperges", icon: "1FADB", emoji: "🫛", category: "vegetables", defaultUnit: "botte", countUnit: "botte", gramsPerCountUnit: 250, aliases: ["asperge", "botte d asperges", "asperges vertes", "asperges blanches"] },
   { id: "ing_petits_pois", name: "Petits pois", icon: "1FADB", emoji: "🫛", category: "vegetables", defaultUnit: "g", iconKeywords: ["petits pois", "pois", "haricots verts", "haricot vert", "mange tout"] },
   { id: "ing_oignon_nouveau", name: "Oignon nouveau / Cébette", icon: "1F9C5", emoji: "🧅", category: "vegetables", defaultUnit: "botte", countUnit: "botte", gramsPerCountUnit: 100, aliases: ["cebette", "oignons nouveaux", "cive"] },
   { id: "ing_champignon", name: "Champignon", icon: "1F344", emoji: "🍄", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 25, iconKeywords: ["champignons", "champignon de paris", "pleurote", "girolle", "cepe"] },
@@ -99,14 +98,13 @@ export const INGREDIENTS: readonly IngredientCatalogItem[] = [
   // ==========================================
   // --- 2. HERBES FRAÎCHES & AROMATES ---
   // ==========================================
-  { id: "ing_basilic", name: "Basilic", icon: "1F33F", emoji: "🌿", category: "vegetables", defaultUnit: "feuille", countUnit: "feuille", gramsPerCountUnit: 1, aliases: ["basilic frais", "feuilles de basilic"] },
+  { id: "ing_basilic", name: "Basilic/Laurier", icon: "1F33F", emoji: "🌿", category: "vegetables", defaultUnit: "feuille", countUnit: "feuille", gramsPerCountUnit: 1, aliases: ["basilic frais", "feuilles de basilic", "feuille de laurier", "laurier sauce", "laurier"] },
   { id: "ing_persil", name: "Persil", icon: "1F33F", emoji: "🌿", category: "vegetables", defaultUnit: "brin", countUnit: "brin", gramsPerCountUnit: 2, aliases: ["persil plat", "persil frise", "botte de persil"] },
   { id: "ing_ciboulette", name: "Ciboulette", icon: "1F33F", emoji: "🌿", category: "vegetables", defaultUnit: "brin", countUnit: "brin", gramsPerCountUnit: 2, aliases: ["botte de ciboulette", "brins de ciboulette"] },
   { id: "ing_menthe", name: "Menthe", icon: "1F33F", emoji: "🌿", category: "vegetables", defaultUnit: "feuille", countUnit: "feuille", gramsPerCountUnit: 1, aliases: ["menthe fraiche", "feuilles de menthe"] },
   { id: "ing_coriandre", name: "Coriandre", icon: "1F33F", emoji: "🌿", category: "vegetables", defaultUnit: "brin", countUnit: "brin", gramsPerCountUnit: 2, aliases: ["coriandre fraiche", "botte de coriandre"] },
   { id: "ing_thym", name: "Thym", icon: "1F33F", emoji: "🌿", category: "vegetables", defaultUnit: "brin", countUnit: "brin", gramsPerCountUnit: 2, aliases: ["brin de thym", "branche de thym"] },
   { id: "ing_romarin", name: "Romarin", icon: "1F33F", emoji: "🌿", category: "vegetables", defaultUnit: "brin", countUnit: "brin", gramsPerCountUnit: 2, aliases: ["brin de romarin", "branche de romarin"] },
-  { id: "ing_laurier", name: "Laurier", icon: "1F343", emoji: "🍃", category: "vegetables", defaultUnit: "feuille", countUnit: "feuille", gramsPerCountUnit: 1, aliases: ["feuille de laurier", "laurier sauce"] },
   { id: "ing_aneth", name: "Aneth", icon: "1F33F", emoji: "🌿", category: "vegetables", defaultUnit: "brin", countUnit: "brin", gramsPerCountUnit: 2, aliases: ["brin d aneth"] },
   { id: "ing_herbes", name: "Herbes fraîches", icon: "1F33F", emoji: "🌿", category: "vegetables", defaultUnit: "brin", countUnit: "brin", gramsPerCountUnit: 2, iconKeywords: ["herbes", "bouquet garni", "herbes de provence", "estragon"] },
 
@@ -185,39 +183,32 @@ export const INGREDIENTS: readonly IngredientCatalogItem[] = [
   // --- 7. ÉPICERIE, CONDIMENTS, HUILES & BOISSONS ---
   // ==========================================
   { id: "ing_huile_d_olive", name: "Huile d'olive", icon: "1FAD2", emoji: "🫒", category: "pantry", defaultUnit: "c_soupe", aliases: ["huile d olive", "huile olive", "huile d'olive", "olives", "olives noires", "olives vertes", "capres"] },
-  { id: "ing_huile", name: "Huile (Tournesol / Neutre)", icon: "1FAD2", emoji: "🫒", category: "pantry", defaultUnit: "c_soupe", aliases: ["huile de tournesol", "huile de colza", "huile de truffe", "huile de sesame", "huile", "huile de friture", "huile neutre"] },
-  { id: "ing_vinaigre", name: "Vinaigre / Vinaigrette", icon: "1F37E", emoji: "🍾", category: "pantry", defaultUnit: "c_cafe", aliases: ["vinaigre balsamique", "vinaigre de cidre", "vinaigre de vin", "vinaigre", "vinaigrette"] },
-  { id: "ing_bouillon_cube", name: "Bouillon cube", icon: "1F9C2", emoji: "🧂", category: "pantry", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 10, aliases: ["cube de bouillon", "bouillon de volaille", "bouillon de legumes", "bouillon de boeuf", "cube maggi", "tablette de bouillon"] },
-  { id: "ing_sel_poivre", name: "Sel & Poivre / Épices", icon: "1F9C2", emoji: "🧂", category: "pantry", defaultUnit: "pincee", countUnit: "pincee", gramsPerCountUnit: 1, aliases: ["sel et poivre", "sel &amp; poivre", "fleur de sel", "sel", "poivre", "gros sel", "paprika", "paprika fume", "curry", "cumin", "curcuma", "cannelle", "epices", "epice"] },
-  { id: "ing_sauces", name: "Sauces & Condiments (Tomate, Soja, Moutarde)", icon: "1F96B", emoji: "🥫", category: "pantry", defaultUnit: "c_soupe", aliases: ["sauce tomate", "coulis de tomate", "concentre de tomate", "tomates pelees", "sauce soja", "moutarde", "mayonnaise", "ketchup", "harissa", "pesto"] },
-  { id: "ing_sucre", name: "Sucre", icon: "1F36C", emoji: "🍬", category: "pantry", defaultUnit: "g", aliases: ["sucre en poudre", "cassonade", "sucre roux", "sucre glace"] },
-  { id: "ing_sucre_vanille", name: "Sucre vanillé", icon: "1F36C", emoji: "🍬", category: "pantry", defaultUnit: "sachet", countUnit: "sachet", gramsPerCountUnit: 7, aliases: ["sucre vanille", "sachet de sucre vanille"] },
+  
+  { id: "ing_huile", name: "Huile (Tournesol / Neutre)", icon: "1F33B", emoji: "🌻", category: "pantry", defaultUnit: "c_soupe", aliases: ["huile de tournesol", "huile de colza", "huile de truffe", "huile de sesame", "huile", "huile de friture", "huile neutre"] },
+  { id: "ing_champagne", name: "Champagne / Alcool / Boissons", icon: "1F37E", emoji: "🍾", category: "pantry", defaultUnit: "ml", aliases: ["champagne", "prosecco", "cremant", "cava", "mousseux", "alcool", "spiritueux", "vodka", "rhum", "gin", "whisky", "aperitif", "cocktail", "liqueur", "boisson alcoolisee"], iconKeywords: ["champagne", "alcool", "boisson", "boissons", "prosecco", "cremant", "spiritueux", "vodka", "rhum", "whisky", "gin", "aperitif", "cocktail", "liqueur"] },
+  { id: "ing_sel_poivre", name: "Sel / Sucre", icon: "1F9C2", emoji: "🧂", category: "pantry", defaultUnit: "pincee", countUnit: "pincee", gramsPerCountUnit: 1, aliases: ["sel", "sucre", "sel et poivre", "sel &amp; poivre", "fleur de sel", "poivre", "gros sel", "sucre en poudre", "cassonade", "sucre roux", "sucre glace", "sucre vanille", "sachet de sucre vanille", "paprika", "paprika fume", "curry", "cumin", "curcuma", "cannelle", "epices", "epice"], iconKeywords: ["sel", "sucre", "poivre", "epice", "epices", "cassonade"] },
+  { id: "ing_sauces", name: "Sauces & Condiments (Tomate, Soja, Moutarde)", icon: "1F96B", emoji: "🥫", category: "pantry", defaultUnit: "c_soupe", aliases: ["sauce tomate", "coulis de tomate", "concentre de tomate", "tomates pelees", "sauce soja", "moutarde", "mayonnaise", "ketchup", "harissa", "pesto", "vinaigre", "vinaigrette", "vinaigre balsamique", "vinaigre de cidre", "vinaigre de vin"] },
   { id: "ing_chocolat", name: "Chocolat / Cacao", icon: "1F36B", emoji: "🍫", category: "pantry", defaultUnit: "g", aliases: ["chocolat noir", "chocolat au lait", "chocolat patissier", "chocolat noir 70%", "chocolat noir 70 %", "cacao", "praline", "pepites de chocolat"] },
   { id: "ing_miel", name: "Miel / Confiture / Sucrants", icon: "1F36F", emoji: "🍯", category: "pantry", defaultUnit: "c_soupe", aliases: ["miel", "sirop d erable", "sirop d agave", "confiture", "marmelade", "pate a tartiner", "nutella"] },
   { id: "ing_biscuits", name: "Biscuits / Gâteaux", icon: "1F36A", emoji: "🍪", category: "pantry", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 20, aliases: ["biscuits", "gateaux", "cookies", "sables"] },
   { id: "ing_oleagineux", name: "Noix / Amandes / Graines", icon: "1F95C", emoji: "🥜", category: "pantry", defaultUnit: "g", aliases: ["noix", "amandes", "noisettes", "cacahuetes", "pignons de pin", "graines de chia", "graines de courge", "graines de sesame", "noix de cajou"] },
   { id: "ing_cafe", name: "Café", icon: "2615", emoji: "☕", category: "pantry", defaultUnit: "g", aliases: ["cafe", "cafe en grains", "cafe moulu", "capsules de cafe"] },
   { id: "ing_the", name: "Thé / Infusion", icon: "1FAD6", emoji: "🫖", category: "pantry", defaultUnit: "sachet", countUnit: "sachet", gramsPerCountUnit: 2, aliases: ["the", "infusion", "tisane", "the vert", "the noir"] },
-  { id: "ing_boissons", name: "Eau / Jus / Boissons", icon: "1F4A7", emoji: "💧", category: "pantry", defaultUnit: "ml", aliases: ["eau", "eau gazeuse", "eau minerale"] },
+  { id: "ing_boissons", name: "Eau / Eau gazeuse", icon: "1F4A7", emoji: "💧", category: "pantry", defaultUnit: "ml", aliases: ["eau", "eau gazeuse", "eau minerale", "eau plate"] },
+  { id: "ing_glacons", name: "Glaçons", icon: "1F9CA", emoji: "🧊", category: "pantry", defaultUnit: "piece", countUnit: "piece", aliases: ["glacons", "glacon", "glaçons", "glaçon", "glace", "glace pilee", "sac de glacons", "poche de glacons", "cubes de glace"], iconKeywords: ["glacons", "glacon", "glaçons", "glaçon", "glace", "glace pilee"] },
   { id: "ing_jus", name: "Jus de fruits", icon: "1F9C3", emoji: "🧃", category: "pantry", defaultUnit: "ml", aliases: ["jus de pomme", "jus de fruits", "jus d ananas", "smoothie"] },
   { id: "ing_vin", name: "Vin", icon: "1F377", emoji: "🍷", category: "pantry", defaultUnit: "ml", aliases: ["vin blanc", "vin rouge", "vin rose"] },
   { id: "ing_biere", name: "Bière", icon: "1F37A", emoji: "🍺", category: "pantry", defaultUnit: "ml", aliases: ["biere", "cidre"] },
   { id: "ing_levure", name: "Levure", icon: "1F33E", emoji: "🌾", category: "pantry", defaultUnit: "sachet", countUnit: "sachet", gramsPerCountUnit: 11, aliases: ["levure chimique", "levure de boulanger", "sachet de levure", "levure seche"] },
-  { id: "ing_vanille_gousse", name: "Gousse de vanille", icon: "1F366", emoji: "🍦", category: "pantry", defaultUnit: "gousse", countUnit: "gousse", gramsPerCountUnit: 3, aliases: ["gousse de vanille", "vanille en gousse", "extrait de vanille"] },
-
-  // ==========================================
-  // --- 8. MAISON & HYGIÈNE ---
-  // ==========================================
-  { id: "ing_liquide_vaisselle", name: "Liquide vaisselle", icon: "1F9FC", emoji: "🧼", category: "maison_hygiene", defaultUnit: "piece", countUnit: "piece", iconKeywords: ["liquide vaisselle"] },
-  { id: "ing_savon", name: "Savon / Gel douche", icon: "1F9FC", emoji: "🧼", category: "maison_hygiene", defaultUnit: "piece", countUnit: "piece", aliases: ["savon", "gel douche", "savon de marseille", "savon noir"] },
-  { id: "ing_shampoing", name: "Shampoing", icon: "1F9F4", category: "maison_hygiene", defaultUnit: "piece", countUnit: "piece", aliases: ["shampoing", "shampooing", "apres shampoing", "apres-shampoing"] },
-  { id: "ing_lessive", name: "Lessive / Entretien", icon: "1FAE7", category: "maison_hygiene", defaultUnit: "piece", countUnit: "piece", aliases: ["lessive", "nettoyant", "javel", "detergent", "assouplissant", "adoucissant", "multi usages", "multi-usages"] },
+  { id: "ing_shampoing", name: "Shampoing / Gel douche / Liquide vaisselle", icon: "1F9F4", emoji: "🧴", category: "maison_hygiene", defaultUnit: "piece", countUnit: "piece", aliases: ["shampoing", "shampooing", "apres shampoing", "apres-shampoing", "gel douche", "liquide vaisselle", "savon", "savon de marseille", "savon noir"] },
+  { id: "ing_lessive", name: "Lessive / Entretien", icon: "1F9F4", emoji: "🧴", category: "maison_hygiene", defaultUnit: "piece", countUnit: "piece", aliases: ["lessive", "nettoyant", "javel", "detergent", "assouplissant", "adoucissant", "multi usages", "multi-usages"] },
   { id: "ing_eponge", name: "Éponge", icon: "1F9FD", category: "maison_hygiene", defaultUnit: "piece", countUnit: "piece", aliases: ["eponge", "eponges"] },
   { id: "ing_papier_toilette", name: "Papier toilette / Essuie-tout", icon: "1F9FB", category: "maison_hygiene", defaultUnit: "piece", countUnit: "piece", aliases: ["papier toilette", "pq", "papier absorbant", "sopalin", "essuie tout", "essuie-tout", "mouchoir", "mouchoirs"] },
   { id: "ing_brosse_dents", name: "Brosse à dents", icon: "1FAA5", category: "maison_hygiene", defaultUnit: "piece", countUnit: "piece", aliases: ["brosse a dents"] },
   { id: "ing_dentifrice", name: "Dentifrice", icon: "1F9B7", category: "maison_hygiene", defaultUnit: "piece", countUnit: "piece", aliases: ["dentifrice"] },
   { id: "ing_sac_poubelle", name: "Sac poubelle", icon: "1F5D1", category: "maison_hygiene", defaultUnit: "piece", countUnit: "piece", aliases: ["sac poubelle", "sacs poubelle", "poubelle"] },
   { id: "ing_rasoir", name: "Rasoir", icon: "1FA92", category: "maison_hygiene", defaultUnit: "piece", countUnit: "piece", aliases: ["rasoir", "coton tige", "cotons tiges"] },
+  { id: "ing_pansements", name: "Pansements / Médicaments", icon: "E306", category: "maison_hygiene", defaultUnit: "piece", countUnit: "piece", aliases: ["pansement", "pansements", "pensement", "pensements", "medicament", "medicaments", "doliprane", "paracetamol", "aspirine", "sparadrap", "compresse", "compresses", "bande", "desinfectant", "antiseptique", "pharmacie", "thermomètre", "sirop toux"], iconKeywords: ["pansement", "pansements", "pensement", "pensements", "medicament", "medicaments", "doliprane", "paracetamol", "aspirine", "sparadrap", "compresse", "desinfectant", "pharmacie"] },
 ];
 
 /**
@@ -435,7 +426,7 @@ export const EMOJI_TO_HEX_MAP: Record<string, string> = {
   "🪒": "1FA92",
   "🥕": "1F955",
   "🥒": "1F952",
-  "🌶️": "1F336-FE0F",
+  "🌶️": "1F336",
   "🌶": "1F336",
   "🧄": "1F9C4",
   "🧅": "1F9C5",
@@ -461,7 +452,7 @@ export const EMOJI_TO_HEX_MAP: Record<string, string> = {
   "🍽️": "1F37D",
   "🍽": "1F37D",
   "❓": "2753",
-  "❄️": "2744-FE0F",
+  "❄️": "2744",
   "🧊": "1F9CA",
 };
 
@@ -533,28 +524,27 @@ export function resolveIcon(name: string): string | undefined {
   if (hasWord(normalized, "salade") || hasWord(normalized, "laitue") || hasWord(normalized, "mesclun") || hasWord(normalized, "roquette") || hasWord(normalized, "mache") || hasWord(normalized, "epinard") || hasWord(normalized, "epinards")) return "🥬";
   if (hasWord(normalized, "champignon") || hasWord(normalized, "champignons")) return "🍄";
   if (hasWord(normalized, "oeuf") || hasWord(normalized, "oeufs")) return "🥚";
-  if (hasWord(normalized, "vinaigre") || hasWord(normalized, "vinaigrette")) return "🍾";
-  if (hasWord(normalized, "sel") || hasWord(normalized, "poivre") || hasWord(normalized, "epice") || hasWord(normalized, "epices") || hasWord(normalized, "paprika") || hasWord(normalized, "curry") || hasWord(normalized, "cumin") || hasWord(normalized, "curcuma") || hasWord(normalized, "cannelle")) return "🧂";
-  if (hasWord(normalized, "sauce") || hasWord(normalized, "moutarde") || hasWord(normalized, "mayonnaise") || hasWord(normalized, "ketchup") || hasWord(normalized, "conserve") || hasWord(normalized, "coulis") || hasWord(normalized, "concentre") || hasWord(normalized, "pesto")) return "🥫";
-  if (hasWord(normalized, "sucre")) return "🍬";
+  if (hasWord(normalized, "champagne") || hasWord(normalized, "alcool") || hasWord(normalized, "prosecco") || hasWord(normalized, "cremant") || hasWord(normalized, "spiritueux") || hasWord(normalized, "vodka") || hasWord(normalized, "rhum") || hasWord(normalized, "whisky") || hasWord(normalized, "gin") || hasWord(normalized, "liqueur") || hasWord(normalized, "cocktail")) return "🍾";
+  if (hasWord(normalized, "sel") || hasWord(normalized, "sucre") || hasWord(normalized, "cassonade") || hasWord(normalized, "poivre") || hasWord(normalized, "epice") || hasWord(normalized, "epices") || hasWord(normalized, "paprika") || hasWord(normalized, "curry") || hasWord(normalized, "cumin") || hasWord(normalized, "curcuma") || hasWord(normalized, "cannelle")) return "🧂";
+  if (hasWord(normalized, "sauce") || hasWord(normalized, "moutarde") || hasWord(normalized, "mayonnaise") || hasWord(normalized, "ketchup") || hasWord(normalized, "conserve") || hasWord(normalized, "coulis") || hasWord(normalized, "concentre") || hasWord(normalized, "pesto") || hasWord(normalized, "vinaigre") || hasWord(normalized, "vinaigrette")) return "🥫";
   if (hasWord(normalized, "cafe")) return "☕";
   if (hasWord(normalized, "the") || hasWord(normalized, "tisane") || hasWord(normalized, "infusion")) return "🫖";
   if (hasWord(normalized, "jus")) return "🧃";
   if (hasWord(normalized, "eau")) return "💧";
+  if (hasWord(normalized, "glacon") || hasWord(normalized, "glacons") || hasWord(normalized, "glace") || hasWord(normalized, "glaçon") || hasWord(normalized, "glaçons")) return "🧊";
   if (hasWord(normalized, "vin")) return "🍷";
   if (hasWord(normalized, "biere") || hasWord(normalized, "cidre")) return "🍺";
   if (hasWord(normalized, "biscuit") || hasWord(normalized, "gateau") || hasWord(normalized, "cookie") || hasWord(normalized, "sable")) return "🍪";
 
   // Fallbacks Maison & Hygiène (les SVG OpenMoji bouchent les trous s'il n'y a pas d'émoji natif)
-  if (hasWord(normalized, "savon") || hasWord(normalized, "douche")) return "1F9FC";
-  if (hasWord(normalized, "shampoing") || hasWord(normalized, "vaisselle") || hasWord(normalized, "lotion")) return "1F9F4";
-  if (hasWord(normalized, "lessive") || hasWord(normalized, "nettoyant") || hasWord(normalized, "javel") || hasWord(normalized, "adoucissant") || hasWord(normalized, "assouplissant")) return "1FAE7";
+  if (hasWord(normalized, "savon") || hasWord(normalized, "douche") || hasWord(normalized, "shampoing") || hasWord(normalized, "vaisselle") || hasWord(normalized, "lotion") || hasWord(normalized, "lessive") || hasWord(normalized, "nettoyant") || hasWord(normalized, "javel") || hasWord(normalized, "adoucissant") || hasWord(normalized, "assouplissant")) return "1F9F4";
   if (hasWord(normalized, "eponge")) return "1F9FD";
   if (hasWord(normalized, "papier toilette") || hasWord(normalized, "mouchoir") || hasWord(normalized, "essuie tout") || hasWord(normalized, "sopalin") || hasWord(normalized, "pq")) return "1F9FB";
   if (hasWord(normalized, "dentifrice")) return "1F9B7";
   if (hasWord(normalized, "brosse a dents")) return "1FAA5";
   if (hasWord(normalized, "poubelle") || hasWord(normalized, "sac poubelle")) return "1F5D1";
   if (hasWord(normalized, "rasoir")) return "1FA92";
+  if (hasWord(normalized, "pansement") || hasWord(normalized, "pansements") || hasWord(normalized, "pensement") || hasWord(normalized, "pensements") || hasWord(normalized, "medicament") || hasWord(normalized, "medicaments") || hasWord(normalized, "doliprane") || hasWord(normalized, "paracetamol") || hasWord(normalized, "sparadrap") || hasWord(normalized, "compresse")) return "E306";
 
   return undefined;
 }
@@ -577,7 +567,7 @@ export function getIngredientDefaultUnit(nameOrId?: string): UnitCode {
   if (hasWord(norm, "levure") || hasWord(norm, "sucre vanille")) return "sachet";
   if (hasWord(norm, "bouillon cube") || hasWord(norm, "cube")) return "piece";
   if (hasWord(norm, "sel") || hasWord(norm, "poivre") || hasWord(norm, "piment") || hasWord(norm, "epice") || hasWord(norm, "epices")) return "pincee";
-  if (hasWord(norm, "lait") || hasWord(norm, "eau") || hasWord(norm, "creme") || hasWord(norm, "bouillon") || hasWord(norm, "jus") || hasWord(norm, "vinaigre")) return "ml";
+  if (hasWord(norm, "lait") || hasWord(norm, "eau") || hasWord(norm, "creme") || hasWord(norm, "bouillon") || hasWord(norm, "jus") || hasWord(norm, "vinaigre") || hasWord(norm, "champagne") || hasWord(norm, "alcool") || hasWord(norm, "boisson") || hasWord(norm, "vin") || hasWord(norm, "biere")) return "ml";
   if (hasWord(norm, "huile") || hasWord(norm, "sauce") || hasWord(norm, "miel")) return "c_soupe";
   if (hasWord(norm, "farine") || hasWord(norm, "sucre") || hasWord(norm, "chocolat") || hasWord(norm, "beurre") || hasWord(norm, "riz") || hasWord(norm, "pates") || hasWord(norm, "viande hachee")) return "g";
 
