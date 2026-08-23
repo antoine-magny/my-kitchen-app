@@ -98,7 +98,6 @@ export function IngredientRow({
         destinations={destinations}
         onEditDlc={onEditDlc}
         onMove={(category) => onMove(item.id, category)}
-        onDelete={handleDelete}
       />
 
       <button

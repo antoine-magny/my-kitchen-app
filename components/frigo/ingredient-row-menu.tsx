@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { CalendarIcon, MoreIcon, MoveIcon, TrashIcon } from "@/components/icons";
+import { CalendarIcon, MoreIcon, MoveIcon } from "@/components/icons";
 import type { Ingredient, TabId } from "@/components/frigo/shared";
 
 export function IngredientRowMenu({
@@ -10,13 +10,11 @@ export function IngredientRowMenu({
   destinations,
   onEditDlc,
   onMove,
-  onDelete,
 }: {
   item: Ingredient;
   destinations: { id: TabId; icon: string; label: string }[];
   onEditDlc: (id: string) => void;
   onMove: (category: TabId) => void;
-  onDelete: () => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPos, setMenuPos] = useState<{ top?: number; bottom?: number; right: number } | null>(null);
@@ -62,7 +60,7 @@ export function IngredientRowMenu({
     if (!buttonRef.current) return;
 
     const rect = buttonRef.current.getBoundingClientRect();
-    const MENU_HEIGHT = 56 + destinations.length * 44 + 56;
+    const MENU_HEIGHT = 48 + destinations.length * 40 + 32;
     const GAP = 8;
     const BOTTOM_NAV_SAFE = 88;
 
@@ -117,7 +115,7 @@ export function IngredientRowMenu({
         createPortal(
           <div
             ref={menuRef}
-            className="slide-down fixed z-[60] min-w-[240px] overflow-hidden rounded-2xl py-1.5"
+            className="slide-down fixed z-[60] min-w-[200px] overflow-hidden rounded-xl py-1"
             style={{
               top: menuPos.top,
               bottom: menuPos.bottom,
@@ -135,19 +133,19 @@ export function IngredientRowMenu({
                 close();
                 onEditDlc(item.id);
               }}
-              className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-semibold text-[#1C2B1E] transition-colors hover:bg-[#F6F8F3]"
+              className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-xs font-semibold text-[#1C2B1E] transition-colors hover:bg-[#F6F8F3]"
             >
               <span className="text-[#4A7C59]">
-                <CalendarIcon size={14} />
+                <CalendarIcon size={13} />
               </span>
               {item.expirationDate
                 ? "Modifier la date d'expiration"
                 : "Ajouter une date d'expiration"}
             </button>
 
-            <div className="mx-3 my-1 h-px bg-[#F0F4EF]" />
+            <div className="mx-2.5 my-0.5 h-px bg-[#F0F4EF]" />
 
-            <p className="px-4 pt-1.5 pb-1 text-[10px] font-bold tracking-[0.08em] text-[#9CA3AF] uppercase">
+            <p className="px-3 pt-1 pb-0.5 text-[10px] font-bold tracking-[0.08em] text-[#9CA3AF] uppercase">
               Déplacer vers
             </p>
             {destinations.map((tab) => (
@@ -159,31 +157,17 @@ export function IngredientRowMenu({
                   close();
                   onMove(tab.id);
                 }}
-                className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-semibold text-[#1C2B1E] transition-colors hover:bg-[#F6F8F3]"
+                className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-xs font-semibold text-[#1C2B1E] transition-colors hover:bg-[#F6F8F3]"
               >
                 <span className="flex w-3.5 items-center justify-center text-[#4A7C59]" aria-hidden>
-                  <MoveIcon size={14} />
+                  <MoveIcon size={13} />
                 </span>
-                <span className="flex items-center gap-2">
+                <span className="flex items-center gap-1.5">
                   <span aria-hidden>{tab.icon}</span>
                   {tab.label}
                 </span>
               </button>
             ))}
-
-            <div className="mx-3 my-1 h-px bg-[#F0F4EF]" />
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                close();
-                onDelete();
-              }}
-              className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-semibold text-[#DC2626] transition-colors hover:bg-[#FEF2F2]"
-            >
-              <TrashIcon size={15} />
-              Supprimer
-            </button>
           </div>,
           document.body,
         )}

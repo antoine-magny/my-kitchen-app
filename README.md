@@ -124,7 +124,7 @@ ingrédients peuvent partager le même emoji (ex. 🥒 → Courgette *et* Concom
 catalogue, un seul ingrédient par emoji visuel unique. **Obligatoire** dans tout
 sélecteur ou grille d'emojis afin d'éliminer les icônes identiques côte à côte.
 
-**`DEFAULT_INGREDIENT_EMOJI`** (`🍽️`) : emoji neutre par défaut quand aucun
+**`DEFAULT_INGREDIENT_ICON`** (`2205` / ∅) : icône neutre par défaut quand aucun
 ingrédient n'est reconnu ou quand l'utilisateur reset le choix.
 
 Le composant partagé **`EmojiPickerPopover`** (`components/ui/emoji-picker-popover.tsx`)

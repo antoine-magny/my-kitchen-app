@@ -230,7 +230,6 @@ export const EMOJI_TO_HEX_MAP: Record<string, string> = {
   "🍾": "1F37E",
   "🧂": "1F9C2",
   "🥫": "1F96B",
-  "🍬": "1F36C",
   "☕": "2615",
   "🫖": "1FAD6",
   "🧃": "1F9C3",
@@ -238,9 +237,7 @@ export const EMOJI_TO_HEX_MAP: Record<string, string> = {
   "🍷": "1F377",
   "🍺": "1F37A",
   "🍪": "1F36A",
-  "🧼": "1F9FC",
   "🧴": "1F9F4",
-  "🫧": "1FAE7",
   "🧽": "1F9FD",
   "🧻": "1F9FB",
   "🦷": "1F9B7",
@@ -256,7 +253,6 @@ export const EMOJI_TO_HEX_MAP: Record<string, string> = {
   "🧅": "1F9C5",
   "🍋": "1F34B",
   "🍎": "1F34E",
-  "🍏": "1F34F",
   "🍐": "1F350",
   "🍌": "1F34C",
   "🍊": "1F34A",
@@ -271,11 +267,6 @@ export const EMOJI_TO_HEX_MAP: Record<string, string> = {
   "🥑": "1F951",
   "🥦": "1F966",
   "🌿": "1F33F",
-  "🌱": "1F331",
-  "🍃": "1F343",
-  "🍽️": "1F37D",
-  "🍽": "1F37D",
-  "❓": "2753",
   "❄️": "2744",
   "🧊": "1F9CA",
 };
@@ -292,7 +283,7 @@ export function toIconHex(input?: string): string {
     return EMOJI_TO_HEX_MAP[trimmed];
   }
 
-  // Si c'est déjà une chaîne hex valide (ex. 1F345, 2753, 1F336-FE0F)
+  // Si c'est déjà une chaîne hex valide (ex. 1F345, 2205, 1F336-FE0F)
   if (/^[0-9A-Fa-f]{2,6}(-[0-9A-Fa-f]{2,6})*$/.test(trimmed)) {
     return trimmed.toUpperCase();
   }
