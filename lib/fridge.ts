@@ -7,7 +7,7 @@
  * l'aliment canonique pour le matching avec les recettes et les courses.
  */
 
-import { describeIngredient, DEFAULT_INGREDIENT_ICON, toIconHex } from "@/lib/ingredients";
+import { describeIngredient, DEFAULT_INGREDIENT_ICON } from "@/lib/ingredients";
 import { normalizeProductName } from "@/lib/shopping-categories";
 import {
   coerceUnitCode,
@@ -110,10 +110,15 @@ export function createFridgeItem(input: {
 }): FridgeItem {
   const customName = input.customName.trim();
   const identity = describeIngredient(customName);
-  const icon =
-    input.icon && input.icon !== DEFAULT_INGREDIENT_ICON
-      ? toIconHex(input.icon)
-      : identity.icon ? toIconHex(identity.icon) : (input.icon ? toIconHex(input.icon) : DEFAULT_INGREDIENT_ICON);
+  const isInputHex = input.icon ? /^[0-9A-Fa-f]{2,6}(-[0-9A-Fa-f]{2,6})*$/.test(input.icon.trim()) : false;
+  let icon = DEFAULT_INGREDIENT_ICON;
+  if (input.icon && input.icon !== DEFAULT_INGREDIENT_ICON && !isInputHex) {
+    icon = input.icon;
+  } else if (identity.icon) {
+    icon = identity.icon;
+  } else if (input.icon && input.icon !== DEFAULT_INGREDIENT_ICON) {
+    icon = input.icon;
+  }
 
   return {
     id: input.id ?? createFridgeItemId(),
@@ -229,9 +234,9 @@ function sanitizeItem(raw: unknown): FridgeItem | null {
         : "fridge",
     icon:
       typeof entry.icon === "string" && entry.icon
-        ? toIconHex(entry.icon)
+        ? entry.icon
         : typeof (entry as any).emoji === "string" && (entry as any).emoji
-        ? toIconHex((entry as any).emoji)
+        ? (entry as any).emoji
         : undefined,
     expirationDate: rawExpiration && /^\d{4}-\d{2}-\d{2}$/.test(rawExpiration) ? rawExpiration : null,
     addedAt: typeof entry.addedAt === "string" ? entry.addedAt : undefined,

@@ -29,7 +29,7 @@ export function EmojiPickerPopover({
   function openPopover() {
     if (!buttonRef.current) return;
     const rect = buttonRef.current.getBoundingClientRect();
-    const POPOVER_WIDTH = 256;
+    const POPOVER_WIDTH = 282;
     const POPOVER_MAX_HEIGHT = 256;
     const GAP = 6;
     const BOTTOM_NAV_HEIGHT = 80; // Marge pour la barre de navigation
@@ -120,8 +120,9 @@ export function EmojiPickerPopover({
               boxShadow: "0 10px 36px rgba(20,31,22,0.22)",
               border: "1px solid #E2EBE3",
               gridTemplateColumns: "repeat(6, 1fr)",
-              width: 256,
+              width: 282,
               maxHeight: popoverPos.maxHeight,
+              overflowX: "hidden",
               scrollbarWidth: "thin",
               scrollbarColor: "#C8E0CF transparent",
             }}
@@ -141,21 +142,23 @@ export function EmojiPickerPopover({
             >
               <IngredientIcon iconHex={DEFAULT_INGREDIENT_ICON} size={24} />
             </button>
-            {UNIQUE_EMOJI_INGREDIENTS.map((item) => (
+            {UNIQUE_EMOJI_INGREDIENTS.map((item) => {
+              const visual = item.emoji || item.icon;
+              return (
               <button
                 key={item.id}
                 type="button"
                 title={item.name}
                 onClick={() => {
-                  onSelectIcon(item.icon, item.defaultUnit, item.name);
+                  onSelectIcon(visual, item.defaultUnit, item.name);
                   setIsOpen(false);
                 }}
                 className="flex h-9 w-9 items-center justify-center rounded-xl transition-all hover:bg-[#EBF2EC] active:scale-90 select-none cursor-pointer"
-                style={{ background: currentIcon === item.icon ? "#EBF2EC" : "transparent" }}
+                style={{ background: currentIcon === visual ? "#EBF2EC" : "transparent" }}
               >
-                <IngredientIcon iconHex={item.icon} size={24} />
+                <IngredientIcon iconHex={visual} size={24} />
               </button>
-            ))}
+            )})}
           </div>,
           document.body,
         )

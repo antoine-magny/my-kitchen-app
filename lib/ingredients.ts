@@ -33,6 +33,7 @@ export interface IngredientCatalogItem {
   id: string;
   name: string;
   icon: string;
+  emoji?: string;
   category: IngredientCategory;
   /** Unité par défaut pré-remplie dans les formulaires et l'IA. */
   defaultUnit?: UnitCode;
@@ -52,162 +53,163 @@ export interface IngredientCatalogItem {
    * jamais influencer l'identité (« Basilic » reste distinct des « Herbes »).
    */
   iconKeywords?: readonly string[];
+  emojiKeywords?: readonly string[];
 }
 
 /**
  * Ingrédients du sélecteur frigo et du catalogue, enrichis avec les aliments
  * décomptés du quotidien (pièces, tranches, gousses, bottes, feuilles, brins, sachets...).
  */
+
+
 export const INGREDIENTS: readonly IngredientCatalogItem[] = [
   // ==========================================
   // --- 1. LÉGUMES, BULBES & CHAMPIGNONS ---
   // ==========================================
-  { id: "ing_tomate", name: "Tomate", icon: "1F345", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 120, iconKeywords: ["tomates", "tomate cerise", "tomates cerises"] },
-  { id: "ing_carotte", name: "Carotte", icon: "1F955", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 100, iconKeywords: ["carottes", "carotte fanee"] },
-  { id: "ing_courgette", name: "Courgette", icon: "1F952", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 250, iconKeywords: ["courgettes"] },
-  { id: "ing_concombre", name: "Concombre", icon: "1F952", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 300, iconKeywords: ["concombres"] },
-  { id: "ing_poivron", name: "Poivron", icon: "1FAD1", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 160, iconKeywords: ["poivrons", "poivron rouge", "poivron vert", "poivron jaune"] },
-  { id: "ing_aubergine", name: "Aubergine", icon: "1F346", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 250, iconKeywords: ["aubergines"] },
-  { id: "ing_oignon", name: "Oignon", icon: "1F9C5", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 100, iconKeywords: ["oignons", "oignon jaune", "oignon rouge"] },
-  { id: "ing_echalote", name: "Échalote", icon: "1F9C5", category: "vegetables", defaultUnit: "gousse", countUnit: "gousse", gramsPerCountUnit: 25, aliases: ["echalotte", "echalotes", "echalottes"] },
-  { id: "ing_ail", name: "Ail", icon: "1F9C4", category: "vegetables", defaultUnit: "gousse", countUnit: "gousse", gramsPerCountUnit: 5, aliases: ["gousse d ail", "gousses d ail", "tete d ail"] },
-  { id: "ing_poireau", name: "Poireau", icon: "1F96C", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 150, aliases: ["poireaux", "blanc de poireau"] },
-  { id: "ing_pomme_de_terre", name: "Pomme de terre", icon: "1F954", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 150, iconKeywords: ["grenaille", "patate", "pommes de terre", "pomme de terre grenaille"] },
-  { id: "ing_patate_douce", name: "Patate douce", icon: "1F360", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 250, iconKeywords: ["patates douces"] },
-  { id: "ing_avocat", name: "Avocat", icon: "1F951", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 150, iconKeywords: ["avocats"] },
-  { id: "ing_brocoli", name: "Brocoli", icon: "1F966", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 350, iconKeywords: ["brocolis"] },
-  { id: "ing_chou_fleur", name: "Chou-fleur", icon: "1F966", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 600, aliases: ["chou fleur", "choux"] },
-  { id: "ing_laitue", name: "Laitue / Salade", icon: "1F96C", category: "vegetables", defaultUnit: "piece", countUnit: "feuille", gramsPerCountUnit: 15, aliases: ["salade", "salade verte", "batavia", "romaine", "sucrine", "mesclun", "mache", "roquette", "epinard", "epinards", "pousses d epinard"] },
-  { id: "ing_fenouil", name: "Fenouil", icon: "1F9C5", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 250, iconKeywords: ["fenouils", "bulbe de fenouil"] },
-  { id: "ing_celeri", name: "Céleri", icon: "1F96C", category: "vegetables", defaultUnit: "brin", countUnit: "brin", gramsPerCountUnit: 40, aliases: ["celeri branche", "branche de celeri", "celeri rave"] },
-  { id: "ing_radis", name: "Radis", icon: "1F957", category: "vegetables", defaultUnit: "botte", countUnit: "botte", gramsPerCountUnit: 200, aliases: ["radis rose", "botte de radis"] },
-  { id: "ing_navet", name: "Navet", icon: "1F954", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 100, iconKeywords: ["navets"] },
-  { id: "ing_betterave", name: "Betterave", icon: "1F360", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 150, iconKeywords: ["betteraves", "betterave cuite"] },
-  { id: "ing_artichaut", name: "Artichaut", icon: "1F96C", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 300, iconKeywords: ["artichauts", "coeur d artichaut"] },
-  { id: "ing_asperge", name: "Asperges", icon: "1FADB", category: "vegetables", defaultUnit: "botte", countUnit: "botte", gramsPerCountUnit: 250, aliases: ["asperge", "botte d asperges", "asperges vertes", "asperges blanches"] },
-  { id: "ing_petits_pois", name: "Petits pois", icon: "1FADB", category: "vegetables", defaultUnit: "g", iconKeywords: ["petits pois", "pois", "haricots verts", "haricot vert", "mange tout"] },
-  { id: "ing_oignon_nouveau", name: "Oignon nouveau / Cébette", icon: "1F9C5", category: "vegetables", defaultUnit: "botte", countUnit: "botte", gramsPerCountUnit: 100, aliases: ["cebette", "oignons nouveaux", "cive"] },
-  { id: "ing_champignon", name: "Champignon", icon: "1F344", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 25, iconKeywords: ["champignons", "champignon de paris", "pleurote", "girolle", "cepe"] },
-  { id: "ing_piment", name: "Piment", icon: "1F336", category: "vegetables", defaultUnit: "piece", countUnit: "pincee", gramsPerCountUnit: 5, iconKeywords: ["piment rouge", "piment vert", "piment oiseau", "espelette"] },
-  { id: "ing_gingembre", name: "Gingembre", icon: "1FADA", category: "vegetables", defaultUnit: "tranche", countUnit: "tranche", gramsPerCountUnit: 10, iconKeywords: ["racine de gingembre"] },
-  { id: "ing_courge", name: "Courge / Butternut", icon: "1F383", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 800, aliases: ["butternut", "potiron", "potimarron", "courge spaghetti"] },
+  { id: "ing_tomate", name: "Tomate", icon: "1F345", emoji: "🍅", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 120, iconKeywords: ["tomates", "tomate cerise", "tomates cerises"] },
+  { id: "ing_carotte", name: "Carotte", icon: "1F955", emoji: "🥕", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 100, iconKeywords: ["carottes", "carotte fanee"] },
+  { id: "ing_courgette", name: "Courgette", icon: "1F952", emoji: "🥒", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 250, iconKeywords: ["courgettes"] },
+  { id: "ing_concombre", name: "Concombre", icon: "1F952", emoji: "🥒", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 300, iconKeywords: ["concombres"] },
+  { id: "ing_poivron", name: "Poivron", icon: "1FAD1", emoji: "🫑", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 160, iconKeywords: ["poivrons", "poivron rouge", "poivron vert", "poivron jaune"] },
+  { id: "ing_aubergine", name: "Aubergine", icon: "1F346", emoji: "🍆", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 250, iconKeywords: ["aubergines"] },
+  { id: "ing_oignon", name: "Oignon", icon: "1F9C5", emoji: "🧅", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 100, iconKeywords: ["oignons", "oignon jaune", "oignon rouge"] },
+  { id: "ing_echalote", name: "Échalote", icon: "1F9C5", emoji: "🧅", category: "vegetables", defaultUnit: "gousse", countUnit: "gousse", gramsPerCountUnit: 25, aliases: ["echalotte", "echalotes", "echalottes"] },
+  { id: "ing_ail", name: "Ail", icon: "1F9C4", emoji: "🧄", category: "vegetables", defaultUnit: "gousse", countUnit: "gousse", gramsPerCountUnit: 5, aliases: ["gousse d ail", "gousses d ail", "tete d ail"] },
+  { id: "ing_poireau", name: "Poireau", icon: "1F96C", emoji: "🥬", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 150, aliases: ["poireaux", "blanc de poireau"] },
+  { id: "ing_pomme_de_terre", name: "Pomme de terre", icon: "1F954", emoji: "🥔", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 150, iconKeywords: ["grenaille", "patate", "pommes de terre", "pomme de terre grenaille"] },
+  { id: "ing_patate_douce", name: "Patate douce", icon: "1F360", emoji: "🍠", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 250, iconKeywords: ["patates douces"] },
+  { id: "ing_avocat", name: "Avocat", icon: "1F951", emoji: "🥑", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 150, iconKeywords: ["avocats"] },
+  { id: "ing_brocoli", name: "Brocoli", icon: "1F966", emoji: "🥦", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 350, iconKeywords: ["brocolis"] },
+  { id: "ing_chou_fleur", name: "Chou-fleur", icon: "1F966", emoji: "🥦", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 600, aliases: ["chou fleur", "choux"] },
+  { id: "ing_laitue", name: "Laitue / Salade", icon: "1F96C", emoji: "🥬", category: "vegetables", defaultUnit: "piece", countUnit: "feuille", gramsPerCountUnit: 15, aliases: ["salade", "salade verte", "batavia", "romaine", "sucrine", "mesclun", "mache", "roquette", "epinard", "epinards", "pousses d epinard"] },
+  { id: "ing_fenouil", name: "Fenouil", icon: "1F9C5", emoji: "🧅", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 250, iconKeywords: ["fenouils", "bulbe de fenouil"] },
+  { id: "ing_celeri", name: "Céleri", icon: "1F96C", emoji: "🥬", category: "vegetables", defaultUnit: "brin", countUnit: "brin", gramsPerCountUnit: 40, aliases: ["celeri branche", "branche de celeri", "celeri rave"] },
+  { id: "ing_radis", name: "Radis", icon: "1F957", emoji: "🥗", category: "vegetables", defaultUnit: "botte", countUnit: "botte", gramsPerCountUnit: 200, aliases: ["radis rose", "botte de radis"] },
+  { id: "ing_navet", name: "Navet", icon: "1F954", emoji: "🥔", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 100, iconKeywords: ["navets"] },
+  { id: "ing_betterave", name: "Betterave", icon: "1F360", emoji: "🍠", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 150, iconKeywords: ["betteraves", "betterave cuite"] },
+  { id: "ing_artichaut", name: "Artichaut", icon: "1F96C", emoji: "🥬", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 300, iconKeywords: ["artichauts", "coeur d artichaut"] },
+  { id: "ing_asperge", name: "Asperges", icon: "1FADB", emoji: "🫛", category: "vegetables", defaultUnit: "botte", countUnit: "botte", gramsPerCountUnit: 250, aliases: ["asperge", "botte d asperges", "asperges vertes", "asperges blanches"] },
+  { id: "ing_petits_pois", name: "Petits pois", icon: "1FADB", emoji: "🫛", category: "vegetables", defaultUnit: "g", iconKeywords: ["petits pois", "pois", "haricots verts", "haricot vert", "mange tout"] },
+  { id: "ing_oignon_nouveau", name: "Oignon nouveau / Cébette", icon: "1F9C5", emoji: "🧅", category: "vegetables", defaultUnit: "botte", countUnit: "botte", gramsPerCountUnit: 100, aliases: ["cebette", "oignons nouveaux", "cive"] },
+  { id: "ing_champignon", name: "Champignon", icon: "1F344", emoji: "🍄", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 25, iconKeywords: ["champignons", "champignon de paris", "pleurote", "girolle", "cepe"] },
+  { id: "ing_piment", name: "Piment", icon: "1F336", emoji: "🌶️", category: "vegetables", defaultUnit: "piece", countUnit: "pincee", gramsPerCountUnit: 5, iconKeywords: ["piment rouge", "piment vert", "piment oiseau", "espelette"] },
+  { id: "ing_gingembre", name: "Gingembre", icon: "1FADA", emoji: "🫚", category: "vegetables", defaultUnit: "tranche", countUnit: "tranche", gramsPerCountUnit: 10, iconKeywords: ["racine de gingembre"] },
+  { id: "ing_courge", name: "Courge / Butternut", icon: "1F383", emoji: "🎃", category: "vegetables", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 800, aliases: ["butternut", "potiron", "potimarron", "courge spaghetti"] },
 
   // ==========================================
   // --- 2. HERBES FRAÎCHES & AROMATES ---
   // ==========================================
-  { id: "ing_basilic", name: "Basilic", icon: "1F33F", category: "vegetables", defaultUnit: "feuille", countUnit: "feuille", gramsPerCountUnit: 1, aliases: ["basilic frais", "feuilles de basilic"] },
-  { id: "ing_persil", name: "Persil", icon: "1F33F", category: "vegetables", defaultUnit: "brin", countUnit: "brin", gramsPerCountUnit: 2, aliases: ["persil plat", "persil frise", "botte de persil"] },
-  { id: "ing_ciboulette", name: "Ciboulette", icon: "1F33F", category: "vegetables", defaultUnit: "brin", countUnit: "brin", gramsPerCountUnit: 2, aliases: ["botte de ciboulette", "brins de ciboulette"] },
-  { id: "ing_menthe", name: "Menthe", icon: "1F33F", category: "vegetables", defaultUnit: "feuille", countUnit: "feuille", gramsPerCountUnit: 1, aliases: ["menthe fraiche", "feuilles de menthe"] },
-  { id: "ing_coriandre", name: "Coriandre", icon: "1F33F", category: "vegetables", defaultUnit: "brin", countUnit: "brin", gramsPerCountUnit: 2, aliases: ["coriandre fraiche", "botte de coriandre"] },
-  { id: "ing_thym", name: "Thym", icon: "1F33F", category: "vegetables", defaultUnit: "brin", countUnit: "brin", gramsPerCountUnit: 2, aliases: ["brin de thym", "branche de thym"] },
-  { id: "ing_romarin", name: "Romarin", icon: "1F33F", category: "vegetables", defaultUnit: "brin", countUnit: "brin", gramsPerCountUnit: 2, aliases: ["brin de romarin", "branche de romarin"] },
-  { id: "ing_laurier", name: "Laurier", icon: "1F343", category: "vegetables", defaultUnit: "feuille", countUnit: "feuille", gramsPerCountUnit: 1, aliases: ["feuille de laurier", "laurier sauce"] },
-  { id: "ing_aneth", name: "Aneth", icon: "1F33F", category: "vegetables", defaultUnit: "brin", countUnit: "brin", gramsPerCountUnit: 2, aliases: ["brin d aneth"] },
-  { id: "ing_herbes", name: "Herbes fraîches", icon: "1F33F", category: "vegetables", defaultUnit: "brin", countUnit: "brin", gramsPerCountUnit: 2, iconKeywords: ["herbes", "bouquet garni", "herbes de provence", "estragon"] },
+  { id: "ing_basilic", name: "Basilic", icon: "1F33F", emoji: "🌿", category: "vegetables", defaultUnit: "feuille", countUnit: "feuille", gramsPerCountUnit: 1, aliases: ["basilic frais", "feuilles de basilic"] },
+  { id: "ing_persil", name: "Persil", icon: "1F33F", emoji: "🌿", category: "vegetables", defaultUnit: "brin", countUnit: "brin", gramsPerCountUnit: 2, aliases: ["persil plat", "persil frise", "botte de persil"] },
+  { id: "ing_ciboulette", name: "Ciboulette", icon: "1F33F", emoji: "🌿", category: "vegetables", defaultUnit: "brin", countUnit: "brin", gramsPerCountUnit: 2, aliases: ["botte de ciboulette", "brins de ciboulette"] },
+  { id: "ing_menthe", name: "Menthe", icon: "1F33F", emoji: "🌿", category: "vegetables", defaultUnit: "feuille", countUnit: "feuille", gramsPerCountUnit: 1, aliases: ["menthe fraiche", "feuilles de menthe"] },
+  { id: "ing_coriandre", name: "Coriandre", icon: "1F33F", emoji: "🌿", category: "vegetables", defaultUnit: "brin", countUnit: "brin", gramsPerCountUnit: 2, aliases: ["coriandre fraiche", "botte de coriandre"] },
+  { id: "ing_thym", name: "Thym", icon: "1F33F", emoji: "🌿", category: "vegetables", defaultUnit: "brin", countUnit: "brin", gramsPerCountUnit: 2, aliases: ["brin de thym", "branche de thym"] },
+  { id: "ing_romarin", name: "Romarin", icon: "1F33F", emoji: "🌿", category: "vegetables", defaultUnit: "brin", countUnit: "brin", gramsPerCountUnit: 2, aliases: ["brin de romarin", "branche de romarin"] },
+  { id: "ing_laurier", name: "Laurier", icon: "1F343", emoji: "🍃", category: "vegetables", defaultUnit: "feuille", countUnit: "feuille", gramsPerCountUnit: 1, aliases: ["feuille de laurier", "laurier sauce"] },
+  { id: "ing_aneth", name: "Aneth", icon: "1F33F", emoji: "🌿", category: "vegetables", defaultUnit: "brin", countUnit: "brin", gramsPerCountUnit: 2, aliases: ["brin d aneth"] },
+  { id: "ing_herbes", name: "Herbes fraîches", icon: "1F33F", emoji: "🌿", category: "vegetables", defaultUnit: "brin", countUnit: "brin", gramsPerCountUnit: 2, iconKeywords: ["herbes", "bouquet garni", "herbes de provence", "estragon"] },
 
   // ==========================================
   // --- 3. FRUITS ---
   // ==========================================
-  { id: "ing_citron", name: "Citron", icon: "1F34B", category: "fruits", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 100, aliases: ["citron jaune", "citrons", "citron vert", "lime", "citrons verts", "jus de citron"] },
-  { id: "ing_pomme", name: "Pomme", icon: "1F34E", category: "fruits", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 150, iconKeywords: ["pommes", "golden", "granny smith", "gala"] },
-  { id: "ing_poire", name: "Poire", icon: "1F350", category: "fruits", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 150, iconKeywords: ["poires", "williams", "conference"] },
-  { id: "ing_banane", name: "Banane", icon: "1F34C", category: "fruits", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 120, iconKeywords: ["bananes"] },
-  { id: "ing_orange", name: "Orange", icon: "1F34A", category: "fruits", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 180, iconKeywords: ["oranges", "jus d orange"] },
-  { id: "ing_clementine", name: "Clémentine / Mandarine", icon: "1F34A", category: "fruits", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 70, aliases: ["mandarine", "clementine", "clementines", "mandarines"] },
-  { id: "ing_pamplemousse", name: "Pamplemousse", icon: "1F34A", category: "fruits", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 300, aliases: ["pomelo", "pamplemousses"] },
-  { id: "ing_peche", name: "Pêche / Nectarine", icon: "1F351", category: "fruits", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 130, aliases: ["nectarine", "abricot", "peches", "nectarines", "abricots"] },
-  { id: "ing_kiwi", name: "Kiwi", icon: "1F95D", category: "fruits", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 80, iconKeywords: ["kiwis"] },
-  { id: "ing_fraise", name: "Fraise", icon: "1F353", category: "fruits", defaultUnit: "g", iconKeywords: ["fraises"] },
-  { id: "ing_cerise", name: "Cerise", icon: "1F352", category: "fruits", defaultUnit: "g", iconKeywords: ["cerises"] },
-  { id: "ing_raisin", name: "Raisin", icon: "1F347", category: "fruits", defaultUnit: "g", iconKeywords: ["raisins", "raisin blanc", "raisin noir", "grappe de raisin"] },
-  { id: "ing_ananas", name: "Ananas", icon: "1F34D", category: "fruits", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 900 },
-  { id: "ing_melon", name: "Melon", icon: "1F348", category: "fruits", defaultUnit: "tranche", countUnit: "tranche", gramsPerCountUnit: 150, aliases: ["melon charentais"] },
-  { id: "ing_pasteque", name: "Pastèque", icon: "1F349", category: "fruits", defaultUnit: "tranche", countUnit: "tranche", gramsPerCountUnit: 150, aliases: ["pasteques"] },
-  { id: "ing_mangue", name: "Mangue", icon: "1F96D", category: "fruits", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 300, iconKeywords: ["mangues", "passion", "fruit de la passion"] },
-  { id: "ing_grenade", name: "Grenade", icon: "1F34E", category: "fruits", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 250, iconKeywords: ["grenades"] },
-  { id: "ing_figue", name: "Figue", icon: "1F347", category: "fruits", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 50, iconKeywords: ["figues", "figue fraiche", "prune", "prunes", "raisin", "raisins"] },
-  { id: "ing_fraise", name: "Fraise / Fruits rouges", icon: "1F353", category: "fruits", defaultUnit: "g", iconKeywords: ["fraise", "fraises", "framboise", "framboises", "fruits rouges"] },
-  { id: "ing_myrtille", name: "Myrtille / Mûre", icon: "1FAD0", category: "fruits", defaultUnit: "g", iconKeywords: ["myrtille", "myrtilles", "mure", "mures", "cassis"] },
-  { id: "ing_cerise", name: "Cerise", icon: "1F352", category: "fruits", defaultUnit: "g", iconKeywords: ["cerise", "cerises"] },
+  { id: "ing_citron", name: "Citron", icon: "1F34B", emoji: "🍋", category: "fruits", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 100, aliases: ["citron jaune", "citrons", "citron vert", "lime", "citrons verts", "jus de citron"] },
+  { id: "ing_pomme", name: "Pomme", icon: "1F34E", emoji: "🍎", category: "fruits", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 150, iconKeywords: ["pommes", "golden", "granny smith", "gala"] },
+  { id: "ing_poire", name: "Poire", icon: "1F350", emoji: "🍐", category: "fruits", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 150, iconKeywords: ["poires", "williams", "conference"] },
+  { id: "ing_banane", name: "Banane", icon: "1F34C", emoji: "🍌", category: "fruits", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 120, iconKeywords: ["bananes"] },
+  { id: "ing_orange", name: "Orange", icon: "1F34A", emoji: "🍊", category: "fruits", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 180, iconKeywords: ["oranges", "jus d orange"] },
+  { id: "ing_clementine", name: "Clémentine / Mandarine", icon: "1F34A", emoji: "🍊", category: "fruits", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 70, aliases: ["mandarine", "clementine", "clementines", "mandarines"] },
+  { id: "ing_pamplemousse", name: "Pamplemousse", icon: "1F34A", emoji: "🍊", category: "fruits", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 300, aliases: ["pomelo", "pamplemousses"] },
+  { id: "ing_peche", name: "Pêche / Nectarine", icon: "1F351", emoji: "🍑", category: "fruits", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 130, aliases: ["nectarine", "abricot", "peches", "nectarines", "abricots"] },
+  { id: "ing_kiwi", name: "Kiwi", icon: "1F95D", emoji: "🥝", category: "fruits", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 80, iconKeywords: ["kiwis"] },
+  { id: "ing_raisin", name: "Raisin", icon: "1F347", emoji: "🍇", category: "fruits", defaultUnit: "g", iconKeywords: ["raisins", "raisin blanc", "raisin noir", "grappe de raisin"] },
+  { id: "ing_ananas", name: "Ananas", icon: "1F34D", emoji: "🍍", category: "fruits", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 900 },
+  { id: "ing_melon", name: "Melon", icon: "1F348", emoji: "🍈", category: "fruits", defaultUnit: "tranche", countUnit: "tranche", gramsPerCountUnit: 150, aliases: ["melon charentais"] },
+  { id: "ing_pasteque", name: "Pastèque", icon: "1F349", emoji: "🍉", category: "fruits", defaultUnit: "tranche", countUnit: "tranche", gramsPerCountUnit: 150, aliases: ["pasteques"] },
+  { id: "ing_mangue", name: "Mangue", icon: "1F96D", emoji: "🥭", category: "fruits", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 300, iconKeywords: ["mangues", "passion", "fruit de la passion"] },
+  { id: "ing_grenade", name: "Grenade", icon: "1F34E", emoji: "🍎", category: "fruits", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 250, iconKeywords: ["grenades"] },
+  { id: "ing_figue", name: "Figue", icon: "1F347", emoji: "🍇", category: "fruits", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 50, iconKeywords: ["figues", "figue fraiche", "prune", "prunes", "raisin", "raisins"] },
+  { id: "ing_fraise", name: "Fraise / Fruits rouges", icon: "1F353", emoji: "🍓", category: "fruits", defaultUnit: "g", iconKeywords: ["fraise", "fraises", "framboise", "framboises", "fruits rouges"] },
+  { id: "ing_myrtille", name: "Myrtille / Mûre", icon: "1FAD0", emoji: "🫐", category: "fruits", defaultUnit: "g", iconKeywords: ["myrtille", "myrtilles", "mure", "mures", "cassis"] },
+  { id: "ing_cerise", name: "Cerise", icon: "1F352", emoji: "🍒", category: "fruits", defaultUnit: "g", iconKeywords: ["cerise", "cerises"] },
 
   // ==========================================
   // --- 4. VIANDES, VOLAILLES, POISSONS & TRAITEUR ---
   // ==========================================
-  { id: "ing_oeuf", name: "Œuf", icon: "1F95A", category: "proteins", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 55, aliases: ["oeufs", "oeuf frais", "jaune d oeuf", "blanc d oeuf"] },
-  { id: "ing_jambon_blanc", name: "Jambon blanc / cuit", icon: "1F953", category: "proteins", defaultUnit: "tranche", countUnit: "tranche", gramsPerCountUnit: 40, aliases: ["jambon blanc", "jambon cuit", "jambon de paris", "tranches de jambon blanc", "tranche de jambon"] },
-  { id: "ing_jambon_cru", name: "Jambon cru / Serrano", icon: "1F953", category: "proteins", defaultUnit: "tranche", countUnit: "tranche", gramsPerCountUnit: 25, aliases: ["jambon cru", "jambon sec", "serrano", "prosciutto", "parme", "jambon de bayonne"] },
-  { id: "ing_bacon", name: "Bacon / Lardons", icon: "1F953", category: "proteins", defaultUnit: "tranche", countUnit: "tranche", gramsPerCountUnit: 25, aliases: ["bacon", "tranches de bacon", "poitrine fumee", "lardon", "lardons", "pancetta", "chorizo"] },
-  { id: "ing_saucisse", name: "Saucisse", icon: "1F32D", category: "proteins", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 70, aliases: ["chipolata", "merguez", "saucisse de toulouse", "knacki", "saucisses", "saucisson"] },
-  { id: "ing_cuisse_poulet", name: "Cuisse / Haut de cuisse de poulet", icon: "1F357", category: "proteins", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 200, aliases: ["cuisse de poulet", "haut de cuisse", "hauts de cuisse", "cuisses de poulet", "pilon de poulet", "pilons de poulet"] },
-  { id: "ing_filet_poulet", name: "Filet / Escalope de poulet", icon: "1F357", category: "proteins", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 140, aliases: ["filet de poulet", "escalope de poulet", "escalope de dinde", "filets de poulet", "poulet", "dinde", "canard", "magret"] },
-  { id: "ing_steak", name: "Steak / Bœuf / Viande rouge", icon: "1F969", category: "proteins", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 150, aliases: ["steak", "steak hache", "pave de boeuf", "entrecote", "faux filet", "filet de boeuf", "viande hachee", "boeuf hache", "veau", "agneau", "porc", "cote de porc", "roti"] },
-  { id: "ing_pave_de_saumon", name: "Pavé de saumon", icon: "1F41F", category: "proteins", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 140, aliases: ["pave de saumon", "filet de saumon", "paves de saumon", "saumon"] },
-  { id: "ing_dos_cabillaud", name: "Dos de cabillaud / Poisson blanc", icon: "1F41F", category: "proteins", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 140, aliases: ["dos de cabillaud", "filet de cabillaud", "filet de colin", "filet de lieu", "filet de dorade", "poisson", "filets de poisson blanc", "bar", "sole", "merlu"] },
-  { id: "ing_saumon_fume", name: "Saumon fumé", icon: "1F41F", category: "proteins", defaultUnit: "tranche", countUnit: "tranche", gramsPerCountUnit: 35, aliases: ["saumon fume", "truite fumee", "tranches de saumon fume"] },
-  { id: "ing_thon", name: "Thon / Sardines en boîte", icon: "1F41F", category: "proteins", defaultUnit: "g", iconKeywords: ["thon", "thon en boite", "sardine", "sardines", "maquereau", "anchois"] },
-  { id: "ing_crevettes", name: "Crevettes / Fruits de mer", icon: "1F990", category: "proteins", defaultUnit: "g", iconKeywords: ["crevette", "crevettes", "gambas", "moule", "moules", "saint jacques", "st jacques", "calamar", "fruits de mer"] },
-  { id: "ing_tofu", name: "Tofu & alternatives végétales", icon: "1F371", category: "proteins", defaultUnit: "tranche", countUnit: "tranche", gramsPerCountUnit: 100, aliases: ["tofu", "seitan", "tempeh", "proteines de soja"] },
+  { id: "ing_oeuf", name: "Œuf", icon: "1F95A", emoji: "🥚", category: "proteins", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 55, aliases: ["oeufs", "oeuf frais", "jaune d oeuf", "blanc d oeuf"] },
+  { id: "ing_jambon_blanc", name: "Jambon blanc / cuit", icon: "1F953", emoji: "🥓", category: "proteins", defaultUnit: "tranche", countUnit: "tranche", gramsPerCountUnit: 40, aliases: ["jambon blanc", "jambon cuit", "jambon de paris", "tranches de jambon blanc", "tranche de jambon"] },
+  { id: "ing_jambon_cru", name: "Jambon cru / Serrano", icon: "1F953", emoji: "🥓", category: "proteins", defaultUnit: "tranche", countUnit: "tranche", gramsPerCountUnit: 25, aliases: ["jambon cru", "jambon sec", "serrano", "prosciutto", "parme", "jambon de bayonne"] },
+  { id: "ing_bacon", name: "Bacon / Lardons", icon: "1F953", emoji: "🥓", category: "proteins", defaultUnit: "tranche", countUnit: "tranche", gramsPerCountUnit: 25, aliases: ["bacon", "tranches de bacon", "poitrine fumee", "lardon", "lardons", "pancetta", "chorizo"] },
+  { id: "ing_saucisse", name: "Saucisse", icon: "1F32D", emoji: "🌭", category: "proteins", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 70, aliases: ["chipolata", "merguez", "saucisse de toulouse", "knacki", "saucisses", "saucisson"] },
+  { id: "ing_cuisse_poulet", name: "Cuisse / Haut de cuisse de poulet", icon: "1F357", emoji: "🍗", category: "proteins", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 200, aliases: ["cuisse de poulet", "haut de cuisse", "hauts de cuisse", "cuisses de poulet", "pilon de poulet", "pilons de poulet"] },
+  { id: "ing_filet_poulet", name: "Filet / Escalope de poulet", icon: "1F357", emoji: "🍗", category: "proteins", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 140, aliases: ["filet de poulet", "escalope de poulet", "escalope de dinde", "filets de poulet", "poulet", "dinde", "canard", "magret"] },
+  { id: "ing_steak", name: "Steak / Bœuf / Viande rouge", icon: "1F969", emoji: "🥩", category: "proteins", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 150, aliases: ["steak", "steak hache", "pave de boeuf", "entrecote", "faux filet", "filet de boeuf", "viande hachee", "boeuf hache", "veau", "agneau", "porc", "cote de porc", "roti"] },
+  { id: "ing_pave_de_saumon", name: "Pavé de saumon", icon: "1F41F", emoji: "🐟", category: "proteins", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 140, aliases: ["pave de saumon", "filet de saumon", "paves de saumon", "saumon"] },
+  { id: "ing_dos_cabillaud", name: "Dos de cabillaud / Poisson blanc", icon: "1F41F", emoji: "🐟", category: "proteins", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 140, aliases: ["dos de cabillaud", "filet de cabillaud", "filet de colin", "filet de lieu", "filet de dorade", "poisson", "filets de poisson blanc", "bar", "sole", "merlu"] },
+  { id: "ing_saumon_fume", name: "Saumon fumé", icon: "1F41F", emoji: "🐟", category: "proteins", defaultUnit: "tranche", countUnit: "tranche", gramsPerCountUnit: 35, aliases: ["saumon fume", "truite fumee", "tranches de saumon fume"] },
+  { id: "ing_thon", name: "Thon / Sardines en boîte", icon: "1F41F", emoji: "🐟", category: "proteins", defaultUnit: "g", iconKeywords: ["thon", "thon en boite", "sardine", "sardines", "maquereau", "anchois"] },
+  { id: "ing_crevettes", name: "Crevettes / Fruits de mer", icon: "1F990", emoji: "🦐", category: "proteins", defaultUnit: "g", iconKeywords: ["crevette", "crevettes", "gambas", "moule", "moules", "saint jacques", "st jacques", "calamar", "fruits de mer"] },
+  { id: "ing_tofu", name: "Tofu & alternatives végétales", icon: "1F371", emoji: "🍱", category: "proteins", defaultUnit: "tranche", countUnit: "tranche", gramsPerCountUnit: 100, aliases: ["tofu", "seitan", "tempeh", "proteines de soja"] },
 
   // ==========================================
   // --- 5. PRODUITS LAITIERS & FROMAGES ---
   // ==========================================
-  { id: "ing_beurre", name: "Beurre", icon: "1F9C8", category: "proteins", defaultUnit: "g", aliases: ["beurre doux", "beurre demi sel", "beurre aop", "beurre sale", "margarine"] },
-  { id: "ing_lait", name: "Lait", icon: "1F95B", category: "proteins", defaultUnit: "ml", aliases: ["lait demi ecreme", "lait entier", "lait ecreme", "lait d amande", "lait d avoine", "lait de soja", "lait de coco"] },
-  { id: "ing_creme", name: "Crème fraîche / Crème liquide", icon: "1F95B", category: "proteins", defaultUnit: "ml", aliases: ["creme fraiche", "creme liquide", "creme entiere", "creme legere", "creme fluide"] },
-  { id: "ing_yaourt", name: "Yaourt / Skyr / Fromage blanc", icon: "1F963", category: "proteins", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 125, aliases: ["yaourt", "yaourt nature", "yaourt grec", "skyr", "fromage blanc", "petit suisse"] },
-  { id: "ing_mozzarella", name: "Mozzarella", icon: "1F9C0", category: "proteins", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 125, aliases: ["boule de mozzarella", "mozzarella di bufala", "mozzarella di buffala"] },
-  { id: "ing_burrata", name: "Burrata", icon: "1F9C0", category: "proteins", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 150, aliases: ["burrata fraiche", "boule de burrata"] },
-  { id: "ing_fromage_chevre", name: "Fromage de chèvre", icon: "1F9C0", category: "proteins", defaultUnit: "tranche", countUnit: "tranche", gramsPerCountUnit: 30, aliases: ["chevre", "buche de chevre", "crottin de chavignol", "crottin"] },
-  { id: "ing_camembert", name: "Camembert / Brie", icon: "1F9C0", category: "proteins", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 250, aliases: ["camembert", "brie", "coulommiers", "reblochon"] },
-  { id: "ing_fromage_pate_dure", name: "Comté / Emmental / Parmesan", icon: "1F9C0", category: "proteins", defaultUnit: "g", aliases: ["comte", "emmental", "parmesan", "gruyere", "pecorino", "feta", "cheddar", "fromage rape", "fromage a raclette"] },
-  { id: "ing_fromage_tranche", name: "Fromage en tranches", icon: "1F9C0", category: "proteins", defaultUnit: "tranche", countUnit: "tranche", gramsPerCountUnit: 25, aliases: ["tranche de fromage", "cheddar en tranche", "emmental en tranches"] },
+  { id: "ing_beurre", name: "Beurre", icon: "1F9C8", emoji: "🧈", category: "proteins", defaultUnit: "g", aliases: ["beurre doux", "beurre demi sel", "beurre aop", "beurre sale", "margarine"] },
+  { id: "ing_lait", name: "Lait", icon: "1F95B", emoji: "🥛", category: "proteins", defaultUnit: "ml", aliases: ["lait demi ecreme", "lait entier", "lait ecreme", "lait d amande", "lait d avoine", "lait de soja", "lait de coco"] },
+  { id: "ing_creme", name: "Crème fraîche / Crème liquide", icon: "1F95B", emoji: "🥛", category: "proteins", defaultUnit: "ml", aliases: ["creme fraiche", "creme liquide", "creme entiere", "creme legere", "creme fluide"] },
+  { id: "ing_yaourt", name: "Yaourt / Skyr / Fromage blanc", icon: "1F963", emoji: "🥣", category: "proteins", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 125, aliases: ["yaourt", "yaourt nature", "yaourt grec", "skyr", "fromage blanc", "petit suisse"] },
+  { id: "ing_mozzarella", name: "Mozzarella", icon: "1F9C0", emoji: "🧀", category: "proteins", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 125, aliases: ["boule de mozzarella", "mozzarella di bufala", "mozzarella di buffala"] },
+  { id: "ing_burrata", name: "Burrata", icon: "1F9C0", emoji: "🧀", category: "proteins", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 150, aliases: ["burrata fraiche", "boule de burrata"] },
+  { id: "ing_fromage_chevre", name: "Fromage de chèvre", icon: "1F9C0", emoji: "🧀", category: "proteins", defaultUnit: "tranche", countUnit: "tranche", gramsPerCountUnit: 30, aliases: ["chevre", "buche de chevre", "crottin de chavignol", "crottin"] },
+  { id: "ing_camembert", name: "Camembert / Brie", icon: "1F9C0", emoji: "🧀", category: "proteins", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 250, aliases: ["camembert", "brie", "coulommiers", "reblochon"] },
+  { id: "ing_fromage_pate_dure", name: "Comté / Emmental / Parmesan", icon: "1F9C0", emoji: "🧀", category: "proteins", defaultUnit: "g", aliases: ["comte", "emmental", "parmesan", "gruyere", "pecorino", "feta", "cheddar", "fromage rape", "fromage a raclette"] },
+  { id: "ing_fromage_tranche", name: "Fromage en tranches", icon: "1F9C0", emoji: "🧀", category: "proteins", defaultUnit: "tranche", countUnit: "tranche", gramsPerCountUnit: 25, aliases: ["tranche de fromage", "cheddar en tranche", "emmental en tranches"] },
 
   // ==========================================
   // --- 6. PAINS, CÉRÉALES & FÉCULENTS ---
   // ==========================================
-  { id: "ing_pain", name: "Pain / Baguette", icon: "1F35E", category: "starches", defaultUnit: "tranche", countUnit: "tranche", gramsPerCountUnit: 35, aliases: ["baguette", "pain de campagne", "pain complet", "tranche de pain", "miche", "pain aux cereales"] },
-  { id: "ing_pain_mie", name: "Pain de mie", icon: "1F35E", category: "starches", defaultUnit: "tranche", countUnit: "tranche", gramsPerCountUnit: 30, aliases: ["pain de mie", "tranches de pain de mie", "toast"] },
-  { id: "ing_pain_burger", name: "Pain burger / Bun", icon: "1F354", category: "starches", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 60, aliases: ["pain burger", "bun", "pain a burger", "pains burger"] },
-  { id: "ing_tortilla", name: "Wrap / Tortilla", icon: "1FAD3", category: "starches", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 40, aliases: ["wrap", "tortilla", "galette de ble", "galette de mais", "tacos", "pita"] },
-  { id: "ing_pate_tarte", name: "Pâte à tarte", icon: "1F967", category: "starches", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 230, aliases: ["pate feuilletee", "pate brisee", "pate sablee", "rouleau de pate", "pate a pizza"] },
-  { id: "ing_viennoiserie", name: "Brioche / Viennoiserie", icon: "1F950", category: "starches", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 60, aliases: ["brioche", "croissant", "pain au chocolat"] },
-  { id: "ing_pates", name: "Pâtes", icon: "1F35D", category: "starches", defaultUnit: "g", aliases: ["spaghetti", "pates linguine", "linguine", "penne", "coquillettes", "tagliatelles", "nouilles", "lasagnes", "pasta"] },
-  { id: "ing_riz", name: "Riz", icon: "1F35A", category: "starches", defaultUnit: "g", aliases: ["riz basmati", "riz thai", "riz rond", "riz complet", "risotto"] },
-  { id: "ing_cereales_sec", name: "Quinoa / Semoule / Féculents", icon: "1F33E", category: "starches", defaultUnit: "g", aliases: ["quinoa", "semoule", "couscous", "boulgour", "polenta"] },
-  { id: "ing_granola", name: "Granola / Flocons d'avoine / Céréales", icon: "1F963", category: "starches", defaultUnit: "g", aliases: ["granola", "flocons d avoine", "avoine", "muesli", "cereales"] },
-  { id: "ing_farine", name: "Farine / Fécule", icon: "1F33E", category: "starches", defaultUnit: "g", aliases: ["farine t55", "farine de ble", "farine", "maizena", "fecule", "fecule de mais"] },
-  { id: "ing_legumineuses", name: "Légumineuses (Pois chiches / Lentilles)", icon: "1FAD8", category: "starches", defaultUnit: "g", aliases: ["pois chiches", "pois chiche", "lentilles", "lentilles corail", "lentilles vertes", "haricots rouges", "haricots blancs"] },
+  { id: "ing_pain", name: "Pain / Baguette", icon: "1F35E", emoji: "🍞", category: "starches", defaultUnit: "tranche", countUnit: "tranche", gramsPerCountUnit: 35, aliases: ["baguette", "pain de campagne", "pain complet", "tranche de pain", "miche", "pain aux cereales"] },
+  { id: "ing_pain_mie", name: "Pain de mie", icon: "1F35E", emoji: "🍞", category: "starches", defaultUnit: "tranche", countUnit: "tranche", gramsPerCountUnit: 30, aliases: ["pain de mie", "tranches de pain de mie", "toast"] },
+  { id: "ing_pain_burger", name: "Pain burger / Bun", icon: "1F354", emoji: "🍔", category: "starches", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 60, aliases: ["pain burger", "bun", "pain a burger", "pains burger"] },
+  { id: "ing_tortilla", name: "Wrap / Tortilla", icon: "1FAD3", emoji: "🫓", category: "starches", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 40, aliases: ["wrap", "tortilla", "galette de ble", "galette de mais", "tacos", "pita"] },
+  { id: "ing_pate_tarte", name: "Pâte à tarte", icon: "1F967", emoji: "🥧", category: "starches", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 230, aliases: ["pate feuilletee", "pate brisee", "pate sablee", "rouleau de pate", "pate a pizza"] },
+  { id: "ing_viennoiserie", name: "Brioche / Viennoiserie", icon: "1F950", emoji: "🥐", category: "starches", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 60, aliases: ["brioche", "croissant", "pain au chocolat"] },
+  { id: "ing_pates", name: "Pâtes", icon: "1F35D", emoji: "🍝", category: "starches", defaultUnit: "g", aliases: ["spaghetti", "pates linguine", "linguine", "penne", "coquillettes", "tagliatelles", "nouilles", "lasagnes", "pasta"] },
+  { id: "ing_riz", name: "Riz", icon: "1F35A", emoji: "🍚", category: "starches", defaultUnit: "g", aliases: ["riz basmati", "riz thai", "riz rond", "riz complet", "risotto"] },
+  { id: "ing_cereales_sec", name: "Quinoa / Semoule / Féculents", icon: "1F33E", emoji: "🌾", category: "starches", defaultUnit: "g", aliases: ["quinoa", "semoule", "couscous", "boulgour", "polenta"] },
+  { id: "ing_granola", name: "Granola / Flocons d'avoine / Céréales", icon: "1F963", emoji: "🥣", category: "starches", defaultUnit: "g", aliases: ["granola", "flocons d avoine", "avoine", "muesli", "cereales"] },
+  { id: "ing_farine", name: "Farine / Fécule", icon: "1F33E", emoji: "🌾", category: "starches", defaultUnit: "g", aliases: ["farine t55", "farine de ble", "farine", "maizena", "fecule", "fecule de mais"] },
+  { id: "ing_legumineuses", name: "Légumineuses (Pois chiches / Lentilles)", icon: "1FAD8", emoji: "🫘", category: "starches", defaultUnit: "g", aliases: ["pois chiches", "pois chiche", "lentilles", "lentilles corail", "lentilles vertes", "haricots rouges", "haricots blancs"] },
 
   // ==========================================
   // --- 7. ÉPICERIE, CONDIMENTS, HUILES & BOISSONS ---
   // ==========================================
-  { id: "ing_huile_d_olive", name: "Huile d'olive", icon: "1FAD2", category: "pantry", defaultUnit: "c_soupe", aliases: ["huile d olive", "huile olive", "huile d'olive", "olives", "olives noires", "olives vertes", "capres"] },
-  { id: "ing_huile", name: "Huile (Tournesol / Neutre)", icon: "1FAD2", category: "pantry", defaultUnit: "c_soupe", aliases: ["huile de tournesol", "huile de colza", "huile de truffe", "huile de sesame", "huile", "huile de friture", "huile neutre"] },
-  { id: "ing_vinaigre", name: "Vinaigre / Vinaigrette", icon: "1F37E", category: "pantry", defaultUnit: "c_cafe", aliases: ["vinaigre balsamique", "vinaigre de cidre", "vinaigre de vin", "vinaigre", "vinaigrette"] },
-  { id: "ing_bouillon_cube", name: "Bouillon cube", icon: "1F9C2", category: "pantry", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 10, aliases: ["cube de bouillon", "bouillon de volaille", "bouillon de legumes", "bouillon de boeuf", "cube maggi", "tablette de bouillon"] },
-  { id: "ing_sel_poivre", name: "Sel & Poivre / Épices", icon: "1F9C2", category: "pantry", defaultUnit: "pincee", countUnit: "pincee", gramsPerCountUnit: 1, aliases: ["sel et poivre", "sel &amp; poivre", "fleur de sel", "sel", "poivre", "gros sel", "paprika", "paprika fume", "curry", "cumin", "curcuma", "cannelle", "epices", "epice"] },
-  { id: "ing_sauces", name: "Sauces & Condiments (Tomate, Soja, Moutarde)", icon: "1F96B", category: "pantry", defaultUnit: "c_soupe", aliases: ["sauce tomate", "coulis de tomate", "concentre de tomate", "tomates pelees", "sauce soja", "moutarde", "mayonnaise", "ketchup", "harissa", "pesto"] },
-  { id: "ing_sucre", name: "Sucre", icon: "1F36C", category: "pantry", defaultUnit: "g", aliases: ["sucre en poudre", "cassonade", "sucre roux", "sucre glace"] },
-  { id: "ing_sucre_vanille", name: "Sucre vanillé", icon: "1F36C", category: "pantry", defaultUnit: "sachet", countUnit: "sachet", gramsPerCountUnit: 7, aliases: ["sucre vanille", "sachet de sucre vanille"] },
-  { id: "ing_chocolat", name: "Chocolat / Cacao", icon: "1F36B", category: "pantry", defaultUnit: "g", aliases: ["chocolat noir", "chocolat au lait", "chocolat patissier", "chocolat noir 70%", "chocolat noir 70 %", "cacao", "praline", "pepites de chocolat"] },
-  { id: "ing_miel", name: "Miel / Confiture / Sucrants", icon: "1F36F", category: "pantry", defaultUnit: "c_soupe", aliases: ["miel", "sirop d erable", "sirop d agave", "confiture", "marmelade", "pate a tartiner", "nutella"] },
-  { id: "ing_biscuits", name: "Biscuits / Gâteaux", icon: "1F36A", category: "pantry", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 20, aliases: ["biscuits", "gateaux", "cookies", "sables"] },
-  { id: "ing_oleagineux", name: "Noix / Amandes / Graines", icon: "1F95C", category: "pantry", defaultUnit: "g", aliases: ["noix", "amandes", "noisettes", "cacahuetes", "pignons de pin", "graines de chia", "graines de courge", "graines de sesame", "noix de cajou"] },
-  { id: "ing_cafe", name: "Café", icon: "2615", category: "pantry", defaultUnit: "g", aliases: ["cafe", "cafe en grains", "cafe moulu", "capsules de cafe"] },
-  { id: "ing_the", name: "Thé / Infusion", icon: "1FAD6", category: "pantry", defaultUnit: "sachet", countUnit: "sachet", gramsPerCountUnit: 2, aliases: ["the", "infusion", "tisane", "the vert", "the noir"] },
-  { id: "ing_boissons", name: "Eau / Jus / Boissons", icon: "1F4A7", category: "pantry", defaultUnit: "ml", aliases: ["eau", "eau gazeuse", "eau minerale"] },
-  { id: "ing_jus", name: "Jus de fruits", icon: "1F9C3", category: "pantry", defaultUnit: "ml", aliases: ["jus de pomme", "jus de fruits", "jus d ananas", "smoothie"] },
-  { id: "ing_vin", name: "Vin", icon: "1F377", category: "pantry", defaultUnit: "ml", aliases: ["vin blanc", "vin rouge", "vin rose"] },
-  { id: "ing_biere", name: "Bière", icon: "1F37A", category: "pantry", defaultUnit: "ml", aliases: ["biere", "cidre"] },
-  { id: "ing_levure", name: "Levure", icon: "1F33E", category: "pantry", defaultUnit: "sachet", countUnit: "sachet", gramsPerCountUnit: 11, aliases: ["levure chimique", "levure de boulanger", "sachet de levure", "levure seche"] },
-  { id: "ing_vanille_gousse", name: "Gousse de vanille", icon: "1F366", category: "pantry", defaultUnit: "gousse", countUnit: "gousse", gramsPerCountUnit: 3, aliases: ["gousse de vanille", "vanille en gousse", "extrait de vanille"] },
+  { id: "ing_huile_d_olive", name: "Huile d'olive", icon: "1FAD2", emoji: "🫒", category: "pantry", defaultUnit: "c_soupe", aliases: ["huile d olive", "huile olive", "huile d'olive", "olives", "olives noires", "olives vertes", "capres"] },
+  { id: "ing_huile", name: "Huile (Tournesol / Neutre)", icon: "1FAD2", emoji: "🫒", category: "pantry", defaultUnit: "c_soupe", aliases: ["huile de tournesol", "huile de colza", "huile de truffe", "huile de sesame", "huile", "huile de friture", "huile neutre"] },
+  { id: "ing_vinaigre", name: "Vinaigre / Vinaigrette", icon: "1F37E", emoji: "🍾", category: "pantry", defaultUnit: "c_cafe", aliases: ["vinaigre balsamique", "vinaigre de cidre", "vinaigre de vin", "vinaigre", "vinaigrette"] },
+  { id: "ing_bouillon_cube", name: "Bouillon cube", icon: "1F9C2", emoji: "🧂", category: "pantry", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 10, aliases: ["cube de bouillon", "bouillon de volaille", "bouillon de legumes", "bouillon de boeuf", "cube maggi", "tablette de bouillon"] },
+  { id: "ing_sel_poivre", name: "Sel & Poivre / Épices", icon: "1F9C2", emoji: "🧂", category: "pantry", defaultUnit: "pincee", countUnit: "pincee", gramsPerCountUnit: 1, aliases: ["sel et poivre", "sel &amp; poivre", "fleur de sel", "sel", "poivre", "gros sel", "paprika", "paprika fume", "curry", "cumin", "curcuma", "cannelle", "epices", "epice"] },
+  { id: "ing_sauces", name: "Sauces & Condiments (Tomate, Soja, Moutarde)", icon: "1F96B", emoji: "🥫", category: "pantry", defaultUnit: "c_soupe", aliases: ["sauce tomate", "coulis de tomate", "concentre de tomate", "tomates pelees", "sauce soja", "moutarde", "mayonnaise", "ketchup", "harissa", "pesto"] },
+  { id: "ing_sucre", name: "Sucre", icon: "1F36C", emoji: "🍬", category: "pantry", defaultUnit: "g", aliases: ["sucre en poudre", "cassonade", "sucre roux", "sucre glace"] },
+  { id: "ing_sucre_vanille", name: "Sucre vanillé", icon: "1F36C", emoji: "🍬", category: "pantry", defaultUnit: "sachet", countUnit: "sachet", gramsPerCountUnit: 7, aliases: ["sucre vanille", "sachet de sucre vanille"] },
+  { id: "ing_chocolat", name: "Chocolat / Cacao", icon: "1F36B", emoji: "🍫", category: "pantry", defaultUnit: "g", aliases: ["chocolat noir", "chocolat au lait", "chocolat patissier", "chocolat noir 70%", "chocolat noir 70 %", "cacao", "praline", "pepites de chocolat"] },
+  { id: "ing_miel", name: "Miel / Confiture / Sucrants", icon: "1F36F", emoji: "🍯", category: "pantry", defaultUnit: "c_soupe", aliases: ["miel", "sirop d erable", "sirop d agave", "confiture", "marmelade", "pate a tartiner", "nutella"] },
+  { id: "ing_biscuits", name: "Biscuits / Gâteaux", icon: "1F36A", emoji: "🍪", category: "pantry", defaultUnit: "piece", countUnit: "piece", gramsPerCountUnit: 20, aliases: ["biscuits", "gateaux", "cookies", "sables"] },
+  { id: "ing_oleagineux", name: "Noix / Amandes / Graines", icon: "1F95C", emoji: "🥜", category: "pantry", defaultUnit: "g", aliases: ["noix", "amandes", "noisettes", "cacahuetes", "pignons de pin", "graines de chia", "graines de courge", "graines de sesame", "noix de cajou"] },
+  { id: "ing_cafe", name: "Café", icon: "2615", emoji: "☕", category: "pantry", defaultUnit: "g", aliases: ["cafe", "cafe en grains", "cafe moulu", "capsules de cafe"] },
+  { id: "ing_the", name: "Thé / Infusion", icon: "1FAD6", emoji: "🫖", category: "pantry", defaultUnit: "sachet", countUnit: "sachet", gramsPerCountUnit: 2, aliases: ["the", "infusion", "tisane", "the vert", "the noir"] },
+  { id: "ing_boissons", name: "Eau / Jus / Boissons", icon: "1F4A7", emoji: "💧", category: "pantry", defaultUnit: "ml", aliases: ["eau", "eau gazeuse", "eau minerale"] },
+  { id: "ing_jus", name: "Jus de fruits", icon: "1F9C3", emoji: "🧃", category: "pantry", defaultUnit: "ml", aliases: ["jus de pomme", "jus de fruits", "jus d ananas", "smoothie"] },
+  { id: "ing_vin", name: "Vin", icon: "1F377", emoji: "🍷", category: "pantry", defaultUnit: "ml", aliases: ["vin blanc", "vin rouge", "vin rose"] },
+  { id: "ing_biere", name: "Bière", icon: "1F37A", emoji: "🍺", category: "pantry", defaultUnit: "ml", aliases: ["biere", "cidre"] },
+  { id: "ing_levure", name: "Levure", icon: "1F33E", emoji: "🌾", category: "pantry", defaultUnit: "sachet", countUnit: "sachet", gramsPerCountUnit: 11, aliases: ["levure chimique", "levure de boulanger", "sachet de levure", "levure seche"] },
+  { id: "ing_vanille_gousse", name: "Gousse de vanille", icon: "1F366", emoji: "🍦", category: "pantry", defaultUnit: "gousse", countUnit: "gousse", gramsPerCountUnit: 3, aliases: ["gousse de vanille", "vanille en gousse", "extrait de vanille"] },
 
   // ==========================================
   // --- 8. MAISON & HYGIÈNE ---
   // ==========================================
-  { id: "ing_liquide_vaisselle", name: "Liquide vaisselle", icon: "1F37D", category: "maison_hygiene", defaultUnit: "piece", countUnit: "piece", iconKeywords: ["liquide vaisselle"] },
-  { id: "ing_savon", name: "Savon / Gel douche", icon: "1F9FC", category: "maison_hygiene", defaultUnit: "piece", countUnit: "piece", aliases: ["savon", "gel douche", "savon de marseille", "savon noir"] },
+  { id: "ing_liquide_vaisselle", name: "Liquide vaisselle", icon: "1F9FC", emoji: "🧼", category: "maison_hygiene", defaultUnit: "piece", countUnit: "piece", iconKeywords: ["liquide vaisselle"] },
+  { id: "ing_savon", name: "Savon / Gel douche", icon: "1F9FC", emoji: "🧼", category: "maison_hygiene", defaultUnit: "piece", countUnit: "piece", aliases: ["savon", "gel douche", "savon de marseille", "savon noir"] },
   { id: "ing_shampoing", name: "Shampoing", icon: "1F9F4", category: "maison_hygiene", defaultUnit: "piece", countUnit: "piece", aliases: ["shampoing", "shampooing", "apres shampoing", "apres-shampoing"] },
   { id: "ing_lessive", name: "Lessive / Entretien", icon: "1FAE7", category: "maison_hygiene", defaultUnit: "piece", countUnit: "piece", aliases: ["lessive", "nettoyant", "javel", "detergent", "assouplissant", "adoucissant", "multi usages", "multi-usages"] },
   { id: "ing_eponge", name: "Éponge", icon: "1F9FD", category: "maison_hygiene", defaultUnit: "piece", countUnit: "piece", aliases: ["eponge", "eponges"] },
@@ -219,7 +221,7 @@ export const INGREDIENTS: readonly IngredientCatalogItem[] = [
 ];
 
 /**
- * Liste épurée des ingrédients avec emojis dédupliqués (1 seul ingrédient par emoji visuel unique).
+ * Liste épurée des ingrédients avec visualisations dédupliquées (1 seul ingrédient par émoji ou icône visuel unique).
  * RÈGLE DU PROJET : À utiliser obligatoirement dans les sélecteurs/grilles d'emojis UI pour éviter
  * d'afficher des icônes identiques en doublon (ex. 🥒 partagé par Courgette et Concombre).
  */
@@ -227,8 +229,9 @@ export const UNIQUE_EMOJI_INGREDIENTS: readonly IngredientCatalogItem[] = (() =>
   const seen = new Set<string>();
   const list: IngredientCatalogItem[] = [];
   for (const item of INGREDIENTS) {
-    if (!seen.has(item.icon)) {
-      seen.add(item.icon);
+    const visual = item.emoji || item.icon;
+    if (visual && !seen.has(visual)) {
+      seen.add(visual);
       list.push(item);
     }
   }
@@ -238,6 +241,18 @@ export const UNIQUE_EMOJI_INGREDIENTS: readonly IngredientCatalogItem[] = (() =>
 const CATALOG_BY_ID = new Map<string, IngredientCatalogItem>(
   INGREDIENTS.map((item) => [item.id, item] as const),
 );
+
+/** Retire les pluriels simples pour retrouver l'entrée canonique. */
+function singularize(normalized: string): string {
+  return normalized
+    .split(" ")
+    .map((word) => (word.length > 3 && /(?:s|x)$/.test(word) ? word.slice(0, -1) : word))
+    .join(" ");
+}
+
+function slugify(normalized: string): string {
+  return normalized.replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+}
 
 /** Nom canonique et synonymes stricts → entrée du catalogue (identité). */
 const CATALOG_BY_NAME = new Map<string, IngredientCatalogItem>();
@@ -265,7 +280,7 @@ for (const item of INGREDIENTS) {
   const keywords = [
     ...item.name.split("/"),
     ...(item.aliases ?? []),
-    ...(item.iconKeywords ?? []),
+    ...(item.emojiKeywords ?? []),
   ];
   for (const keyword of keywords) {
     const normalized = normalizeProductName(keyword);
@@ -273,18 +288,6 @@ for (const item of INGREDIENTS) {
   }
 }
 EMOJI_KEYWORDS.sort((a, b) => b[0].length - a[0].length);
-
-/** Retire les pluriels simples pour retrouver l'entrée canonique. */
-function singularize(normalized: string): string {
-  return normalized
-    .split(" ")
-    .map((word) => (word.length > 3 && /(?:s|x)$/.test(word) ? word.slice(0, -1) : word))
-    .join(" ");
-}
-
-function slugify(normalized: string): string {
-  return normalized.replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
-}
 
 const DESCRIPTOR_PREFIXES = [
   "boule de",
@@ -384,7 +387,7 @@ export function resolveIngredientId(name: string): string {
 }
 
 /** Emoji visuel neutre par défaut lorsqu'aucun ingrédient spécifique n'est reconnu ou choisi. */
-export const DEFAULT_INGREDIENT_ICON = "2753"; // Fallback vers un point d'interrogation OpenMoji ou similaire
+export const DEFAULT_INGREDIENT_ICON = "2753";
 
 export const EMOJI_TO_HEX_MAP: Record<string, string> = {
   "🫒": "1FAD2",
@@ -491,58 +494,58 @@ export function toIconHex(input?: string): string {
 }
 
 /**
- * Code hexadécimal de l'icône le plus pertinent pour un nom libre.
- * Correspondance exacte d'abord, puis mot-clé visuel présent dans le nom
- * (« Tomates cerises » → 1F345).
+ * Icône ou émoji le plus pertinent pour un nom libre.
+ * Correspondance exacte d'abord, puis mot-clé visuel présent dans le nom.
+ * Priorise l'émoji natif ancien s'il existe, sinon l'icône SVG OpenMoji.
  */
 export function resolveIcon(name: string): string | undefined {
   const catalogItem = findCatalogItem(name);
-  if (catalogItem) return catalogItem.icon;
+  if (catalogItem) return catalogItem.emoji || catalogItem.icon;
 
   const normalized = normalizeProductName(name);
   if (!normalized) return undefined;
   const singular = singularize(normalized);
 
   for (const [keyword, item] of EMOJI_KEYWORDS) {
-    if (hasWord(normalized, keyword) || hasWord(singular, keyword)) return item.icon;
+    if (hasWord(normalized, keyword) || hasWord(singular, keyword)) return item.emoji || item.icon;
   }
 
-  // Fallbacks sémantiques par racines ou mots fréquents
-  if (hasWord(normalized, "huile") || normalized.includes("huile")) return "1FAD2";
-  if (hasWord(normalized, "beurre") || normalized.includes("beurre") || hasWord(normalized, "margarine")) return "1F9C8";
-  if (hasWord(normalized, "granola") || hasWord(normalized, "muesli") || hasWord(normalized, "avoine") || hasWord(normalized, "cereale") || hasWord(normalized, "cereales")) return "1F963";
-  if (hasWord(normalized, "lait") || hasWord(normalized, "creme")) return "1F95B";
-  if (hasWord(normalized, "yaourt") || hasWord(normalized, "yogourt") || hasWord(normalized, "skyr") || hasWord(normalized, "fromage blanc")) return "1F963";
-  if (hasWord(normalized, "fromage") || hasWord(normalized, "comte") || hasWord(normalized, "emmental") || hasWord(normalized, "parmesan") || hasWord(normalized, "mozzarella") || hasWord(normalized, "burrata") || hasWord(normalized, "feta") || hasWord(normalized, "chevre")) return "1F9C0";
-  if (hasWord(normalized, "pate") || hasWord(normalized, "pates") || hasWord(normalized, "spaghetti") || hasWord(normalized, "pasta") || hasWord(normalized, "linguine") || hasWord(normalized, "penne") || hasWord(normalized, "coquillette") || hasWord(normalized, "coquillettes") || hasWord(normalized, "nouille") || hasWord(normalized, "nouilles")) return "1F35D";
-  if (hasWord(normalized, "riz") || hasWord(normalized, "risotto")) return "1F35A";
-  if (hasWord(normalized, "farine") || hasWord(normalized, "fecule") || hasWord(normalized, "semoule") || hasWord(normalized, "quinoa") || hasWord(normalized, "boulgour") || hasWord(normalized, "couscous")) return "1F33E";
-  if (hasWord(normalized, "chocolat") || hasWord(normalized, "cacao") || hasWord(normalized, "praline")) return "1F36B";
-  if (hasWord(normalized, "miel") || hasWord(normalized, "confiture") || hasWord(normalized, "sirop") || hasWord(normalized, "marmelade")) return "1F36F";
-  if (hasWord(normalized, "pain") || hasWord(normalized, "baguette") || hasWord(normalized, "brioche") || hasWord(normalized, "toast")) return "1F35E";
-  if (hasWord(normalized, "poulet") || hasWord(normalized, "dinde") || hasWord(normalized, "volaille") || hasWord(normalized, "canard")) return "1F357";
-  if (hasWord(normalized, "boeuf") || hasWord(normalized, "steak") || hasWord(normalized, "viande") || hasWord(normalized, "porc") || hasWord(normalized, "veau") || hasWord(normalized, "agneau")) return "1F969";
-  if (hasWord(normalized, "jambon") || hasWord(normalized, "lardon") || hasWord(normalized, "lardons") || hasWord(normalized, "bacon") || hasWord(normalized, "charcuterie")) return "1F953";
-  if (hasWord(normalized, "saumon") || hasWord(normalized, "cabillaud") || hasWord(normalized, "poisson") || hasWord(normalized, "thon") || hasWord(normalized, "colin") || hasWord(normalized, "dorade") || hasWord(normalized, "truite")) return "1F41F";
-  if (hasWord(normalized, "crevette") || hasWord(normalized, "crevettes") || hasWord(normalized, "gambas") || hasWord(normalized, "moule") || hasWord(normalized, "moules") || hasWord(normalized, "fruit de mer") || hasWord(normalized, "fruits de mer")) return "1F990";
-  if (hasWord(normalized, "pomme de terre") || hasWord(normalized, "patate") || hasWord(normalized, "grenaille")) return "1F954";
-  if (hasWord(normalized, "tomate") || hasWord(normalized, "tomates")) return "1F345";
-  if (hasWord(normalized, "salade") || hasWord(normalized, "laitue") || hasWord(normalized, "mesclun") || hasWord(normalized, "roquette") || hasWord(normalized, "mache") || hasWord(normalized, "epinard") || hasWord(normalized, "epinards")) return "1F96C";
-  if (hasWord(normalized, "champignon") || hasWord(normalized, "champignons")) return "1F344";
-  if (hasWord(normalized, "oeuf") || hasWord(normalized, "oeufs")) return "1F95A";
-  if (hasWord(normalized, "vinaigre") || hasWord(normalized, "vinaigrette")) return "1F37E";
-  if (hasWord(normalized, "sel") || hasWord(normalized, "poivre") || hasWord(normalized, "epice") || hasWord(normalized, "epices") || hasWord(normalized, "paprika") || hasWord(normalized, "curry") || hasWord(normalized, "cumin") || hasWord(normalized, "curcuma") || hasWord(normalized, "cannelle")) return "1F9C2";
-  if (hasWord(normalized, "sauce") || hasWord(normalized, "moutarde") || hasWord(normalized, "mayonnaise") || hasWord(normalized, "ketchup") || hasWord(normalized, "conserve") || hasWord(normalized, "coulis") || hasWord(normalized, "concentre") || hasWord(normalized, "pesto")) return "1F96B";
-  if (hasWord(normalized, "sucre")) return "1F36C";
-  if (hasWord(normalized, "cafe")) return "2615";
-  if (hasWord(normalized, "the") || hasWord(normalized, "tisane") || hasWord(normalized, "infusion")) return "1FAD6";
-  if (hasWord(normalized, "jus")) return "1F9C3";
-  if (hasWord(normalized, "eau")) return "1F4A7";
-  if (hasWord(normalized, "vin")) return "1F377";
-  if (hasWord(normalized, "biere") || hasWord(normalized, "cidre")) return "1F37A";
-  if (hasWord(normalized, "biscuit") || hasWord(normalized, "gateau") || hasWord(normalized, "cookie") || hasWord(normalized, "sable")) return "1F36A";
+  // Fallbacks sémantiques par racines ou mots fréquents (émojis natifs prioritaires)
+  if (hasWord(normalized, "huile") || normalized.includes("huile")) return "🫒";
+  if (hasWord(normalized, "beurre") || normalized.includes("beurre") || hasWord(normalized, "margarine")) return "🧈";
+  if (hasWord(normalized, "granola") || hasWord(normalized, "muesli") || hasWord(normalized, "avoine") || hasWord(normalized, "cereale") || hasWord(normalized, "cereales")) return "🥣";
+  if (hasWord(normalized, "lait") || hasWord(normalized, "creme")) return "🥛";
+  if (hasWord(normalized, "yaourt") || hasWord(normalized, "yogourt") || hasWord(normalized, "skyr") || hasWord(normalized, "fromage blanc")) return "🥣";
+  if (hasWord(normalized, "fromage") || hasWord(normalized, "comte") || hasWord(normalized, "emmental") || hasWord(normalized, "parmesan") || hasWord(normalized, "mozzarella") || hasWord(normalized, "burrata") || hasWord(normalized, "feta") || hasWord(normalized, "chevre")) return "🧀";
+  if (hasWord(normalized, "pate") || hasWord(normalized, "pates") || hasWord(normalized, "spaghetti") || hasWord(normalized, "pasta") || hasWord(normalized, "linguine") || hasWord(normalized, "penne") || hasWord(normalized, "coquillette") || hasWord(normalized, "coquillettes") || hasWord(normalized, "nouille") || hasWord(normalized, "nouilles")) return "🍝";
+  if (hasWord(normalized, "riz") || hasWord(normalized, "risotto")) return "🍚";
+  if (hasWord(normalized, "farine") || hasWord(normalized, "fecule") || hasWord(normalized, "semoule") || hasWord(normalized, "quinoa") || hasWord(normalized, "boulgour") || hasWord(normalized, "couscous")) return "🌾";
+  if (hasWord(normalized, "chocolat") || hasWord(normalized, "cacao") || hasWord(normalized, "praline")) return "🍫";
+  if (hasWord(normalized, "miel") || hasWord(normalized, "confiture") || hasWord(normalized, "sirop") || hasWord(normalized, "marmelade")) return "🍯";
+  if (hasWord(normalized, "pain") || hasWord(normalized, "baguette") || hasWord(normalized, "brioche") || hasWord(normalized, "toast")) return "🍞";
+  if (hasWord(normalized, "poulet") || hasWord(normalized, "dinde") || hasWord(normalized, "volaille") || hasWord(normalized, "canard")) return "🍗";
+  if (hasWord(normalized, "boeuf") || hasWord(normalized, "steak") || hasWord(normalized, "viande") || hasWord(normalized, "porc") || hasWord(normalized, "veau") || hasWord(normalized, "agneau")) return "🥩";
+  if (hasWord(normalized, "jambon") || hasWord(normalized, "lardon") || hasWord(normalized, "lardons") || hasWord(normalized, "bacon") || hasWord(normalized, "charcuterie")) return "🥓";
+  if (hasWord(normalized, "saumon") || hasWord(normalized, "cabillaud") || hasWord(normalized, "poisson") || hasWord(normalized, "thon") || hasWord(normalized, "colin") || hasWord(normalized, "dorade") || hasWord(normalized, "truite")) return "🐟";
+  if (hasWord(normalized, "crevette") || hasWord(normalized, "crevettes") || hasWord(normalized, "gambas") || hasWord(normalized, "moule") || hasWord(normalized, "moules") || hasWord(normalized, "fruit de mer") || hasWord(normalized, "fruits de mer")) return "🦐";
+  if (hasWord(normalized, "pomme de terre") || hasWord(normalized, "patate") || hasWord(normalized, "grenaille")) return "🥔";
+  if (hasWord(normalized, "tomate") || hasWord(normalized, "tomates")) return "🍅";
+  if (hasWord(normalized, "salade") || hasWord(normalized, "laitue") || hasWord(normalized, "mesclun") || hasWord(normalized, "roquette") || hasWord(normalized, "mache") || hasWord(normalized, "epinard") || hasWord(normalized, "epinards")) return "🥬";
+  if (hasWord(normalized, "champignon") || hasWord(normalized, "champignons")) return "🍄";
+  if (hasWord(normalized, "oeuf") || hasWord(normalized, "oeufs")) return "🥚";
+  if (hasWord(normalized, "vinaigre") || hasWord(normalized, "vinaigrette")) return "🍾";
+  if (hasWord(normalized, "sel") || hasWord(normalized, "poivre") || hasWord(normalized, "epice") || hasWord(normalized, "epices") || hasWord(normalized, "paprika") || hasWord(normalized, "curry") || hasWord(normalized, "cumin") || hasWord(normalized, "curcuma") || hasWord(normalized, "cannelle")) return "🧂";
+  if (hasWord(normalized, "sauce") || hasWord(normalized, "moutarde") || hasWord(normalized, "mayonnaise") || hasWord(normalized, "ketchup") || hasWord(normalized, "conserve") || hasWord(normalized, "coulis") || hasWord(normalized, "concentre") || hasWord(normalized, "pesto")) return "🥫";
+  if (hasWord(normalized, "sucre")) return "🍬";
+  if (hasWord(normalized, "cafe")) return "☕";
+  if (hasWord(normalized, "the") || hasWord(normalized, "tisane") || hasWord(normalized, "infusion")) return "🫖";
+  if (hasWord(normalized, "jus")) return "🧃";
+  if (hasWord(normalized, "eau")) return "💧";
+  if (hasWord(normalized, "vin")) return "🍷";
+  if (hasWord(normalized, "biere") || hasWord(normalized, "cidre")) return "🍺";
+  if (hasWord(normalized, "biscuit") || hasWord(normalized, "gateau") || hasWord(normalized, "cookie") || hasWord(normalized, "sable")) return "🍪";
 
-  // Fallbacks Maison & Hygiène
+  // Fallbacks Maison & Hygiène (les SVG OpenMoji bouchent les trous s'il n'y a pas d'émoji natif)
   if (hasWord(normalized, "savon") || hasWord(normalized, "douche")) return "1F9FC";
   if (hasWord(normalized, "shampoing") || hasWord(normalized, "vaisselle") || hasWord(normalized, "lotion")) return "1F9F4";
   if (hasWord(normalized, "lessive") || hasWord(normalized, "nettoyant") || hasWord(normalized, "javel") || hasWord(normalized, "adoucissant") || hasWord(normalized, "assouplissant")) return "1FAE7";

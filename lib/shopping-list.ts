@@ -10,7 +10,6 @@ import {
   describeIngredient,
   DEFAULT_INGREDIENT_ICON,
   resolveIcon,
-  toIconHex,
 } from "@/lib/ingredients";
 import {
   classifyProduct,
@@ -59,10 +58,15 @@ function toShoppingItem(input: {
     input.category && isShoppingCategoryId(input.category)
       ? input.category
       : classifyProduct(customName);
-  const icon =
-    input.icon && input.icon !== DEFAULT_INGREDIENT_ICON
-      ? toIconHex(input.icon)
-      : identity.icon ? toIconHex(identity.icon) : (input.icon ? toIconHex(input.icon) : undefined);
+  const isInputHex = input.icon ? /^[0-9A-Fa-f]{2,6}(-[0-9A-Fa-f]{2,6})*$/.test(input.icon.trim()) : false;
+  let icon: string | undefined = undefined;
+  if (input.icon && input.icon !== DEFAULT_INGREDIENT_ICON && !isInputHex) {
+    icon = input.icon;
+  } else if (identity.icon) {
+    icon = identity.icon;
+  } else if (input.icon && input.icon !== DEFAULT_INGREDIENT_ICON) {
+    icon = input.icon;
+  }
 
   let finalAmount = input.amount;
   let finalUnit = input.unit;
@@ -103,7 +107,7 @@ function sanitizeItem(raw: unknown): ShoppingItem | null {
       amount: entry.amount,
       unit,
       category: typeof entry.category === "string" ? entry.category : undefined,
-      icon: typeof entry.icon === "string" ? toIconHex(entry.icon) : (typeof (entry as any).emoji === "string" ? toIconHex((entry as any).emoji) : undefined),
+      icon: typeof entry.icon === "string" ? entry.icon : (typeof (entry as any).emoji === "string" ? (entry as any).emoji : undefined),
       isChecked: Boolean(entry.isChecked),
       createdAt: typeof entry.createdAt === "string" ? entry.createdAt : undefined,
     });
@@ -280,7 +284,6 @@ export function mergeIngredients(ingredients: RecipeIngredient[]): ShoppingItem[
         amount: ing.amount,
         unit: ing.unit,
         category: ing.category,
-        icon: ing.icon,
       }),
     );
   }
@@ -330,7 +333,6 @@ export function appendIngredientsToShoppingList(
         amount: ing.amount,
         unit: ing.unit,
         category: ing.category,
-        icon: ing.icon,
       }),
     );
   }
@@ -451,7 +453,6 @@ export function countExportImpact(
         amount: ing.amount,
         unit: ing.unit,
         category: ing.category,
-        icon: ing.icon,
       }),
     );
     count += 1;
