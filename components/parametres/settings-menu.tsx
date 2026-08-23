@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { ChevronRightIcon } from "@/components/icons";
 import { SETTINGS_ENTRIES } from "@/lib/profile";
+import { createClient } from "@/lib/supabase/client";
 
 const THEMES = [
   { id: "light", emoji: "☀️", label: "Clair" },
@@ -13,6 +15,15 @@ type ThemeId = (typeof THEMES)[number]["id"];
 
 export function SettingsMenu() {
   const [theme, setTheme] = useState<ThemeId>("light");
+  const router = useRouter();
+  const supabase = createClient();
+
+  const handleLogout = async () => {
+    window.localStorage.clear();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  };
 
   return (
     <div
@@ -78,6 +89,7 @@ export function SettingsMenu() {
 
       <button
         type="button"
+        onClick={handleLogout}
         className="flex w-full items-center gap-3.5 px-5 py-4 text-left transition-colors hover:bg-[#FEF2F2]"
       >
         <span

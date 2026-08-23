@@ -7,7 +7,7 @@ import {
   type FridgeSnapshotItem,
 } from "@/lib/fridge";
 import { resolveIngredientId } from "@/lib/ingredients";
-import { createAdminClient, getOwnerId } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { coerceUnitCode, DEFAULT_UNIT } from "@/lib/units";
 
 function ingredientNameFromJoin(value: unknown): string | undefined {
@@ -25,8 +25,10 @@ function ingredientNameFromJoin(value: unknown): string | undefined {
  * Clé serveur uniquement — jamais depuis le navigateur.
  */
 export async function getSupabaseFridgeSnapshot(): Promise<FridgeSnapshotItem[]> {
-  const supabase = createAdminClient();
-  const ownerId = getOwnerId();
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Non authentifié.");
+  const ownerId = user.id;
   const now = new Date();
 
   const { data, error } = await supabase

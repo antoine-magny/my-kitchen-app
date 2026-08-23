@@ -8,7 +8,7 @@ import {
   type RecipeIngredient,
   type RecipeStep,
 } from "@/lib/recipes";
-import { createAdminClient, getOwnerId } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_UNIT, normalizeUnit, type UnitCode } from "@/lib/units";
 
 export type RecipeFormIngredient = {
@@ -78,8 +78,10 @@ export async function saveRecipeToSupabase(
     .map((step, index) => `${index + 1}. ${step}`)
     .join("\n");
 
-  const supabase = createAdminClient();
-  const userId = getOwnerId();
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Non authentifié.");
+  const userId = user.id;
 
   const { data: recipeRow, error: recipeError } = await supabase
     .from("recipes")
@@ -118,12 +120,13 @@ export async function saveRecipeToSupabase(
 
   try {
     for (const ing of merged.values()) {
-      const ingredientId = await findOrCreateIngredient(ing.name, ing.unit);
+      const ingredientId = await findOrCreateIngredient(ing.name, ing.unit, userId);
       const { error: linkError } = await supabase.from("recipe_ingredients").insert({
         recipe_id: recipeId,
         ingredient_id: ingredientId,
         quantity: ing.amount,
         unit: ing.unit,
+        user_id: userId,
       });
       if (linkError) {
         throw new Error(linkError.message);
@@ -138,8 +141,8 @@ export async function saveRecipeToSupabase(
   return { supabaseId: recipeId, local };
 }
 
-async function findOrCreateIngredient(name: string, unit: UnitCode): Promise<string> {
-  const supabase = createAdminClient();
+async function findOrCreateIngredient(name: string, unit: UnitCode, userId: string): Promise<string> {
+  const supabase = await createClient();
 
   const { data: existing, error: selectError } = await supabase
     .from("ingredients")
@@ -155,6 +158,7 @@ async function findOrCreateIngredient(name: string, unit: UnitCode): Promise<str
     .insert({
       name,
       default_unit: unit || DEFAULT_UNIT,
+      user_id: userId,
     })
     .select("id")
     .single();

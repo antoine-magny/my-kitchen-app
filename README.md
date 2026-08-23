@@ -291,24 +291,19 @@ suppressions stockées côté client.
 
 ## Supabase
 
-### Accès aux données
+### Accès aux données & Sécurité (Multi-utilisateurs)
 
-**L'application n'a pas d'écran de connexion.** Tous les accès passent par le
-serveur avec la clé secrète, épinglés sur un unique utilisateur propriétaire
-identifié par `KITCHEN_OWNER_ID`. La RLS reste active côté base et continue de
-bloquer tout accès direct depuis le navigateur.
+L'application est multi-utilisateurs et protégée par un écran de connexion (`/login`).
+Toutes les routes de l'application (à l'exception de `/login`) sont protégées par un `middleware.ts` qui vérifie la présence d'une session Supabase valide via les cookies.
 
-Le seul point d'entrée est `lib/supabase/admin.ts` :
+**Sécurité (RLS)** : La sécurité des données est assurée par le *Row Level Security* (RLS) de PostgreSQL. Chaque utilisateur ne peut lire, modifier ou supprimer que ses propres données, grâce à la colonne `user_id` présente sur toutes les tables.
 
-- `createAdminClient()` — client Supabase typé, clé secrète, sans session ;
-- `getOwnerId()` — UUID du propriétaire, requis pour toute écriture.
+Côté serveur, l'accès aux données s'effectue via le client `@supabase/ssr` (`lib/supabase/server.ts`) qui récupère automatiquement l'identité de l'utilisateur connecté pour l'appliquer aux requêtes.
 
-Les deux modules sont marqués `server-only` : les importer depuis un composant
-client fait échouer le build, ce qui est voulu.
+*Note : Le client administrateur (`createAdminClient` dans `lib/supabase/admin.ts`) utilisant la clé secrète n'est conservé que pour le ping automatisé de maintien en éveil (`/api/keep-alive`).*
 
-Pour initialiser le propriétaire sur une nouvelle base :
-`node scripts/setup-owner.mjs` crée l'utilisateur et affiche l'UUID à recopier
-dans `KITCHEN_OWNER_ID`.
+**Isolation des données locales** :
+À la déconnexion, le `localStorage` du navigateur est entièrement effacé afin de garantir qu'aucune donnée (frigo, liste de courses, recettes locales) ne fuite entre deux sessions utilisateurs sur le même appareil.
 
 ### Schéma
 
@@ -388,13 +383,12 @@ production.
 | Variable | Requise | Utilité |
 | --- | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | oui | URL du projet Supabase |
-| `SUPABASE_SECRET_KEY` | oui | Clé secrète serveur (Project Settings → API Keys). Contourne la RLS, ne jamais l'exposer au client |
-| `KITCHEN_OWNER_ID` | oui | UUID du profil propriétaire, fourni par `scripts/setup-owner.mjs` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | oui | Clé publique anonyme (pour l'authentification client) |
+| `SUPABASE_SECRET_KEY` | oui | Clé secrète serveur. Contourne la RLS (utilisée pour le cron de keep-alive) |
 | `GEMINI_API_KEY` | pour l'IA | Clé Google Gemini. Sans elle, les routes de génération et d'import renvoient une erreur explicite, le reste de l'app fonctionne |
 | `GEMINI_MODEL` | non | Force un modèle précis. Par défaut `gemini-3.6-flash` (`GEMINI_FLASH_MODEL`) |
 
-`NEXT_PUBLIC_SUPABASE_ANON_KEY` peut encore figurer dans `.env.local` mais n'est
-plus référencée nulle part dans le code.
+
 
 ---
 
