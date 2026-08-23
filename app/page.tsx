@@ -23,6 +23,7 @@ import {
 import { suggestRecipesFromFridge } from "@/lib/generate-from-fridge";
 import { getRecipeById, type Recipe } from "@/lib/recipes";
 import { getTodayMainMeal, type MealSlot } from "@/lib/planning";
+import { isAnonymousUser } from "@/lib/auth-guest";
 import { createClient } from "@/lib/supabase/client";
 import { initialFromName, resolveUserFirstName } from "@/lib/user-name";
 
@@ -68,6 +69,7 @@ export default function Home() {
     breakfast?: unknown;
   } | null>(null);
   const [firstName, setFirstName] = useState("");
+  const [isGuest, setIsGuest] = useState(false);
 
   useEffect(() => {
     setFridgeItemsState(getFridgeItems());
@@ -77,6 +79,7 @@ export default function Home() {
     const supabase = createClient();
     void supabase.auth.getUser().then(async ({ data: { user } }) => {
       setFirstName(await resolveUserFirstName(supabase, user));
+      setIsGuest(isAnonymousUser(user));
     });
   }, []);
 
@@ -111,7 +114,7 @@ export default function Home() {
                 {todayLabel}
               </p>
               <h1 className="font-lora mt-0.5 text-2xl leading-tight font-bold text-[#1C2B1E]">
-                Bonjour{firstName ? ` ${firstName}` : ""} !<br />
+                Bonjour{firstName && !isGuest ? ` ${firstName}` : ""} !<br />
                 <span className="text-[#4A7C59]">Prêt à cuisiner ?</span>
               </h1>
             </div>

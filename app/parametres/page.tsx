@@ -7,7 +7,7 @@ import { SettingsMenu } from "@/components/parametres/settings-menu";
 import { StatsCard } from "@/components/parametres/stats-card";
 import { TasteTestBanner } from "@/components/parametres/taste-test-banner";
 import { PREFERENCE_GROUPS } from "@/lib/profile";
-import { userAccountLabel } from "@/lib/auth-guest";
+import { getUserPreferSession, userAccountLabel } from "@/lib/auth-guest";
 import { createClient } from "@/lib/supabase/server";
 import { resolveUserFirstName } from "@/lib/user-name";
 
@@ -18,9 +18,7 @@ export const metadata: Metadata = {
 
 export default async function ParametresPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUserPreferSession(supabase);
   const firstName = await resolveUserFirstName(supabase, user);
 
   return (

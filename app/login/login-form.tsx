@@ -51,8 +51,7 @@ export function LoginForm({ oauthError, oauthEmail }: LoginFormProps) {
     try {
       const { error: guestError } = await signInAsGuest(supabase)
       if (guestError) throw guestError
-      router.push('/')
-      router.refresh()
+      window.location.assign('/')
     } catch (err: unknown) {
       setError(
         err instanceof Error ? guestAuthErrorMessage(err) : guestAuthErrorMessage(null),
@@ -315,7 +314,7 @@ export function LoginForm({ oauthError, oauthEmail }: LoginFormProps) {
             {loading === 'guest' ? 'Connexion...' : "Se connecter en tant qu'invité"}
           </button>
           <p className="mt-3 text-center text-xs text-gray-500">
-            Sans e-mail. La session disparaît si vous vous déconnectez.
+            Sans e-mail, la session disparaît si vous vous déconnectez.
           </p>
         </div>
       </div>

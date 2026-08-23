@@ -75,6 +75,10 @@ export function googleCallbackUrl(origin: string) {
 /** Empêche une redirection ouverte via le paramètre `next`. */
 export function safeAuthNextPath(next: string | null): string {
   if (!next || !next.startsWith("/") || next.startsWith("//")) return "/";
+  const path = next.split("?")[0] ?? "/";
+  if (path === "/login" || path.startsWith("/login/") || path.startsWith("/auth/")) {
+    return "/";
+  }
   return next;
 }
 

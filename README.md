@@ -340,11 +340,14 @@ Les messages d'erreur sont personnalisés (`lib/auth-google.ts`,
 - **Invité** : utilisateur temporaire `is_anonymous`, même RLS (`auth.uid()`),
   pas d'e-mail. Prénom affiché « Invité », libellé profil « Compte invité ».
   Session perdue à la déconnexion, au nettoyage du navigateur, ou sur un autre
-  appareil. Connexion côté **navigateur** (`/auth/guest` + bouton login), pas
-  côté serveur.
-- **Auto-login local** : en `next dev`, une visite hors `/login`, `/auth/*` et
-  `/nouveau-mot-de-passe` sans session redirige vers `/auth/guest`. Désactiver
-  avec `DEV_AUTO_GUEST=0`. Jamais actif en production.
+  appareil. Connexion côté **navigateur** (`/auth/guest` + bouton login).
+  Le middleware valide la session via Auth ; si Supabase est injoignable
+  depuis Node (certificat local / antivirus), il lit le JWT cookie.
+- **Auto-login local** : désactivé par défaut (même flux qu'en production :
+  page `/login`). En `next dev`, `DEV_AUTO_GUEST=1` redirige une visite hors
+  `/login`, `/auth/*` et `/nouveau-mot-de-passe` sans session vers
+  `/auth/guest` (un seul essai, puis `/login` pour éviter une boucle). Jamais
+  actif en production.
 - **Mot de passe oublié** : `/login/mot-de-passe-oublie` →
   `resetPasswordForEmail` (ne révèle pas si l'adresse existe). Le lien e-mail
   revient sur `/auth/callback?next=/nouveau-mot-de-passe`, puis
@@ -468,7 +471,7 @@ production.
 | `SUPABASE_SECRET_KEY` | oui | Clé secrète serveur. Contourne la RLS (keep-alive + détection des fournisseurs Auth) |
 | `GEMINI_API_KEY` | pour l'IA | Clé Google Gemini. Sans elle, les routes de génération et d'import renvoient une erreur explicite, le reste de l'app fonctionne |
 | `GEMINI_MODEL` | non | Force un modèle précis. Par défaut `gemini-3.6-flash` (`GEMINI_FLASH_MODEL`) |
-| `DEV_AUTO_GUEST` | non | Uniquement en local. `0` / `false` désactive l'auto-connexion invité (`next dev` l'active par défaut) |
+| `DEV_AUTO_GUEST` | non | Uniquement en local. `1` / `true` active l'auto-connexion invité (`next dev` la laisse désactivée par défaut) |
 
 
 

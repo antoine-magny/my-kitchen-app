@@ -1,7 +1,30 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
-import { GUEST_SIGN_IN_PATH, isDevAutoGuestEnabled } from '@/lib/auth-guest'
+import {
+  DEV_AUTO_GUEST_ATTEMPTED_COOKIE,
+  GUEST_SIGN_IN_PATH,
+  getUserPreferSession,
+  isDevAutoGuestEnabled,
+} from '@/lib/auth-guest'
 import { Database } from './database.types'
+
+function redirectPreservingSession(url: URL, supabaseResponse: NextResponse) {
+  const redirectResponse = NextResponse.redirect(url)
+  const setCookies =
+    typeof supabaseResponse.headers.getSetCookie === "function"
+      ? supabaseResponse.headers.getSetCookie()
+      : []
+  if (setCookies.length > 0) {
+    for (const cookie of setCookies) {
+      redirectResponse.headers.append("Set-Cookie", cookie)
+    }
+    return redirectResponse
+  }
+  supabaseResponse.cookies.getAll().forEach((cookie) => {
+    redirectResponse.cookies.set(cookie.name, cookie.value)
+  })
+  return redirectResponse
+}
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -16,13 +39,16 @@ export async function updateSession(request: NextRequest) {
         getAll() {
           return request.cookies.getAll()
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+        setAll(cookiesToSet, headers) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           supabaseResponse = NextResponse.next({
             request,
           })
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
+          )
+          Object.entries(headers).forEach(([key, value]) =>
+            supabaseResponse.headers.set(key, value)
           )
         },
       },
@@ -30,12 +56,8 @@ export async function updateSession(request: NextRequest) {
   )
 
   // IMPORTANT: Avoid writing any logic between createServerClient and
-  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // the first auth read. getUserPreferSession appelle getUser() en premier.
+  const user = await getUserPreferSession(supabase)
 
   const pathname = request.nextUrl.pathname
   const isLoginRoute = pathname.startsWith('/login')
@@ -44,20 +66,28 @@ export async function updateSession(request: NextRequest) {
 
   if (!user && !isLoginRoute && !isAuthCallback) {
     const url = request.nextUrl.clone()
-    if (isDevAutoGuestEnabled() && !isPasswordUpdate) {
+    const alreadyTriedAutoGuest =
+      request.cookies.get(DEV_AUTO_GUEST_ATTEMPTED_COOKIE)?.value === '1'
+    if (isDevAutoGuestEnabled() && !isPasswordUpdate && !alreadyTriedAutoGuest) {
       const next = `${pathname}${request.nextUrl.search}`
       url.pathname = GUEST_SIGN_IN_PATH
       url.search = `?next=${encodeURIComponent(next)}`
-      return NextResponse.redirect(url)
+      const response = redirectPreservingSession(url, supabaseResponse)
+      response.cookies.set(DEV_AUTO_GUEST_ATTEMPTED_COOKIE, '1', {
+        path: '/',
+        maxAge: 120,
+        sameSite: 'lax',
+      })
+      return response
     }
     url.pathname = '/login'
-    return NextResponse.redirect(url)
+    return redirectPreservingSession(url, supabaseResponse)
   }
 
   if (user && isLoginRoute) {
     const url = request.nextUrl.clone()
     url.pathname = '/'
-    return NextResponse.redirect(url)
+    return redirectPreservingSession(url, supabaseResponse)
   }
 
   return supabaseResponse

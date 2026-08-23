@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { AuthCard } from "@/components/auth-card";
 import { safeAuthNextPath } from "@/lib/auth-google";
 import {
@@ -12,11 +12,14 @@ import {
 import { createClient } from "@/lib/supabase/client";
 
 export function GuestSignIn() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
+  const started = useRef(false);
 
   useEffect(() => {
+    if (started.current) return;
+    started.current = true;
+
     const supabase = createClient();
     const next = safeAuthNextPath(searchParams.get("next"));
 
@@ -29,15 +32,14 @@ export function GuestSignIn() {
         const { error: guestError } = await signInAsGuest(supabase);
         if (guestError) {
           setError(guestAuthErrorMessage(guestError));
-          router.replace(`/login?error=${GUEST_AUTH_ERROR}`);
+          window.location.replace(`/login?error=${GUEST_AUTH_ERROR}`);
           return;
         }
       }
 
-      router.replace(next);
-      router.refresh();
+      window.location.replace(next);
     })();
-  }, [router, searchParams]);
+  }, [searchParams]);
 
   return (
     <AuthCard title="My Kitchen App" subtitle="Connexion en tant qu'invité…">

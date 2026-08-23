@@ -10,11 +10,13 @@ export function isAnonymousUser(user: User | null | undefined): boolean {
   return user?.is_anonymous === true;
 }
 
-/** Auto-connexion invité uniquement en `next dev`. Désactiver avec `DEV_AUTO_GUEST=0`. */
+export const DEV_AUTO_GUEST_ATTEMPTED_COOKIE = "dev_auto_guest_attempted";
+
+/** Auto-connexion invité uniquement en `next dev`, si `DEV_AUTO_GUEST=1`. */
 export function isDevAutoGuestEnabled(): boolean {
   if (process.env.NODE_ENV !== "development") return false;
   const flag = process.env.DEV_AUTO_GUEST?.trim().toLowerCase();
-  return flag !== "0" && flag !== "false";
+  return flag === "1" || flag === "true";
 }
 
 export function guestQueryErrorMessage(error: string | undefined): string | null {
@@ -45,4 +47,35 @@ export async function signInAsGuest(supabase: SupabaseClient) {
       data: { full_name: GUEST_DISPLAY_NAME },
     },
   });
+}
+
+function isAuthUnreachable(error: { name?: string; message?: string } | null): boolean {
+  if (!error) return false;
+  const message = error.message?.toLowerCase() ?? "";
+  return (
+    error.name === "AuthRetryableFetchError" ||
+    message === "fetch failed" ||
+    message.includes("unable to verify")
+  );
+}
+
+/** `getUser()` contacte Auth ; si le serveur local n'atteint pas Supabase (certificat / antivirus), on lit le JWT cookie. */
+export async function getUserPreferSession(supabase: SupabaseClient) {
+  if (process.env.NODE_ENV === "development") {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (session?.user) return session.user;
+  }
+
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+  if (user) return user;
+  if (!isAuthUnreachable(error)) return null;
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  return session?.user ?? null;
 }
