@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { XIcon } from "@/components/icons";
-import { emptyIngredientRow, type RecipeFormIngredientRow } from "@/lib/recipe-import";
+import type { RecipeFormIngredientRow } from "@/lib/recipe-import";
 import {
-  DIFFICULTIES,
   ing,
   tagToLabel,
   type NewRecipeInput,
@@ -14,24 +12,21 @@ import {
 } from "@/lib/recipes";
 import { getIngredientDefaultUnit } from "@/lib/ingredients";
 import { coerceUnitCode, DEFAULT_UNIT } from "@/lib/units";
-
-import { ImageSection } from "./recipe-form/image-section";
-import { MetaSection } from "./recipe-form/meta-section";
-import { IngredientsSection } from "./recipe-form/ingredients-section";
-import { StepsSection } from "./recipe-form/steps-section";
+import { FormFooter } from "@/components/recipe-form/form-footer";
+import {
+  initialIngredientRows,
+  initialSteps,
+  toDifficulty,
+  toTag,
+  type Difficulty,
+} from "@/components/recipe-form/form-state";
+import { RecipeFormShell } from "@/components/recipe-form/form-shell";
+import { ImageSection } from "@/components/recipe-form/image-section";
+import { IngredientsSection } from "@/components/recipe-form/ingredients-section";
+import { MetaSection } from "@/components/recipe-form/meta-section";
+import { StepsSection } from "@/components/recipe-form/steps-section";
 
 type IngredientRow = RecipeFormIngredientRow;
-
-type Difficulty = (typeof DIFFICULTIES)[number];
-
-function toDifficulty(value: string): Difficulty {
-  return (DIFFICULTIES as readonly string[]).includes(value) ? (value as Difficulty) : "Facile";
-}
-
-function toTag(value: RecipeFilter | null | undefined): Exclude<RecipeFilter, "Tout"> | "" {
-  if (!value || value === "Tout") return "";
-  return value;
-}
 
 const MAX_IMAGE_BYTES = 1.5 * 1024 * 1024;
 
@@ -55,20 +50,8 @@ export function RecipeFormModal({
   const [servings, setServings] = useState(String(recipe?.servings ?? 2));
   const [difficulty, setDifficulty] = useState<Difficulty>(toDifficulty(recipe?.difficulty ?? "Facile"));
   const [tag, setTag] = useState<Exclude<RecipeFilter, "Tout"> | "">(toTag(recipe?.tag));
-  const [ingredients, setIngredients] = useState<IngredientRow[]>(
-    recipe?.ingredients.length
-      ? recipe.ingredients.map((row) => ({
-          name: row.name,
-          amount: String(row.amount),
-          unit: row.unit,
-        }))
-      : [emptyIngredientRow()],
-  );
-  const [steps, setSteps] = useState<RecipeStep[]>(
-    recipe?.steps.length
-      ? recipe.steps.map((step) => ({ ...step, duration: step.duration ?? "" }))
-      : [{ title: "", detail: "", duration: "" }],
-  );
+  const [ingredients, setIngredients] = useState<IngredientRow[]>(initialIngredientRows(recipe));
+  const [steps, setSteps] = useState<RecipeStep[]>(initialSteps(recipe));
   const [error, setError] = useState("");
   const titleRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -193,87 +176,50 @@ export function RecipeFormModal({
   };
 
   return (
-    <div
-      className="fixed inset-x-0 top-0 bottom-20 z-[60] flex items-end justify-center sm:inset-0 sm:items-center"
-      style={{ background: "rgba(20,31,22,0.55)", backdropFilter: "blur(4px)" }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+    <RecipeFormShell
+      title={isEditing ? "Modifier la recette" : "Nouvelle recette"}
+      onClose={onClose}
     >
-      <div
-        className="scale-in flex max-h-full w-full flex-col rounded-t-3xl sm:max-h-[92vh] sm:w-auto sm:min-w-[520px] sm:max-w-xl sm:rounded-3xl"
-        style={{ background: "#FFFFFF", boxShadow: "0 24px 64px rgba(20,31,22,0.22)" }}
-      >
-        <div className="flex shrink-0 items-center justify-between border-b border-[#F0F4EF] px-6 py-5">
-          <h2 className="font-lora text-xl font-bold text-[#1C2B1E]">
-            {isEditing ? "Modifier la recette" : "Nouvelle recette"}
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-xl text-[#7A8F7D] transition-colors hover:bg-[#F0F4EF]"
-          >
-            <XIcon size={18} />
-          </button>
+      <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col" noValidate>
+        <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
+          <ImageSection
+            photo={photo}
+            setPhoto={setPhoto}
+            showUrlInput={showUrlInput}
+            setShowUrlInput={setShowUrlInput}
+            photoUrlDraft={photoUrlDraft}
+            setPhotoUrlDraft={setPhotoUrlDraft}
+            fileRef={fileRef}
+            handleFileChange={handleFileChange}
+            applyPhotoUrl={applyPhotoUrl}
+          />
+
+          <MetaSection
+            titleRef={titleRef}
+            title={title} setTitle={setTitle}
+            time={time} setTime={setTime}
+            servings={servings} setServings={setServings}
+            calories={calories} setCalories={setCalories}
+            proteins={proteins} setProteins={setProteins}
+            difficulty={difficulty} setDifficulty={setDifficulty}
+            tag={tag} setTag={setTag}
+          />
+
+          <IngredientsSection
+            ingredients={ingredients}
+            setIngredients={setIngredients}
+            updateIngredient={updateIngredient}
+          />
+
+          <StepsSection
+            steps={steps}
+            setSteps={setSteps}
+            updateStep={updateStep}
+          />
         </div>
 
-        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col" noValidate>
-          <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
-            <ImageSection
-              photo={photo}
-              setPhoto={setPhoto}
-              showUrlInput={showUrlInput}
-              setShowUrlInput={setShowUrlInput}
-              photoUrlDraft={photoUrlDraft}
-              setPhotoUrlDraft={setPhotoUrlDraft}
-              fileRef={fileRef}
-              handleFileChange={handleFileChange}
-              applyPhotoUrl={applyPhotoUrl}
-            />
-
-            <MetaSection
-              titleRef={titleRef}
-              title={title} setTitle={setTitle}
-              time={time} setTime={setTime}
-              servings={servings} setServings={setServings}
-              calories={calories} setCalories={setCalories}
-              proteins={proteins} setProteins={setProteins}
-              difficulty={difficulty} setDifficulty={setDifficulty}
-              tag={tag} setTag={setTag}
-            />
-
-            <IngredientsSection
-              ingredients={ingredients}
-              setIngredients={setIngredients}
-              updateIngredient={updateIngredient}
-            />
-
-            <StepsSection
-              steps={steps}
-              setSteps={setSteps}
-              updateStep={updateStep}
-            />
-          </div>
-
-          <div className="shrink-0 border-t border-[#F0F4EF] px-6 py-4">
-            {error && (
-              <p className="mb-3 rounded-xl bg-[#FEF2F2] px-3 py-2 text-xs font-semibold text-[#DC2626]">
-                {error}
-              </p>
-            )}
-            <button
-              type="submit"
-              className="w-full rounded-2xl py-3.5 text-sm font-bold text-white transition-all hover:opacity-90 active:scale-[0.98]"
-              style={{
-                background: "linear-gradient(135deg, #4A7C59, #5E9E72)",
-                boxShadow: "0 4px 16px rgba(74,124,89,0.28)",
-              }}
-            >
-              {isEditing ? "Enregistrer les modifications" : "Enregistrer la recette"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <FormFooter error={error} isEditing={isEditing} />
+      </form>
+    </RecipeFormShell>
   );
 }

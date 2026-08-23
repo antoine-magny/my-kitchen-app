@@ -32,8 +32,6 @@ export const MONTHS_FR = [
   "décembre",
 ] as const;
 
-export const DAY_SHORT = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"] as const;
-
 export type MealSlot = "breakfast" | "lunch" | "dinner";
 
 export type BreakfastItem = {
@@ -50,11 +48,37 @@ export type DayPlan = {
   dinnerId: number | null;
 };
 
-function parseDayKey(key: string): Date | null {
-  const parts = key.split("-").map(Number);
-  if (parts.length !== 3 || parts.some((n) => !Number.isFinite(n))) return null;
-  const [year, month, day] = parts;
-  return new Date(Date.UTC(year, month, day, 12, 0, 0));
+export const EMPTY_DAY_PLAN: DayPlan = {
+  breakfast: null,
+  lunchId: null,
+  dinnerId: null,
+};
+
+export function dayHasMeals(plan: DayPlan | undefined): boolean {
+  if (!plan) return false;
+  return plan.breakfast != null || plan.lunchId != null || plan.dinnerId != null;
+}
+
+export function breakfastRecipeId(breakfast: BreakfastItem | null): number | null {
+  if (!breakfast?.id.startsWith("recipe-")) return null;
+  const parsed = Number(breakfast.id.slice("recipe-".length));
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+export function applyRecipeToDay(plan: DayPlan, slot: MealSlot, recipe: Recipe): DayPlan {
+  const next: DayPlan = { ...plan };
+  if (slot === "breakfast") {
+    next.breakfast = {
+      id: `recipe-${recipe.id}`,
+      name: recipe.title,
+      detail: `${recipe.difficulty} · ${recipe.time}`,
+      calories: recipe.calories,
+      proteins: recipe.proteins,
+    };
+  }
+  if (slot === "lunch") next.lunchId = recipe.id;
+  if (slot === "dinner") next.dinnerId = recipe.id;
+  return next;
 }
 
 export function buildInitialPlans(weekStart: Date): Record<string, DayPlan> {
@@ -105,6 +129,13 @@ export function ingredientsFromMealSlot(
   if (recipeId == null) return [];
   const recipe = getRecipeById(recipeId);
   return recipe ? [...recipe.ingredients] : [];
+}
+
+function parseDayKey(key: string): Date | null {
+  const parts = key.split("-").map(Number);
+  if (parts.length !== 3 || parts.some((n) => !Number.isFinite(n))) return null;
+  const [year, month, day] = parts;
+  return new Date(Date.UTC(year, month, day, 12, 0, 0));
 }
 
 function ingredientsFromDayPlan(plan: DayPlan): RecipeIngredient[] {
@@ -210,8 +241,8 @@ export function getPlanForDay(
   const allPlans = plansByWeek ?? getStoredMealPlans();
   const ws = startOfWeek(date);
   const weekPlans = allPlans[dayKey(ws)];
-  if (!weekPlans) return { breakfast: null, lunchId: null, dinnerId: null };
-  return weekPlans[dayKey(date)] ?? { breakfast: null, lunchId: null, dinnerId: null };
+  if (!weekPlans) return { ...EMPTY_DAY_PLAN };
+  return weekPlans[dayKey(date)] ?? { ...EMPTY_DAY_PLAN };
 }
 
 export function getTodayMainMeal(todayDate: Date = parisCalendarDate()): {

@@ -1,90 +1,93 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { EXISTING_ACCOUNT_MESSAGE, isExistingAccountSignUp } from '@/lib/auth-signup'
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { GoogleIcon, UsersIcon } from "@/components/icons";
+import {
+  AuthDivider,
+  AuthModeToggle,
+  AuthPasswordField,
+  AuthTextField,
+} from "@/components/login/auth-fields";
+import { EXISTING_ACCOUNT_MESSAGE, isExistingAccountSignUp } from "@/lib/auth-signup";
 import {
   GOOGLE_AUTH_ERROR_MESSAGE,
   googleAuthErrorMessage,
   loginOAuthErrorMessage,
   signInWithGoogle,
-} from '@/lib/auth-google'
-import { EyeIcon, EyeOffIcon, GoogleIcon, UsersIcon } from '@/components/icons'
-import { useRouter } from 'next/navigation'
+} from "@/lib/auth-google";
 import {
   guestAuthErrorMessage,
   guestQueryErrorMessage,
   signInAsGuest,
-} from '@/lib/auth-guest'
-import { passwordRecoveryErrorMessage, REQUEST_RESET_PATH } from '@/lib/auth-password'
-import { getUserProviders } from './actions'
-
-const inputClass =
-  'appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#2E5B3E] focus:border-[#2E5B3E] sm:text-sm'
+} from "@/lib/auth-guest";
+import { passwordRecoveryErrorMessage, REQUEST_RESET_PATH } from "@/lib/auth-password";
+import { createClient } from "@/lib/supabase/client";
+import { getUserProviders } from "./actions";
 
 type LoginFormProps = {
-  oauthError?: string
-  oauthEmail?: string
-}
+  oauthError?: string;
+  oauthEmail?: string;
+};
 
 export function LoginForm({ oauthError, oauthEmail }: LoginFormProps) {
-  const [mode, setMode] = useState<'login' | 'signup'>('login')
-  const [firstName, setFirstName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [loading, setLoading] = useState<'email' | 'google' | 'guest' | null>(null)
+  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [firstName, setFirstName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState<"email" | "google" | "guest" | null>(null);
   const [error, setError] = useState<string | null>(
     loginOAuthErrorMessage(oauthError, oauthEmail) ??
       passwordRecoveryErrorMessage(oauthError) ??
       guestQueryErrorMessage(oauthError),
-  )
-  const router = useRouter()
-  const supabase = createClient()
+  );
+  const router = useRouter();
+  const supabase = createClient();
 
-  const isSignup = mode === 'signup'
-  const busy = loading !== null
+  const isSignup = mode === "signup";
+  const busy = loading !== null;
 
   const handleGuestAuth = async () => {
-    setLoading('guest')
-    setError(null)
+    setLoading("guest");
+    setError(null);
     try {
-      const { error: guestError } = await signInAsGuest(supabase)
-      if (guestError) throw guestError
-      window.location.assign('/')
+      const { error: guestError } = await signInAsGuest(supabase);
+      if (guestError) throw guestError;
+      window.location.assign("/");
     } catch (err: unknown) {
       setError(
         err instanceof Error ? guestAuthErrorMessage(err) : guestAuthErrorMessage(null),
-      )
-      setLoading(null)
+      );
+      setLoading(null);
     }
-  }
+  };
 
   const handleGoogleAuth = async () => {
-    setLoading('google')
-    setError(null)
+    setLoading("google");
+    setError(null);
     try {
-      const { error: googleError } = await signInWithGoogle(supabase, window.location.origin)
-      if (googleError) throw googleError
+      const { error: googleError } = await signInWithGoogle(supabase, window.location.origin);
+      if (googleError) throw googleError;
     } catch (err: unknown) {
       setError(
         err instanceof Error
           ? googleAuthErrorMessage(err)
           : GOOGLE_AUTH_ERROR_MESSAGE,
-      )
-      setLoading(null)
+      );
+      setLoading(null);
     }
-  }
+  };
 
   const handleAuth = async () => {
-    const trimmedName = firstName.trim()
+    const trimmedName = firstName.trim();
     if (isSignup && !trimmedName) {
-      setError('Veuillez indiquer votre prénom')
-      return
+      setError("Veuillez indiquer votre prénom");
+      return;
     }
 
-    setLoading('email')
-    setError(null)
+    setLoading("email");
+    setError(null);
 
     try {
       if (isSignup) {
@@ -94,7 +97,7 @@ export function LoginForm({ oauthError, oauthEmail }: LoginFormProps) {
           options: {
             data: { full_name: trimmedName },
           },
-        })
+        });
         if (isExistingAccountSignUp(signUpError, data.user)) {
           const providers = await getUserProviders(email);
           if (providers && providers.includes("google") && !providers.includes("email")) {
@@ -102,16 +105,16 @@ export function LoginForm({ oauthError, oauthEmail }: LoginFormProps) {
           } else {
             setError(EXISTING_ACCOUNT_MESSAGE);
           }
-          return
+          return;
         }
-        if (signUpError) throw signUpError
-        alert("Vérifiez vos emails pour confirmer l'inscription (si nécessaire), sinon vous pouvez vous connecter directement si auto-confirmé.")
-        setMode('login')
+        if (signUpError) throw signUpError;
+        alert("Vérifiez vos emails pour confirmer l'inscription (si nécessaire), sinon vous pouvez vous connecter directement si auto-confirmé.");
+        setMode("login");
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password,
-        })
+        });
         if (signInError) {
           if (signInError.message === "Invalid login credentials") {
             const providers = await getUserProviders(email);
@@ -122,15 +125,15 @@ export function LoginForm({ oauthError, oauthEmail }: LoginFormProps) {
           }
           throw signInError;
         }
-        router.push('/')
-        router.refresh()
+        router.push("/");
+        router.refresh();
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue')
+      setError(err instanceof Error ? err.message : "Une erreur est survenue");
     } finally {
-      setLoading(null)
+      setLoading(null);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-[#F7F9F6] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -140,39 +143,24 @@ export function LoginForm({ oauthError, oauthEmail }: LoginFormProps) {
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
           {isSignup
-            ? 'Créez votre compte pour commencer'
-            : 'Vous avez déjà un compte ? Connectez-vous !'}
+            ? "Créez votre compte pour commencer"
+            : "Vous avez déjà un compte ? Connectez-vous !"}
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <div className="mb-6 grid grid-cols-2 gap-1 rounded-md bg-gray-100 p-1">
-            <button
-              type="button"
-              onClick={() => {
-                setMode('login')
-                setError(null)
-              }}
-              className={`rounded px-3 py-2 text-sm font-medium transition-colors ${
-                !isSignup ? 'bg-white text-[#2E5B3E] shadow-sm' : 'text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              Connexion
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setMode('signup')
-                setError(null)
-              }}
-              className={`rounded px-3 py-2 text-sm font-medium transition-colors ${
-                isSignup ? 'bg-white text-[#2E5B3E] shadow-sm' : 'text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              Inscription
-            </button>
-          </div>
+          <AuthModeToggle
+            isSignup={isSignup}
+            onLogin={() => {
+              setMode("login");
+              setError(null);
+            }}
+            onSignup={() => {
+              setMode("signup");
+              setError(null);
+            }}
+          />
 
           <button
             type="button"
@@ -181,100 +169,54 @@ export function LoginForm({ oauthError, oauthEmail }: LoginFormProps) {
             className="w-full flex items-center justify-center gap-3 py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2E5B3E] disabled:opacity-50"
           >
             <GoogleIcon size={18} />
-            {loading === 'google' ? 'Redirection...' : 'Continuer avec Google'}
+            {loading === "google" ? "Redirection..." : "Continuer avec Google"}
           </button>
 
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center" aria-hidden>
-              <div className="w-full border-t border-gray-200" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="bg-white px-2 text-gray-500">ou</span>
-            </div>
-          </div>
+          <AuthDivider />
 
           <form
             className="space-y-6"
             onSubmit={(e) => {
-              e.preventDefault()
-              void handleAuth()
+              e.preventDefault();
+              void handleAuth();
             }}
           >
             {isSignup && (
-              <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
-                  Prénom
-                </label>
-                <div className="mt-1">
-                  <input
-                    id="firstName"
-                    name="firstName"
-                    type="text"
-                    autoComplete="given-name"
-                    required
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    className={inputClass}
-                  />
-                </div>
-              </div>
+              <AuthTextField
+                id="firstName"
+                label="Prénom"
+                type="text"
+                autoComplete="given-name"
+                value={firstName}
+                onChange={setFirstName}
+              />
             )}
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email
-              </label>
-              <div className="mt-1">
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={inputClass}
-                />
-              </div>
-            </div>
+            <AuthTextField
+              id="email"
+              label="Email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={setEmail}
+            />
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Mot de passe
-              </label>
-              <div className="mt-1 relative">
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete={isSignup ? 'new-password' : 'current-password'}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className={`${inputClass} pr-10`}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
-                  tabIndex={-1}
-                  aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
-                >
-                  {showPassword ? <EyeOffIcon size={20} /> : <EyeIcon size={20} />}
-                </button>
-              </div>
-            </div>
+            <AuthPasswordField
+              value={password}
+              showPassword={showPassword}
+              autoComplete={isSignup ? "new-password" : "current-password"}
+              onChange={setPassword}
+              onToggleVisibility={() => setShowPassword(!showPassword)}
+            />
 
-            {error && (
-              <div className="text-red-600 text-sm">{error}</div>
-            )}
+            {error && <div className="text-red-600 text-sm">{error}</div>}
 
             <button
               type="submit"
               disabled={busy}
               className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#2E5B3E] hover:bg-[#23452f] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2E5B3E] disabled:opacity-50"
             >
-              {loading === 'email' ? '...' : isSignup ? "S'inscrire" : 'Se connecter'}
+              {loading === "email" ? "..." : isSignup ? "S'inscrire" : "Se connecter"}
             </button>
 
             {!isSignup && (
@@ -283,9 +225,9 @@ export function LoginForm({ oauthError, oauthEmail }: LoginFormProps) {
                   type="button"
                   disabled={busy}
                   onClick={() => {
-                    const trimmed = email.trim()
-                    const query = trimmed ? `?email=${encodeURIComponent(trimmed)}` : ''
-                    router.push(`${REQUEST_RESET_PATH}${query}`)
+                    const trimmed = email.trim();
+                    const query = trimmed ? `?email=${encodeURIComponent(trimmed)}` : "";
+                    router.push(`${REQUEST_RESET_PATH}${query}`);
                   }}
                   className="text-sm font-medium text-[#2E5B3E] hover:text-[#23452f] hover:underline disabled:opacity-50"
                 >
@@ -295,14 +237,7 @@ export function LoginForm({ oauthError, oauthEmail }: LoginFormProps) {
             )}
           </form>
 
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center" aria-hidden>
-              <div className="w-full border-t border-gray-200" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="bg-white px-2 text-gray-500">ou</span>
-            </div>
-          </div>
+          <AuthDivider />
 
           <button
             type="button"
@@ -311,7 +246,7 @@ export function LoginForm({ oauthError, oauthEmail }: LoginFormProps) {
             className="w-full flex items-center justify-center gap-2 py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2E5B3E] disabled:opacity-50"
           >
             <UsersIcon size={18} />
-            {loading === 'guest' ? 'Connexion...' : "Se connecter en tant qu'invité"}
+            {loading === "guest" ? "Connexion..." : "Se connecter en tant qu'invité"}
           </button>
           <p className="mt-3 text-center text-xs text-gray-500">
             Sans e-mail, la session disparaît si vous vous déconnectez.
@@ -319,5 +254,5 @@ export function LoginForm({ oauthError, oauthEmail }: LoginFormProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }

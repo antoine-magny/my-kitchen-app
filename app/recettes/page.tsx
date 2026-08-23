@@ -1,17 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AddRecipeModal } from "@/components/add-recipe-modal";
-import {
-  ClockIcon,
-  FlameIcon,
-  HeartIcon,
-  MuscleIcon,
-  PlusIcon,
-  SearchIcon,
-} from "@/components/icons";
-import { MissingIngredientsBadges } from "@/components/missing-ingredients-badges";
+import { HeartIcon, PlusIcon, SearchIcon } from "@/components/icons";
+import { FeaturedCard } from "@/components/recettes/featured-card";
+import { RecipeCard } from "@/components/recettes/recipe-card";
+import { DEFAULT_FAVORITES, readFavorites, writeFavorites } from "@/lib/favorites";
 import {
   RECIPES,
   addCustomRecipe,
@@ -24,29 +18,6 @@ import {
 type Filter = RecipeFilter | "Favoris";
 
 const FILTERS: Filter[] = ["Tout", "Favoris", "Express", "Végétarien", "Riche en protéines", "Desserts"];
-
-const FAVORITES_KEY = "my-kitchen-favorite-recipes";
-const DEFAULT_FAVORITES = [1, 5];
-
-function readFavorites(): Set<number> {
-  if (typeof window === "undefined") return new Set(DEFAULT_FAVORITES);
-  try {
-    const raw = window.localStorage.getItem(FAVORITES_KEY);
-    if (!raw) return new Set(DEFAULT_FAVORITES);
-    const parsed = JSON.parse(raw) as number[];
-    return Array.isArray(parsed) ? new Set(parsed) : new Set(DEFAULT_FAVORITES);
-  } catch {
-    return new Set(DEFAULT_FAVORITES);
-  }
-}
-
-function writeFavorites(favorites: Set<number>) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favorites]));
-}
-
-import { RecipeCard } from "@/components/recettes/recipe-card";
-import { FeaturedCard } from "@/components/recettes/featured-card";
 
 export default function RecettesPage() {
   const [recipes, setRecipes] = useState<Recipe[]>(RECIPES);

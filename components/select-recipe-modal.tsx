@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { CheckIcon, ClockIcon, SearchIcon, XIcon } from "@/components/icons";
+import { useLockBodyScroll } from "@/lib/lock-body-scroll";
 import { getAllRecipes, type Recipe } from "@/lib/recipes";
 
 const SLOT_LABELS = {
@@ -24,16 +25,10 @@ export function SelectRecipeModal({
   const [query, setQuery] = useState("");
   const [recipes, setRecipes] = useState<Recipe[]>([]);
 
-  useEffect(() => {
-    setRecipes(getAllRecipes());
-  }, []);
+  useLockBodyScroll();
 
   useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
+    setRecipes(getAllRecipes());
   }, []);
 
   const filtered = useMemo(() => {

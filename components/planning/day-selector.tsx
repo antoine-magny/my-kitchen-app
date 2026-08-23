@@ -1,5 +1,5 @@
 import { dayKey, formatDayShortFr, sameDay } from "@/lib/date-paris";
-import { type DayPlan } from "@/lib/planning";
+import { dayHasMeals, type DayPlan } from "@/lib/planning";
 
 interface DaySelectorProps {
   days: Date[];
@@ -7,11 +7,6 @@ interface DaySelectorProps {
   selectedDay: Date;
   planForDay: (day: Date) => DayPlan;
   onSelectDay: (day: Date) => void;
-}
-
-function dayHasMeals(plan: DayPlan | undefined): boolean {
-  if (!plan) return false;
-  return plan.breakfast != null || plan.lunchId != null || plan.dinnerId != null;
 }
 
 export function DaySelector({

@@ -2,7 +2,14 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { CheckIcon, ChevronDownIcon } from "@/components/icons";
+import { ChevronDownIcon } from "@/components/icons";
+import { UnitOptionRow } from "@/components/ui/unit-option-row";
+import {
+  ALL_COUNT_CODES,
+  MASS_CODES,
+  UNIT_DISPLAY_CONFIG,
+  VOLUME_CODES,
+} from "@/components/ui/unit-select-config";
 import { getIngredientCountUnit } from "@/lib/ingredients";
 import { UNIT_LIST, unitLabel, type UnitCode } from "@/lib/units";
 
@@ -22,51 +29,6 @@ export interface UnitSelectProps {
   allowCulinary?: boolean;
 }
 
-const MASS_CODES = new Set(["g", "kg"]);
-const VOLUME_CODES = new Set(["ml", "cl", "l", "c_cafe", "c_soupe", "verre"]);
-const ALL_COUNT_CODES = [
-  "piece",
-  "gousse",
-  "tranche",
-  "sachet",
-  "pincee",
-  "brin",
-  "poignee",
-  "botte",
-  "feuille",
-];
-
-interface UnitDisplayInfo {
-  label: string;
-  shortLabel: string;
-  detail?: string;
-}
-
-const UNIT_DISPLAY_CONFIG: Record<string, UnitDisplayInfo> = {
-  g: { label: "Grammes", shortLabel: "g", detail: "g" },
-  kg: { label: "Kilogrammes", shortLabel: "kg", detail: "kg" },
-  ml: { label: "Millilitres", shortLabel: "ml", detail: "ml" },
-  cl: { label: "Centilitres", shortLabel: "cl", detail: "cl" },
-  l: { label: "Litres", shortLabel: "L", detail: "L" },
-  c_cafe: { label: "Cuillère à café", shortLabel: "c.à.c", detail: "5 ml" },
-  c_soupe: { label: "Cuillère à soupe", shortLabel: "c.à.s", detail: "15 ml" },
-  verre: { label: "Verre", shortLabel: "verre", detail: "20 cl" },
-  piece: { label: "Pièce", shortLabel: "Pièce", detail: "unité" },
-  gousse: { label: "Gousse", shortLabel: "gousse" },
-  tranche: { label: "Tranche", shortLabel: "tranche" },
-  sachet: { label: "Sachet", shortLabel: "sachet" },
-  pincee: { label: "Pincée", shortLabel: "pincée" },
-  brin: { label: "Brin", shortLabel: "brin" },
-  poignee: { label: "Poignée", shortLabel: "poignée" },
-  botte: { label: "Botte", shortLabel: "botte" },
-  feuille: { label: "Feuille", shortLabel: "feuille" },
-  qs: { label: "Quantité suffisante", shortLabel: "Quantité suffisante", detail: "q.s." },
-};
-
-/**
- * Sélecteur d'unités moderne et élégant par familles (Masse / Volume / Décompte).
- * Remplace le select natif par un menu déroulant soigné avec animations et retour visuel clair.
- */
 export function UnitSelect({
   value,
   onChange,
@@ -86,7 +48,6 @@ export function UnitSelect({
   const generatedId = useId();
   const selectId = id || generatedId;
 
-  // Filtrage des unités
   const mass = UNIT_LIST.filter((u) => MASS_CODES.has(u.code));
   const volume = UNIT_LIST.filter((u) => {
     if (!VOLUME_CODES.has(u.code)) return false;
@@ -114,14 +75,13 @@ export function UnitSelect({
     if (!triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
     const GAP = 6;
-    const BOTTOM_NAV_HEIGHT = 80; // Marge pour la barre de navigation
+    const BOTTOM_NAV_HEIGHT = 80;
     const POPOVER_MAX_HEIGHT = 288;
 
     const width = compact ? 210 : Math.max(240, rect.width);
     let top = rect.bottom + GAP + window.scrollY;
     let left = rect.left + window.scrollX;
-    
-    // Empêcher débordement à droite
+
     if (left + width > window.innerWidth - 8) {
       left = window.innerWidth - width - 8;
     }
@@ -141,7 +101,6 @@ export function UnitSelect({
     setIsOpen(true);
   }
 
-  // Fermeture au clic extérieur et au scroll
   useEffect(() => {
     if (!isOpen) return;
 
@@ -159,7 +118,6 @@ export function UnitSelect({
     }
 
     function handleScroll(event: Event) {
-      // Si le scroll vient de l'intérieur du popover, on le laisse passer
       if (popoverRef.current?.contains(event.target as Node)) return;
       setIsOpen(false);
     }
@@ -169,7 +127,7 @@ export function UnitSelect({
     document.addEventListener("keydown", handleKeyDown);
     window.addEventListener("scroll", handleScroll, true);
     window.addEventListener("resize", handleResize);
-    
+
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleKeyDown);
@@ -250,172 +208,51 @@ export function UnitSelect({
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Groupe Masse */}
           <div className="space-y-0.5">
-              {mass.map((u) => {
-                const info = UNIT_DISPLAY_CONFIG[u.code] || { label: u.label, shortLabel: u.code };
-                const isSelected = value === u.code;
-                return (
-                  <button
-                    key={u.code}
-                    type="button"
-                    role="option"
-                    aria-selected={isSelected}
-                    onClick={() => handleSelect(u.code)}
-                    className={`group flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
-                      isSelected
-                        ? "bg-[#EBF3ED] text-[#2E5B3E] font-bold"
-                        : "text-[#1C2B1E] hover:bg-[#F0F5F1] hover:text-[#2E5B3E]"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">⚖️</span>
-                      <span>{info.label}</span>
-                      {info.detail && (
-                        <span
-                          className={`text-[10px] font-medium ${
-                            isSelected ? "text-[#4A7C59]" : "text-[#9CA3AF] group-hover:text-[#4A7C59]"
-                          }`}
-                        >
-                          ({info.detail})
-                        </span>
-                      )}
-                    </div>
-                    {isSelected && (
-                      <span className="shrink-0 text-[#2E5B3E]">
-                        <CheckIcon size={13} />
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+            {mass.map((u) => (
+              <UnitOptionRow
+                key={u.code}
+                emoji="⚖️"
+                info={UNIT_DISPLAY_CONFIG[u.code] || { label: u.label, shortLabel: u.code }}
+                isSelected={value === u.code}
+                onSelect={() => handleSelect(u.code)}
+              />
+            ))}
+          </div>
 
-          {/* Séparateur */}
           <div className="my-1 border-t border-[#F0F4EF]" />
 
-          {/* Groupe Volume */}
           <div className="space-y-0.5">
-              {volume.map((u) => {
-                const info = UNIT_DISPLAY_CONFIG[u.code] || { label: u.label, shortLabel: u.code };
-                const isSelected = value === u.code;
-                return (
-                  <button
-                    key={u.code}
-                    type="button"
-                    role="option"
-                    aria-selected={isSelected}
-                    onClick={() => handleSelect(u.code)}
-                    className={`group flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
-                      isSelected
-                        ? "bg-[#EBF3ED] text-[#2E5B3E] font-bold"
-                        : "text-[#1C2B1E] hover:bg-[#F0F5F1] hover:text-[#2E5B3E]"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">💧</span>
-                      <span>{info.label}</span>
-                      {info.detail && (
-                        <span
-                          className={`text-[10px] font-medium ${
-                            isSelected ? "text-[#4A7C59]" : "text-[#9CA3AF] group-hover:text-[#4A7C59]"
-                          }`}
-                        >
-                          ({info.detail})
-                        </span>
-                      )}
-                    </div>
-                    {isSelected && (
-                      <span className="shrink-0 text-[#2E5B3E]">
-                        <CheckIcon size={13} />
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+            {volume.map((u) => (
+              <UnitOptionRow
+                key={u.code}
+                emoji="💧"
+                info={UNIT_DISPLAY_CONFIG[u.code] || { label: u.label, shortLabel: u.code }}
+                isSelected={value === u.code}
+                onSelect={() => handleSelect(u.code)}
+              />
+            ))}
+          </div>
 
-          {/* Séparateur */}
           <div className="my-1 border-t border-[#F0F4EF]" />
 
-          {/* Groupe Décompte */}
           <div className="space-y-0.5">
-              {count.map((u) => {
-                const info = UNIT_DISPLAY_CONFIG[u.code] || { label: u.label, shortLabel: u.code };
-                const isSelected = value === u.code;
-                return (
-                  <button
-                    key={u.code}
-                    type="button"
-                    role="option"
-                    aria-selected={isSelected}
-                    onClick={() => handleSelect(u.code)}
-                    className={`group flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
-                      isSelected
-                        ? "bg-[#EBF3ED] text-[#2E5B3E] font-bold"
-                        : "text-[#1C2B1E] hover:bg-[#F0F5F1] hover:text-[#2E5B3E]"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">🔢</span>
-                      <span>{info.label}</span>
-                      {info.detail && (
-                        <span
-                          className={`text-[10px] font-medium ${
-                            isSelected ? "text-[#4A7C59]" : "text-[#9CA3AF] group-hover:text-[#4A7C59]"
-                          }`}
-                        >
-                          ({info.detail})
-                        </span>
-                      )}
-                    </div>
-                    {isSelected && (
-                      <span className="shrink-0 text-[#2E5B3E]">
-                        <CheckIcon size={13} />
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-
-              {/* Option Quantité suffisante */}
-              {(() => {
-                const info = UNIT_DISPLAY_CONFIG.qs;
-                const isSelected = value === "qs";
-                return (
-                  <button
-                    type="button"
-                    role="option"
-                    aria-selected={isSelected}
-                    onClick={() => handleSelect("qs")}
-                    className={`group flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
-                      isSelected
-                        ? "bg-[#EBF3ED] text-[#2E5B3E] font-bold"
-                        : "text-[#1C2B1E] hover:bg-[#F0F5F1] hover:text-[#2E5B3E]"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">🪄</span>
-                      <span>{info.label}</span>
-                      {info.detail && (
-                        <span
-                          className={`text-[10px] font-medium ${
-                            isSelected ? "text-[#4A7C59]" : "text-[#9CA3AF] group-hover:text-[#4A7C59]"
-                          }`}
-                        >
-                          ({info.detail})
-                        </span>
-                      )}
-                    </div>
-                    {isSelected && (
-                      <span className="shrink-0 text-[#2E5B3E]">
-                        <CheckIcon size={13} />
-                      </span>
-                    )}
-                  </button>
-                );
-              })()}
-            </div>
+            {count.map((u) => (
+              <UnitOptionRow
+                key={u.code}
+                emoji="🔢"
+                info={UNIT_DISPLAY_CONFIG[u.code] || { label: u.label, shortLabel: u.code }}
+                isSelected={value === u.code}
+                onSelect={() => handleSelect(u.code)}
+              />
+            ))}
+            <UnitOptionRow
+              emoji="🪄"
+              info={UNIT_DISPLAY_CONFIG.qs}
+              isSelected={value === "qs"}
+              onSelect={() => handleSelect("qs")}
+            />
+          </div>
         </div>,
         document.body
       )}

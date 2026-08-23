@@ -4,9 +4,13 @@ import { useEffect, useState } from "react";
 import { AddModal } from "@/components/frigo/add-modal";
 import { EditDlcModal } from "@/components/frigo/edit-dlc-modal";
 import { ExpiredModal } from "@/components/frigo/expired-modal";
+import { FridgeEmptyState } from "@/components/frigo/fridge-empty-state";
+import { FridgeHeader } from "@/components/frigo/fridge-header";
+import { FridgeLegend } from "@/components/frigo/fridge-legend";
+import { FridgeTabs } from "@/components/frigo/fridge-tabs";
+import { FridgeToolbar } from "@/components/frigo/fridge-toolbar";
 import { IngredientRow } from "@/components/frigo/ingredient-row";
 import { TABS, type Ingredient, type NewFridgeItem, type TabId } from "@/components/frigo/shared";
-import { CalendarIcon, PlusIcon, SearchIcon } from "@/components/icons";
 import { createFridgeItem, dlcStatus, getFridgeItems, setFridgeItems } from "@/lib/fridge";
 
 export default function FrigoPage() {
@@ -43,8 +47,15 @@ export default function FrigoPage() {
       priorityOrder[dlcStatus(a.expirationDate)] - priorityOrder[dlcStatus(b.expirationDate)],
   );
 
-  const urgentCount = (tab: TabId) =>
-    items.filter((i) => i.category === tab && dlcStatus(i.expirationDate) === "urgent").length;
+  const tabCounts = Object.fromEntries(
+    TABS.map((tab) => [tab.id, items.filter((i) => i.category === tab.id).length]),
+  ) as Record<TabId, number>;
+  const urgentCounts = Object.fromEntries(
+    TABS.map((tab) => [
+      tab.id,
+      items.filter((i) => i.category === tab.id && dlcStatus(i.expirationDate) === "urgent").length,
+    ]),
+  ) as Record<TabId, number>;
   const soonCount = (tab: TabId) =>
     items.filter((i) => {
       if (i.category !== tab) return false;
@@ -125,146 +136,39 @@ export default function FrigoPage() {
   return (
     <div className="min-h-screen bg-[#F6F8F3]">
       <main className="mx-auto flex min-h-screen max-w-md flex-col sm:max-w-2xl lg:max-w-3xl">
-        <div className="flex shrink-0 items-center justify-between border-b border-[#E8EDE9] px-5 py-5 lg:px-8 lg:py-7">
-          <div>
-            <p className="mb-0.5 text-xs font-semibold tracking-[0.1em] text-[#7A8F7D] uppercase">Inventaire</p>
-            <h1 className="font-lora text-2xl leading-none font-bold text-[#1C2B1E] lg:text-3xl">
-              Mon Frigo &amp; Placards
-            </h1>
-          </div>
+        <FridgeHeader onAdd={() => setShowModal(true)} />
 
-          <button
-            type="button"
-            onClick={() => setShowModal(true)}
-            className="flex shrink-0 items-center gap-2.5 rounded-2xl px-5 py-3 text-sm font-bold text-white transition-all hover:opacity-90 active:scale-95"
-            style={{
-              background: "linear-gradient(135deg, #4A7C59, #5E9E72)",
-              boxShadow: "0 4px 18px rgba(74,124,89,0.30)",
-            }}
-          >
-            <PlusIcon size={14} />
-            <span className="hidden sm:inline">Ajouter un ingrédient</span>
-            <span className="sm:hidden">Ajouter</span>
-          </button>
-        </div>
-
-        <div className="flex shrink-0 items-end gap-0 border-b border-[#E8EDE9] px-5 lg:px-8">
-          {TABS.map((tab) => {
-            const isActive = activeTab === tab.id;
-            const urgent = urgentCount(tab.id);
-            const tabTotal = items.filter((i) => i.category === tab.id).length;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => {
-                  setActiveTab(tab.id);
-                  setQuery("");
-                }}
-                className="relative -mb-px flex items-center gap-2 px-5 py-4 text-sm font-bold transition-all duration-200"
-                style={{
-                  color: isActive ? "#1C2B1E" : "#7A8F7D",
-                  borderBottom: isActive ? "2px solid #1C2B1E" : "2px solid transparent",
-                }}
-              >
-                <span className="text-base leading-none">{tab.icon}</span>
-                <span>{tab.label}</span>
-                <span
-                  className="rounded-md px-1.5 py-0.5 text-xs font-semibold"
-                  style={{
-                    background: isActive ? "#EBF2EC" : "#F0F4EF",
-                    color: isActive ? "#4A7C59" : "#9CA3AF",
-                  }}
-                >
-                  {tabTotal}
-                </span>
-                {urgent > 0 && (
-                  <span
-                    className="absolute top-2 right-1 h-2 w-2 rounded-full bg-[#EF4444]"
-                    title={`${urgent} expiré(s)`}
-                  />
-                )}
-              </button>
-            );
-          })}
-        </div>
+        <FridgeTabs
+          activeTab={activeTab}
+          tabCounts={tabCounts}
+          urgentCounts={urgentCounts}
+          onSelect={(tab) => {
+            setActiveTab(tab);
+            setQuery("");
+          }}
+        />
 
         <div className="flex-1 overflow-y-auto">
           <div className="px-5 py-6 lg:px-8">
-            <div className="mb-5 flex items-center gap-4">
-              <div
-                className="flex flex-1 items-center gap-2.5 rounded-xl px-3.5 py-2.5"
-                style={{ background: "#FFFFFF", border: "1.5px solid #E2EBE3" }}
-              >
-                <span className="shrink-0 text-[#9CA3AF]">
-                  <SearchIcon size={15} />
-                </span>
-                <input
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder={`Rechercher dans les ${TABS.find((t) => t.id === activeTab)?.label.toLowerCase()}…`}
-                  className="flex-1 bg-transparent text-sm font-medium text-[#1C2B1E] outline-none"
-                />
-              </div>
-
-              {soonCount(activeTab) > 0 && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (urgentCount(activeTab) > 0) setShowExpired(true);
-                  }}
-                  disabled={urgentCount(activeTab) === 0}
-                  className={`flex shrink-0 items-center gap-1.5 rounded-xl border px-3 py-2 transition-all ${
-                    urgentCount(activeTab) > 0
-                      ? "border-[#FECACA] bg-[#FEF2F2] active:scale-95 hover:bg-[#FEE2E2]"
-                      : "cursor-default border-[#FED7AA] bg-[#FFF7ED]"
-                  }`}
-                  aria-label={
-                    urgentCount(activeTab) > 0
-                      ? `Voir les ${urgentCount(activeTab)} ingrédient${urgentCount(activeTab) > 1 ? "s" : ""} expiré${urgentCount(activeTab) > 1 ? "s" : ""}`
-                      : undefined
-                  }
-                >
-                  <CalendarIcon size={14} />
-                  <span
-                    className={`text-xs font-bold ${
-                      urgentCount(activeTab) > 0 ? "text-[#DC2626]" : "text-[#C2410C]"
-                    }`}
-                  >
-                    {urgentCount(activeTab) > 0
-                      ? `${urgentCount(activeTab)} expiré${urgentCount(activeTab) > 1 ? "s" : ""}`
-                      : `${soonCount(activeTab)} bientôt`}
-                  </span>
-                </button>
-              )}
-            </div>
+            <FridgeToolbar
+              activeTab={activeTab}
+              query={query}
+              urgentCount={urgentCounts[activeTab]}
+              soonCount={soonCount(activeTab)}
+              onQueryChange={setQuery}
+              onShowExpired={() => setShowExpired(true)}
+            />
 
             <div
               className="overflow-hidden rounded-2xl border border-[#E8EDE9] bg-white"
               style={{ boxShadow: "0 1px 12px rgba(28,43,30,0.06)" }}
             >
               {sorted.length === 0 ? (
-                <div className="flex flex-col items-center justify-center px-8 py-20 text-center">
-                  <div className="mb-4 text-5xl">
-                    {activeTab === "fridge" ? "🧊" : activeTab === "freezer" ? "❄️" : "🏺"}
-                  </div>
-                  <p className="font-lora mb-1 text-base font-bold text-[#1C2B1E]">
-                    {query ? "Aucun résultat" : "C'est vide ici !"}
-                  </p>
-                  <p className="text-sm font-medium text-[#7A8F7D]">
-                    {query ? "Essayez un autre mot-clé" : "Ajoutez votre premier ingrédient"}
-                  </p>
-                  {!query && (
-                    <button
-                      type="button"
-                      onClick={() => setShowModal(true)}
-                      className="mt-5 flex items-center gap-2 rounded-xl bg-[#EBF2EC] px-4 py-2.5 text-sm font-bold text-[#4A7C59] transition-all hover:opacity-90"
-                    >
-                      <PlusIcon size={13} /> Ajouter un ingrédient
-                    </button>
-                  )}
-                </div>
+                <FridgeEmptyState
+                  activeTab={activeTab}
+                  query={query}
+                  onAdd={() => setShowModal(true)}
+                />
               ) : (
                 sorted.map((item, idx) => (
                   <div key={item.id}>
@@ -285,20 +189,7 @@ export default function FrigoPage() {
               )}
             </div>
 
-            {sorted.length > 0 && (
-              <div className="mt-4 flex items-center gap-5 px-1">
-                {[
-                  { dot: "#EF4444", label: "Urgent / Périmé" },
-                  { dot: "#F97316", label: "Dans les 3 jours" },
-                  { dot: "#9CA3AF", label: "OK" },
-                ].map(({ dot, label }) => (
-                  <div key={label} className="flex items-center gap-1.5">
-                    <div className="h-2 w-2 shrink-0 rounded-full" style={{ background: dot }} />
-                    <span className="text-xs font-medium text-[#9CA3AF]">{label}</span>
-                  </div>
-                ))}
-              </div>
-            )}
+            {sorted.length > 0 && <FridgeLegend />}
           </div>
         </div>
       </main>
