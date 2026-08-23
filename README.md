@@ -20,7 +20,7 @@ modification.
 | Base de données | Supabase (PostgreSQL + RLS) |
 | IA | Google Gemini via `@google/genai` |
 | Hébergement | Vercel (+ un cron déclaré dans `vercel.json`) |
-| CI | GitHub Actions (`.github/workflows/ci.yml`) : `lint` + `build` à chaque push sur `main` |
+| CI | GitHub Actions (`.github/workflows/ci.yml`) : `lint` + `build` à chaque push sur `main` (Node 22) |
 
 > Next.js 16 introduit des ruptures par rapport aux versions précédentes. En cas
 > de doute sur une API du framework, consulter `node_modules/next/dist/docs/`
@@ -38,7 +38,7 @@ Pour un contrôle de types complet : `npx tsc --noEmit`.
 ```
 app/                    Routes App Router (une page par écran)
   layout.tsx            Shell global : polices Nunito/Lora + BottomNav
-  page.tsx              Accueil : repas du jour, frigo en un coup d'œil
+  page.tsx              Accueil : date du jour (SSR) + repas / frigo (client)
   login/                Connexion / inscription (email, Google, invité)
   login/mot-de-passe-oublie/  Demande de réinitialisation du mot de passe
   nouveau-mot-de-passe/ Choix du nouveau mot de passe (après le lien e-mail)
@@ -55,6 +55,7 @@ components/             Composants React partagés
   auth-card.tsx         Carte partagée des écrans d'authentification (`/login`, mot de passe oublié, invité)
   bottom-nav.tsx        Navigation fixe (5 onglets)
   ui/unit-select.tsx    Sélecteur d'unités par familles (Masse / Volume / Décompte)
+  home/                 Accueil : en-tête, repas du jour, suggestions, DLC
   frigo/                Composants propres à la page frigo
   planning/             Modales propres au planning (export courses)
   parametres/           Cartes de la page Profil & Paramètres
@@ -473,6 +474,12 @@ production.
 | `GEMINI_MODEL` | non | Force un modèle précis. Par défaut `gemini-3.6-flash` (`GEMINI_FLASH_MODEL`) |
 | `DEV_AUTO_GUEST` | non | Uniquement en local. `1` / `true` active l'auto-connexion invité (`next dev` la laisse désactivée par défaut) |
 
+La CI GitHub Actions n'a pas les secrets Vercel. Le workflow injecte des valeurs
+factices pour `NEXT_PUBLIC_SUPABASE_URL` et `NEXT_PUBLIC_SUPABASE_ANON_KEY` afin
+que `next build` puisse pré-rendre les pages client qui instancient le client
+navigateur (ex. `/nouveau-mot-de-passe`). Ces valeurs ne sont pas utilisées en
+production.
+
 
 
 ---
@@ -486,7 +493,9 @@ production.
   remontants.
 - Les dates et le calendrier passent par `lib/date-paris.ts`, qui ancre tout sur
   le fuseau Europe/Paris. Ne pas utiliser `new Date()` directement pour du
-  calcul de jour ou de semaine.
+  calcul de jour ou de semaine. Les libellés affichés (ex. « Dimanche 23 août »)
+  sont construits avec des tableaux FR, sans `toLocaleDateString`, pour éviter
+  un mismatch d'hydratation Node vs navigateur.
 - Les unités de mesure sont un ensemble fermé (`UnitCode` dans `lib/units.ts`),
   par familles masse / volume / décompte. Fusion via `combineQuantities` ;
   code invalide rejeté par Postgres `unit_domain` à l'insertion.

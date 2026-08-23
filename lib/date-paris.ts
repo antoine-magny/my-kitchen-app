@@ -2,6 +2,34 @@
 
 export const PARIS_TZ = "Europe/Paris";
 
+/** Index 0 = dimanche, comme `Date#getUTCDay()`. */
+const WEEKDAYS_LONG_FR = [
+  "dimanche",
+  "lundi",
+  "mardi",
+  "mercredi",
+  "jeudi",
+  "vendredi",
+  "samedi",
+] as const;
+
+const WEEKDAYS_SHORT_FR = ["dim", "lun", "mar", "mer", "jeu", "ven", "sam"] as const;
+
+const MONTHS_LONG_FR = [
+  "janvier",
+  "février",
+  "mars",
+  "avril",
+  "mai",
+  "juin",
+  "juillet",
+  "août",
+  "septembre",
+  "octobre",
+  "novembre",
+  "décembre",
+] as const;
+
 /**
  * Jour calendaire à Paris, représenté en UTC à midi.
  * Évite les décalages DST lors des additions de jours.
@@ -80,21 +108,13 @@ export function formatWeekLabel(
 }
 
 export function formatTodayLongFr(now: Date = new Date()): string {
-  const formatted = now.toLocaleDateString("fr-FR", {
-    timeZone: PARIS_TZ,
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
+  const d = parisCalendarDate(now);
+  const formatted = `${WEEKDAYS_LONG_FR[d.getUTCDay()]} ${d.getUTCDate()} ${MONTHS_LONG_FR[d.getUTCMonth()]}`;
   return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 }
 
 /** Abréviation FR du jour (Lun, Mar, …) pour une date calendaire UTC midi. */
 export function formatDayShortFr(date: Date): string {
-  const raw = date.toLocaleDateString("fr-FR", {
-    weekday: "short",
-    timeZone: "UTC",
-  });
-  const cleaned = raw.replace(/\.$/, "").trim();
-  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1, 3);
+  const raw = WEEKDAYS_SHORT_FR[date.getUTCDay()];
+  return raw.charAt(0).toUpperCase() + raw.slice(1);
 }

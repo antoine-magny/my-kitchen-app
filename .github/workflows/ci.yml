@@ -9,14 +9,20 @@ jobs:
   quality:
     name: Lint et build
     runs-on: ubuntu-latest
+    # Valeurs factices : `next build` pré-rend des pages client qui instancient
+    # le client navigateur Supabase. Sans URL/clé, le prerender lève une erreur.
+    # La prod Vercel utilise les vraies variables, pas celles-ci.
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
     steps:
       - name: Checkout du code
         uses: actions/checkout@v4
 
-      - name: Installation de Node.js 20
+      - name: Installation de Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Installation des dépendances
