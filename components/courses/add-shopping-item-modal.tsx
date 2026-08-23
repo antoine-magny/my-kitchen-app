@@ -131,7 +131,7 @@ export function AddShoppingItemModal({ isOpen, onClose, onAdd }: AddShoppingItem
             </div>
             <div className="flex-1">
               <label htmlFor="item-name" className="mb-1 block text-xs font-semibold text-[#7A8F7D]">
-                Nom de l'article
+                Nom de l&apos;article
               </label>
               <input
                 id="item-name"

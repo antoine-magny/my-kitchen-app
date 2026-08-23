@@ -107,7 +107,7 @@ function sanitizeItem(raw: unknown): ShoppingItem | null {
       amount: entry.amount,
       unit,
       category: typeof entry.category === "string" ? entry.category : undefined,
-      icon: typeof entry.icon === "string" ? entry.icon : (typeof (entry as any).emoji === "string" ? (entry as any).emoji : undefined),
+      icon: typeof entry.icon === "string" ? entry.icon : (typeof (entry as Record<string, unknown>).emoji === "string" ? ((entry as Record<string, unknown>).emoji as string) : undefined),
       isChecked: Boolean(entry.isChecked),
       createdAt: typeof entry.createdAt === "string" ? entry.createdAt : undefined,
     });

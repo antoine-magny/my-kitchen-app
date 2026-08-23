@@ -117,7 +117,7 @@ export function UnitSelect({
     const BOTTOM_NAV_HEIGHT = 80; // Marge pour la barre de navigation
     const POPOVER_MAX_HEIGHT = 288;
 
-    let width = compact ? 210 : Math.max(240, rect.width);
+    const width = compact ? 210 : Math.max(240, rect.width);
     let top = rect.bottom + GAP + window.scrollY;
     let left = rect.left + window.scrollX;
     
@@ -204,6 +204,7 @@ export function UnitSelect({
         role="combobox"
         aria-haspopup="listbox"
         aria-expanded={isOpen}
+        aria-controls={isOpen ? "unit-select-listbox" : undefined}
         aria-label={rest["aria-label"] ?? "Choisir l'unité"}
         onClick={(e) => {
           e.stopPropagation();
@@ -233,6 +234,7 @@ export function UnitSelect({
         <div
           ref={popoverRef}
           role="listbox"
+          id="unit-select-listbox"
           aria-label="Unités de mesure"
           className="slide-down overflow-y-auto rounded-2xl border border-[#E2EBE3] bg-white/95 p-1.5 shadow-2xl backdrop-blur-md transition-all"
           style={{

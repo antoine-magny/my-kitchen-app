@@ -63,7 +63,7 @@ export default function Home() {
   const [todayMeal, setTodayMeal] = useState<{
     mealType: MealSlot;
     recipe?: Recipe;
-    breakfast?: any;
+    breakfast?: unknown;
   } | null>(null);
 
   useEffect(() => {

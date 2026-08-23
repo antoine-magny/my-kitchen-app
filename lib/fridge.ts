@@ -235,8 +235,8 @@ function sanitizeItem(raw: unknown): FridgeItem | null {
     icon:
       typeof entry.icon === "string" && entry.icon
         ? entry.icon
-        : typeof (entry as any).emoji === "string" && (entry as any).emoji
-        ? (entry as any).emoji
+        : typeof (entry as Record<string, unknown>).emoji === "string" && (entry as Record<string, unknown>).emoji
+        ? ((entry as Record<string, unknown>).emoji as string)
         : undefined,
     expirationDate: rawExpiration && /^\d{4}-\d{2}-\d{2}$/.test(rawExpiration) ? rawExpiration : null,
     addedAt: typeof entry.addedAt === "string" ? entry.addedAt : undefined,
