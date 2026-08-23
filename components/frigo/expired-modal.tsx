@@ -42,7 +42,7 @@ export function ExpiredModal({
               {sorted.length} expiré{sorted.length > 1 ? "s" : ""}
             </h2>
             <p className="mt-1 text-sm font-medium text-[#7A8F7D]">
-              Dans {tabLabel.toLowerCase()}
+              Dans le {tabLabel.toLowerCase()}
             </p>
           </div>
           <button

@@ -76,7 +76,7 @@ type TabDefinition = {
 export const FRIDGE_TABS: TabDefinition[] = [
   { id: "fridge", label: "Réfrigérateur", icon: "❄️" },
   { id: "freezer", label: "Congélateur", icon: "🧊" },
-  { id: "pantry", label: "Placards", icon: "🥫" },
+  { id: "pantry", label: "Placard", icon: "🥫" },
 ];
 
 export function createFridgeItemId(): string {

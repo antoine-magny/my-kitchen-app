@@ -65,6 +65,7 @@ lib/                    Logique métier, sans JSX
   units.ts              Familles d'unités + combineQuantities
   profile.ts            Données du profil utilisateur (démo, non persistées)
   user-name.ts          Prénom affiché (métadonnées Auth, puis `profiles.full_name`)
+  update-profile.ts     Enregistrement du profil (Auth + table `profiles`)
   auth-signup.ts        Détection d'un compte email déjà existant
   auth-google.ts        OAuth Google, sanitization du `next`, refus de liaison à un compte email
   auth-password.ts      Réinitialisation du mot de passe (chemins, messages, URL de callback)
@@ -344,6 +345,8 @@ Les messages d'erreur sont personnalisés (`lib/auth-google.ts`,
   appareil. Connexion côté **navigateur** (`/auth/guest` + bouton login).
   Le middleware valide la session via Auth ; si Supabase est injoignable
   depuis Node (certificat local / antivirus), il lit le JWT cookie.
+  La modale « Modifier mon profil » convertit le compte via `updateUser`
+  (e-mail + mot de passe) et synchronise `profiles.full_name`.
 - **Auto-login local** : désactivé par défaut (même flux qu'en production :
   page `/login`). En `next dev`, `DEV_AUTO_GUEST=1` redirige une visite hors
   `/login`, `/auth/*` et `/nouveau-mot-de-passe` sans session vers
@@ -403,6 +406,8 @@ vers `piece` / `c_soupe` / `c_cafe`.
 
 Tables réellement lues ou écrites aujourd'hui :
 
+- `profiles` — prénom / nom du compte (`lib/update-profile.ts`,
+  déclenché par la modale « Modifier mon profil ») ;
 - `recipes` et `recipe_ingredients` — enregistrement d'une recette
   (`lib/save-recipe.ts`) ;
 - `ingredients` — résolution ou création d'un ingrédient au passage ;

@@ -9,11 +9,17 @@ import { EditProfileHeader } from "@/components/parametres/edit-profile-header";
 import { EditProfilePasswordFields } from "@/components/parametres/edit-profile-password-fields";
 import { formatAuthError } from "@/components/parametres/format-auth-error";
 import { createClient } from "@/lib/supabase/client";
-import { MIN_PASSWORD_LENGTH } from "@/lib/auth-password";
+import {
+  AccountProfileError,
+  isGuestAccountLabel,
+  profileEmailCallbackUrlFromWindow,
+  updateAccountProfile,
+} from "@/lib/update-profile";
 
 type EditProfileModalProps = {
   firstName: string;
   email: string;
+  isAnonymous?: boolean;
   onSuccess?: (updated: { firstName: string; email: string }) => void;
   onClose: () => void;
 };
@@ -21,13 +27,11 @@ type EditProfileModalProps = {
 export function EditProfileModal({
   firstName: initialFirstName,
   email: initialEmail,
+  isAnonymous = false,
   onSuccess,
   onClose,
 }: EditProfileModalProps) {
-  const isGuestAccount =
-    !initialEmail ||
-    initialEmail === "Compte invité" ||
-    initialEmail.toLowerCase().includes("guest");
+  const isGuestAccount = isAnonymous || isGuestAccountLabel(initialEmail);
 
   const [firstName, setFirstName] = useState(
     initialFirstName === "Invité" ? "" : initialFirstName,
@@ -71,124 +75,40 @@ export function EditProfileModal({
     e.preventDefault();
     setError(null);
     setSuccessInfo(null);
-
-    const trimmedName = firstName.trim();
-    const trimmedEmail = email.trim();
-
-    if (!trimmedName) {
-      setError("Veuillez indiquer un prénom ou un nom.");
-      return;
-    }
-
-    if (!isGuestAccount && !trimmedEmail) {
-      setError("Veuillez indiquer une adresse e-mail valide.");
-      return;
-    }
-
-    if (password) {
-      if (password.length < MIN_PASSWORD_LENGTH) {
-        setError(`Le mot de passe doit contenir au moins ${MIN_PASSWORD_LENGTH} caractères.`);
-        return;
-      }
-      if (password !== confirmPassword) {
-        setError("Les deux mots de passe ne correspondent pas.");
-        return;
-      }
-    }
-
-    const nameChanged = trimmedName !== initialFirstName.trim();
-    const emailChanged = !isGuestAccount
-      ? trimmedEmail.toLowerCase() !== initialEmail.trim().toLowerCase()
-      : Boolean(trimmedEmail);
-    const passwordChanged = Boolean(password);
-
-    if (!nameChanged && !emailChanged && !passwordChanged) {
-      onClose();
-      return;
-    }
-
     setLoading(true);
 
     try {
-      const supabase = createClient();
-      const {
-        data: { user },
-        error: getUserError,
-      } = await supabase.auth.getUser();
+      const result = await updateAccountProfile(createClient(), {
+        firstName,
+        email,
+        password,
+        confirmPassword,
+        initialFirstName,
+        initialEmail,
+        emailRedirectTo: profileEmailCallbackUrlFromWindow(),
+      });
 
-      if (getUserError || !user) {
-        throw new Error("Session utilisateur introuvable. Veuillez vous reconnecter.");
-      }
-
-      const userAttributes: {
-        email?: string;
-        password?: string;
-        data?: Record<string, unknown>;
-      } = {};
-
-      if (nameChanged) {
-        userAttributes.data = {
-          ...(user.user_metadata || {}),
-          full_name: trimmedName,
-          name: trimmedName,
-          given_name: trimmedName,
-        };
-      }
-
-      if (emailChanged && trimmedEmail) {
-        userAttributes.email = trimmedEmail;
-      }
-
-      if (passwordChanged) {
-        userAttributes.password = password;
-      }
-
-      let updatedEmail = isGuestAccount ? "Compte invité" : initialEmail;
-
-      if (Object.keys(userAttributes).length > 0) {
-        const { data: updateData, error: updateError } =
-          await supabase.auth.updateUser(userAttributes);
-
-        if (updateError) {
-          throw updateError;
-        }
-
-        if (updateData.user?.email) {
-          updatedEmail = updateData.user.email;
-        }
-
-        if (emailChanged && updateData.user?.new_email) {
-          setSuccessInfo(
-            "Un e-mail de confirmation a été envoyé à votre nouvelle adresse. Veuillez cliquer sur le lien pour valider le changement.",
-          );
-        }
-      }
-
-      // Synchronisation de la table `profiles`
-      if (nameChanged) {
-        const { error: profileError } = await supabase.from("profiles").upsert({
-          id: user.id,
-          full_name: trimmedName,
-          updated_at: new Date().toISOString(),
-        });
-
-        if (profileError) {
-          console.error("Erreur lors de la mise à jour de la table profiles:", profileError);
-        }
+      if ("unchanged" in result) {
+        onClose();
+        return;
       }
 
       onSuccess?.({
-        firstName: trimmedName,
-        email: emailChanged && !successInfo ? trimmedEmail : updatedEmail,
+        firstName: result.firstName,
+        email: result.email,
       });
-
       router.refresh();
 
-      if (!emailChanged || !userAttributes.email) {
-        onClose();
+      if (result.emailConfirmationPending) {
+        setSuccessInfo(
+          "Un e-mail de confirmation a été envoyé à votre nouvelle adresse. Veuillez cliquer sur le lien pour valider le changement.",
+        );
+        return;
       }
+
+      onClose();
     } catch (err: unknown) {
-      setError(formatAuthError(err));
+      setError(err instanceof AccountProfileError ? err.message : formatAuthError(err));
     } finally {
       setLoading(false);
     }

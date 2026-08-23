@@ -31,7 +31,7 @@ export function EditProfilePasswordFields({
             {isGuestAccount ? "Créer un mot de passe" : "Changer de mot de passe"}
           </span>
           <span className="text-[11px] font-medium text-[#7A8F7D] bg-white px-2 py-0.5 rounded-md border border-[#E2EBE3]">
-            optionnel
+            {isGuestAccount ? "requis pour le compte" : "optionnel"}
           </span>
         </div>
 
@@ -99,7 +99,7 @@ export function EditProfilePasswordFields({
 
         <p className="text-[11px] leading-relaxed text-[#7A8F7D]">
           {isGuestAccount
-            ? "Le mot de passe vous permettra de vous reconnecter plus tard avec votre adresse mail."
+            ? "E-mail et mot de passe sont nécessaires pour enregistrer le compte. Vous pouvez aussi ne changer que le prénom."
             : "Laissez vide pour conserver votre mot de passe actuel."}
         </p>
       </div>

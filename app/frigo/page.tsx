@@ -1,16 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AddModal } from "@/components/frigo/add-modal";
+import { ClearAllModal } from "@/components/frigo/clear-all-modal";
 import { EditDlcModal } from "@/components/frigo/edit-dlc-modal";
 import { ExpiredModal } from "@/components/frigo/expired-modal";
 import { FridgeEmptyState } from "@/components/frigo/fridge-empty-state";
 import { FridgeHeader } from "@/components/frigo/fridge-header";
-import { FridgeLegend } from "@/components/frigo/fridge-legend";
 import { FridgeTabs } from "@/components/frigo/fridge-tabs";
 import { FridgeToolbar } from "@/components/frigo/fridge-toolbar";
 import { IngredientRow } from "@/components/frigo/ingredient-row";
+import { GroupedItemSection } from "@/components/ui/grouped-item-section";
 import { TABS, type Ingredient, type NewFridgeItem, type TabId } from "@/components/frigo/shared";
+import { DLC_GROUPS, groupByDlcStatus, groupIdForItem, type DlcGroupId } from "@/lib/fridge-dlc-groups";
 import { createFridgeItem, dlcStatus, getFridgeItems, setFridgeItems } from "@/lib/fridge";
 
 export default function FrigoPage() {
@@ -18,6 +20,8 @@ export default function FrigoPage() {
   const [items, setItems] = useState<Ingredient[]>([]);
   const [ready, setReady] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showClearAll, setShowClearAll] = useState(false);
+  const [clearGroupId, setClearGroupId] = useState<DlcGroupId | null>(null);
   const [showExpired, setShowExpired] = useState(false);
   const [editingDlcId, setEditingDlcId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -41,11 +45,11 @@ export default function FrigoPage() {
   const expiredItems = tabItems.filter((i) => dlcStatus(i.expirationDate) === "urgent");
   const activeTabLabel = TABS.find((t) => t.id === activeTab)?.label ?? "";
 
-  const priorityOrder = { urgent: 0, soon: 1, ok: 2, none: 3 };
-  const sorted = [...filtered].sort(
-    (a, b) =>
-      priorityOrder[dlcStatus(a.expirationDate)] - priorityOrder[dlcStatus(b.expirationDate)],
-  );
+  const grouped = useMemo(() => groupByDlcStatus(filtered), [filtered]);
+  const clearGroup = clearGroupId ? (DLC_GROUPS.find((g) => g.id === clearGroupId) ?? null) : null;
+  const clearGroupCount = clearGroupId
+    ? tabItems.filter((i) => groupIdForItem(i.expirationDate) === clearGroupId).length
+    : 0;
 
   const tabCounts = Object.fromEntries(
     TABS.map((tab) => [tab.id, items.filter((i) => i.category === tab.id).length]),
@@ -63,9 +67,9 @@ export default function FrigoPage() {
       return status === "urgent" || status === "soon";
     }).length;
 
-  const handleAdjust = (id: string, delta: number) => {
+  const handleChangeAmount = (id: string, amount: number) => {
     setItems((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, amount: Math.max(0, i.amount + delta) } : i)),
+      prev.map((i) => (i.id === id ? { ...i, amount: Math.max(0, amount) } : i)),
     );
   };
 
@@ -114,6 +118,16 @@ export default function FrigoPage() {
     );
   };
 
+  const handleClearAll = () => {
+    setItems((prev) => prev.filter((i) => i.category !== activeTab));
+  };
+
+  const handleClearGroup = (groupId: DlcGroupId) => {
+    setItems((prev) =>
+      prev.filter((i) => i.category !== activeTab || groupIdForItem(i.expirationDate) !== groupId),
+    );
+  };
+
   const handleAdd = (draft: NewFridgeItem) => {
     const item = createFridgeItem(draft);
     setItems((prev) => [...prev, item]);
@@ -135,7 +149,7 @@ export default function FrigoPage() {
 
   return (
     <div className="min-h-screen bg-[#F6F8F3]">
-      <main className="mx-auto flex min-h-screen max-w-md flex-col sm:max-w-2xl lg:max-w-3xl">
+      <div className="mx-auto max-w-md px-5 pt-10 pb-28">
         <FridgeHeader onAdd={() => setShowModal(true)} />
 
         <FridgeTabs
@@ -148,34 +162,56 @@ export default function FrigoPage() {
           }}
         />
 
-        <div className="flex-1 overflow-y-auto">
-          <div className="px-5 py-6 lg:px-8">
-            <FridgeToolbar
-              activeTab={activeTab}
-              query={query}
-              urgentCount={urgentCounts[activeTab]}
-              soonCount={soonCount(activeTab)}
-              onQueryChange={setQuery}
-              onShowExpired={() => setShowExpired(true)}
-            />
+        <div className="mt-4">
+          <FridgeToolbar
+            activeTab={activeTab}
+            query={query}
+            urgentCount={urgentCounts[activeTab]}
+            soonCount={soonCount(activeTab)}
+            onQueryChange={setQuery}
+            onShowExpired={() => setShowExpired(true)}
+          />
 
+          {filtered.length === 0 ? (
             <div
-              className="overflow-hidden rounded-2xl border border-[#E8EDE9] bg-white"
-              style={{ boxShadow: "0 1px 12px rgba(28,43,30,0.06)" }}
+              className="overflow-hidden rounded-3xl bg-white"
+              style={{ boxShadow: "0 4px 20px rgba(74,124,89,0.09)" }}
             >
-              {sorted.length === 0 ? (
-                <FridgeEmptyState
-                  activeTab={activeTab}
-                  query={query}
-                  onAdd={() => setShowModal(true)}
-                />
-              ) : (
-                sorted.map((item, idx) => (
-                  <div key={item.id}>
-                    {idx > 0 && <div className="ml-14 h-px bg-[#F0F4EF]" />}
+              <FridgeEmptyState
+                activeTab={activeTab}
+                query={query}
+                onAdd={() => setShowModal(true)}
+              />
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {grouped.map(({ group, items: sectionItems }) => (
+                <GroupedItemSection
+                  key={group.id}
+                  id={group.id}
+                  title={group.title}
+                  dot={group.dot}
+                  action={
+                    <button
+                      type="button"
+                      onClick={() => setClearGroupId(group.id)}
+                      className="shrink-0 rounded-lg px-2 py-0.5 text-xs font-bold text-[#B91C1C] transition-colors hover:bg-[#FEF2F2]"
+                      aria-label={
+                        group.id === "urgent"
+                          ? `Vider les éléments périmés du ${activeTabLabel.toLowerCase()}`
+                          : `Vider ${group.title}`
+                      }
+                    >
+                      Vider
+                    </button>
+                  }
+                >
+                  {sectionItems.map((item, idx) => (
                     <IngredientRow
+                      key={item.id}
                       item={item}
-                      onAdjust={handleAdjust}
+                      isLast={idx === sectionItems.length - 1}
+                      onChangeAmount={handleChangeAmount}
                       onChangeUnit={handleChangeUnit}
                       onChangeIcon={handleChangeIcon}
                       onDelete={handleDelete}
@@ -184,18 +220,50 @@ export default function FrigoPage() {
                       onRename={handleRename}
                       isNew={newIds.has(item.id)}
                     />
-                  </div>
-                ))
-              )}
+                  ))}
+                </GroupedItemSection>
+              ))}
             </div>
+          )}
 
-            {sorted.length > 0 && <FridgeLegend />}
-          </div>
+          {tabItems.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setShowClearAll(true)}
+              className="mt-4 flex w-full items-center justify-center rounded-3xl bg-white px-4 py-3.5 text-sm font-bold text-[#B91C1C] shadow-[0_4px_20px_rgba(74,124,89,0.09)] transition-colors hover:bg-[#FEF2F2] active:scale-[0.99]"
+            >
+              Tout effacer
+            </button>
+          )}
         </div>
-      </main>
+      </div>
 
       {showModal && (
         <AddModal activeTab={activeTab} onAdd={handleAdd} onClose={() => setShowModal(false)} />
+      )}
+
+      {showClearAll && tabItems.length > 0 && (
+        <ClearAllModal
+          description={`Supprimer tous les éléments du ${activeTabLabel.toLowerCase()} ?`}
+          itemCount={tabItems.length}
+          onConfirm={handleClearAll}
+          onClose={() => setShowClearAll(false)}
+        />
+      )}
+
+      {clearGroup && clearGroupCount > 0 && (
+        <ClearAllModal
+          title="Vider la catégorie"
+          description={
+            clearGroup.id === "urgent"
+              ? `Supprimer tous les éléments périmés du ${activeTabLabel.toLowerCase()} ?`
+              : `Supprimer tous les éléments « ${clearGroup.title} » du ${activeTabLabel.toLowerCase()} ?`
+          }
+          itemCount={clearGroupCount}
+          confirmLabel="Vider"
+          onConfirm={() => handleClearGroup(clearGroup.id)}
+          onClose={() => setClearGroupId(null)}
+        />
       )}
 
       {showExpired && expiredItems.length > 0 && (

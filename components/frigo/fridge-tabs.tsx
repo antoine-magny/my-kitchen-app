@@ -12,7 +12,7 @@ export function FridgeTabs({
   onSelect: (tab: TabId) => void;
 }) {
   return (
-    <div className="flex shrink-0 items-end gap-0 border-b border-[#E8EDE9] px-5 lg:px-8">
+    <div className="mt-3 flex items-end gap-0 border-b border-[#E8EDE9]">
       {TABS.map((tab) => {
         const isActive = activeTab === tab.id;
         const urgent = urgentCounts[tab.id];
@@ -22,16 +22,16 @@ export function FridgeTabs({
             key={tab.id}
             type="button"
             onClick={() => onSelect(tab.id)}
-            className="relative -mb-px flex items-center gap-2 px-5 py-4 text-sm font-bold transition-all duration-200"
+            className="relative -mb-px flex min-w-0 flex-1 items-center justify-center gap-1 px-0.5 py-2.5 text-[11px] font-bold transition-all duration-200 sm:gap-1.5 sm:px-1 sm:text-xs"
             style={{
               color: isActive ? "#1C2B1E" : "#7A8F7D",
               borderBottom: isActive ? "2px solid #1C2B1E" : "2px solid transparent",
             }}
           >
-            <span className="text-base leading-none">{tab.icon}</span>
-            <span>{tab.label}</span>
+            <span className="shrink-0 text-sm leading-none">{tab.icon}</span>
+            <span className="whitespace-nowrap">{tab.label}</span>
             <span
-              className="rounded-md px-1.5 py-0.5 text-xs font-semibold"
+              className="shrink-0 rounded-md px-1 py-px text-[10px] font-semibold"
               style={{
                 background: isActive ? "#EBF2EC" : "#F0F4EF",
                 color: isActive ? "#4A7C59" : "#9CA3AF",
@@ -41,7 +41,7 @@ export function FridgeTabs({
             </span>
             {urgent > 0 && (
               <span
-                className="absolute top-2 right-1 h-2 w-2 rounded-full bg-[#EF4444]"
+                className="absolute top-1.5 right-0.5 h-1.5 w-1.5 rounded-full bg-[#EF4444]"
                 title={`${urgent} expiré(s)`}
               />
             )}

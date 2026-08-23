@@ -1,5 +1,5 @@
 import { PlusIcon } from "@/components/icons";
-import type { TabId } from "@/components/frigo/shared";
+import { TABS, type TabId } from "@/components/frigo/shared";
 
 export function FridgeEmptyState({
   activeTab,
@@ -10,11 +10,11 @@ export function FridgeEmptyState({
   query: string;
   onAdd: () => void;
 }) {
+  const icon = TABS.find((tab) => tab.id === activeTab)?.icon ?? "";
+
   return (
     <div className="flex flex-col items-center justify-center px-8 py-20 text-center">
-      <div className="mb-4 text-5xl">
-        {activeTab === "fridge" ? "🧊" : activeTab === "freezer" ? "❄️" : "🏺"}
-      </div>
+      <div className="mb-4 text-5xl">{icon}</div>
       <p className="font-lora mb-1 text-base font-bold text-[#1C2B1E]">
         {query ? "Aucun résultat" : "C'est vide ici !"}
       </p>

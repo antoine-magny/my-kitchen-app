@@ -7,7 +7,7 @@ import { SettingsMenu } from "@/components/parametres/settings-menu";
 import { StatsCard } from "@/components/parametres/stats-card";
 import { TasteTestBanner } from "@/components/parametres/taste-test-banner";
 import { PREFERENCE_GROUPS } from "@/lib/profile";
-import { getUserPreferSession, userAccountLabel } from "@/lib/auth-guest";
+import { getUserPreferSession, isAnonymousUser, userAccountLabel } from "@/lib/auth-guest";
 import { createClient } from "@/lib/supabase/server";
 import { resolveUserFirstName } from "@/lib/user-name";
 
@@ -25,7 +25,11 @@ export default async function ParametresPage() {
     <div className="min-h-screen bg-[#F6F8F3]">
       <main className="mx-auto max-w-md px-4 pb-10 sm:max-w-2xl">
         <div className="fade-up">
-          <ProfileHeader firstName={firstName} email={userAccountLabel(user)} />
+          <ProfileHeader
+            firstName={firstName}
+            email={userAccountLabel(user)}
+            isAnonymous={isAnonymousUser(user)}
+          />
         </div>
 
         <section className="fade-up mb-7" style={{ animationDelay: "0.08s" }}>

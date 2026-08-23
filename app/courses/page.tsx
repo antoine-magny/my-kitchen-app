@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { PlusIcon } from "@/components/icons";
 import { AddShoppingItemModal } from "@/components/courses/add-shopping-item-modal";
 import { ShoppingItemRow } from "@/components/courses/shopping-item-row";
+import { GroupedItemSection } from "@/components/ui/grouped-item-section";
 import { transferCheckedShoppingItemsToFridge } from "@/lib/fridge";
 import { groupByShoppingCategory } from "@/lib/shopping-categories";
 import {
@@ -175,32 +176,18 @@ export default function CoursesPage() {
 
             <div className="mt-4 flex flex-col gap-4">
               {grouped.map(({ category, items: sectionItems }) => (
-                <section key={category.id} aria-labelledby={`cat-${category.id}`}>
-                  <h2
-                    id={`cat-${category.id}`}
-                    className="mb-2 px-1 text-sm font-bold text-[#1C2B1E]"
-                  >
-                    {category.title}
-                  </h2>
-                  <div
-                    className="overflow-hidden rounded-3xl"
-                    style={{
-                      background: "#FFFFFF",
-                      boxShadow: "0 4px 20px rgba(74,124,89,0.09)",
-                    }}
-                  >
-                    {sectionItems.map((item, index) => (
-                      <ShoppingItemRow
-                        key={item.id}
-                        item={item}
-                        isLast={index === sectionItems.length - 1}
-                        onToggle={handleToggle}
-                        onRemove={handleRemove}
-                        onUpdate={handleUpdate}
-                      />
-                    ))}
-                  </div>
-                </section>
+                <GroupedItemSection key={category.id} id={category.id} title={category.title}>
+                  {sectionItems.map((item, index) => (
+                    <ShoppingItemRow
+                      key={item.id}
+                      item={item}
+                      isLast={index === sectionItems.length - 1}
+                      onToggle={handleToggle}
+                      onRemove={handleRemove}
+                      onUpdate={handleUpdate}
+                    />
+                  ))}
+                </GroupedItemSection>
               ))}
             </div>
           </>

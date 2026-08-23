@@ -36,7 +36,7 @@ export function EditProfileFields({
           htmlFor="edit-firstName"
           className="mb-1.5 block text-xs font-bold uppercase tracking-wider text-[#5A6B5C]"
         >
-          Prénom ou Nom
+          Prénom
         </label>
         <input
           ref={nameInputRef}

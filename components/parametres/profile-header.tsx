@@ -9,11 +9,13 @@ import { EditProfileModal } from "./edit-profile-modal";
 type ProfileHeaderProps = {
   firstName: string;
   email: string;
+  isAnonymous?: boolean;
 };
 
 export function ProfileHeader({
   firstName: initialFirstName,
   email: initialEmail,
+  isAnonymous = false,
 }: ProfileHeaderProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [firstName, setFirstName] = useState(initialFirstName);
@@ -66,6 +68,7 @@ export function ProfileHeader({
         <EditProfileModal
           firstName={firstName}
           email={email}
+          isAnonymous={isAnonymous}
           onSuccess={(updated) => {
             setFirstName(updated.firstName);
             setEmail(updated.email);
