@@ -1,13 +1,24 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import { ChevronLeftIcon, EditIcon } from "@/components/icons";
 import { initialFromName } from "@/lib/user-name";
+import { EditProfileModal } from "./edit-profile-modal";
 
 type ProfileHeaderProps = {
   firstName: string;
   email: string;
 };
 
-export function ProfileHeader({ firstName, email }: ProfileHeaderProps) {
+export function ProfileHeader({
+  firstName: initialFirstName,
+  email: initialEmail,
+}: ProfileHeaderProps) {
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [firstName, setFirstName] = useState(initialFirstName);
+  const [email, setEmail] = useState(initialEmail);
+
   return (
     <div className="pt-10 pb-6">
       <div className="mb-6 flex items-center justify-between">
@@ -43,12 +54,25 @@ export function ProfileHeader({ firstName, email }: ProfileHeaderProps) {
         </div>
         <button
           type="button"
-          className="flex shrink-0 items-center gap-1.5 rounded-xl bg-[#EBF2EC] px-3.5 py-2.5 text-xs font-bold text-[#4A7C59] transition-all hover:opacity-90 active:scale-95"
+          onClick={() => setIsEditOpen(true)}
+          className="flex shrink-0 items-center gap-1.5 rounded-xl bg-[#EBF2EC] px-3.5 py-2.5 text-xs font-bold text-[#4A7C59] transition-all hover:opacity-90 active:scale-95 cursor-pointer"
         >
           <EditIcon size={13} />
           Modifier
         </button>
       </div>
+
+      {isEditOpen && (
+        <EditProfileModal
+          firstName={firstName}
+          email={email}
+          onSuccess={(updated) => {
+            setFirstName(updated.firstName);
+            setEmail(updated.email);
+          }}
+          onClose={() => setIsEditOpen(false)}
+        />
+      )}
     </div>
   );
 }

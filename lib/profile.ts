@@ -85,7 +85,6 @@ export const DEFAULT_EQUIPMENT_IDS = ["oven", "stove", "microwave", "hand-blende
 export type SettingsEntry = { emoji: string; label: string; hint: string };
 
 export const SETTINGS_ENTRIES: SettingsEntry[] = [
-  { emoji: "👤", label: "Gérer mon compte", hint: "Nom, e-mail et mot de passe" },
   { emoji: "🔔", label: "Notifications", hint: "Rappels DLC et repas du jour" },
   { emoji: "❓", label: "Aide & support", hint: "Questions fréquentes et contact" },
 ];
