@@ -39,9 +39,14 @@ export function isGoogleLinkedToExistingEmailAccount(
   return googleCreated > emailCreated + IDENTITY_CREATED_AFTER_MS;
 }
 
-export function loginOAuthErrorMessage(error: string | undefined): string | null {
+export function loginOAuthErrorMessage(error: string | undefined, email?: string): string | null {
   if (error === "google") return GOOGLE_AUTH_ERROR_MESSAGE;
-  if (error === GOOGLE_EXISTING_ACCOUNT_ERROR) return EXISTING_ACCOUNT_MESSAGE;
+  if (error === GOOGLE_EXISTING_ACCOUNT_ERROR) {
+    if (email) {
+      return `Vous avez déjà un compte sur cette adresse mail : ${email}. Si vous avez perdu votre mot de passe, veuillez consulter la page "Mot de passe oublié".`;
+    }
+    return EXISTING_ACCOUNT_MESSAGE;
+  }
   return null;
 }
 

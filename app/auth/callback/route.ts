@@ -21,6 +21,9 @@ export async function GET(request: Request) {
       if (await rejectGoogleLinkedToEmailAccount(supabase, user)) {
         const loginUrl = new URL("/login", origin);
         loginUrl.searchParams.set("error", GOOGLE_EXISTING_ACCOUNT_ERROR);
+        if (user?.email) {
+          loginUrl.searchParams.set("email", user.email);
+        }
         return NextResponse.redirect(loginUrl);
       }
 

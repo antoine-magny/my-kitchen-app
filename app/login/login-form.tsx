@@ -11,22 +11,24 @@ import {
 } from '@/lib/auth-google'
 import { EyeIcon, EyeOffIcon, GoogleIcon } from '@/components/icons'
 import { useRouter } from 'next/navigation'
+import { getUserProviders } from './actions'
 
 const inputClass =
   'appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#2E5B3E] focus:border-[#2E5B3E] sm:text-sm'
 
 type LoginFormProps = {
   oauthError?: string
+  oauthEmail?: string
 }
 
-export function LoginForm({ oauthError }: LoginFormProps) {
+export function LoginForm({ oauthError, oauthEmail }: LoginFormProps) {
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [firstName, setFirstName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState<'email' | 'google' | null>(null)
-  const [error, setError] = useState<string | null>(loginOAuthErrorMessage(oauthError))
+  const [error, setError] = useState<string | null>(loginOAuthErrorMessage(oauthError, oauthEmail))
   const router = useRouter()
   const supabase = createClient()
 
@@ -69,7 +71,12 @@ export function LoginForm({ oauthError }: LoginFormProps) {
           },
         })
         if (isExistingAccountSignUp(signUpError, data.user)) {
-          setError(EXISTING_ACCOUNT_MESSAGE)
+          const providers = await getUserProviders(email);
+          if (providers && providers.includes("google") && !providers.includes("email")) {
+            setError(`Vous avez déjà un compte sur cette adresse mail : ${email}. Veuillez vous connecter avec google.`);
+          } else {
+            setError(EXISTING_ACCOUNT_MESSAGE);
+          }
           return
         }
         if (signUpError) throw signUpError
@@ -80,7 +87,16 @@ export function LoginForm({ oauthError }: LoginFormProps) {
           email,
           password,
         })
-        if (signInError) throw signInError
+        if (signInError) {
+          if (signInError.message === "Invalid login credentials") {
+            const providers = await getUserProviders(email);
+            if (providers && providers.includes("google") && !providers.includes("email")) {
+              setError(`Vous avez déjà un compte sur cette adresse mail : ${email}. Veuillez vous connecter avec google.`);
+              return;
+            }
+          }
+          throw signInError;
+        }
         router.push('/')
         router.refresh()
       }

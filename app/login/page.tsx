@@ -6,5 +6,5 @@ function firstSearchParam(value: string | string[] | undefined): string | undefi
 
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const params = await searchParams;
-  return <LoginForm oauthError={firstSearchParam(params.error)} />;
+  return <LoginForm oauthError={firstSearchParam(params.error)} oauthEmail={firstSearchParam(params.email)} />;
 }
