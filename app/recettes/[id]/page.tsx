@@ -367,7 +367,11 @@ export default function RecipeStepsPage({
                   }}
                 >
                   <span className="flex items-center text-sm font-semibold text-[#1C2B1E]">
-                    {ing.icon ? <div className="mr-2 flex items-center justify-center"><IngredientIcon iconHex={ing.icon} size={20} /></div> : null}
+                    {ing.icon && ing.icon !== "2205" && ing.icon !== "2753" && ing.icon !== "∅" ? (
+                      <div className="mr-2 flex items-center justify-center">
+                        <IngredientIcon iconHex={ing.icon} size={20} />
+                      </div>
+                    ) : null}
                     {ing.name}
                   </span>
                   <span className="shrink-0 text-right">

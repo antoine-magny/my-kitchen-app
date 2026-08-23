@@ -9,12 +9,20 @@ interface IngredientIconProps {
   className?: string;
   size?: number;
   alt?: string;
+  /** Si vrai et que l'icône est l'ensemble vide (ou absente), n'affiche rien (null) */
+  hideIfEmpty?: boolean;
 }
 
-export function IngredientIcon({ name, iconHex, className = "", size = 24, alt = "" }: IngredientIconProps) {
+export function IngredientIcon({ name, iconHex, className = "", size = 24, alt = "", hideIfEmpty = false }: IngredientIconProps) {
   // Soit on a l'hex/emoji directement, soit on le résout via le nom
   const raw = iconHex || (name ? resolveIcon(name) : undefined);
   
+  const isEmptySet = !raw || raw === DEFAULT_INGREDIENT_ICON || raw === "2205" || raw === "∅" || raw === "Ø" || raw === "ø";
+
+  if (isEmptySet && hideIfEmpty) {
+    return null;
+  }
+
   if (!raw) {
     return (
       <Image 

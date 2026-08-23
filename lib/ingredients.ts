@@ -377,10 +377,13 @@ export function resolveIngredientId(name: string): string {
   return slug ? `ing_${slug}` : "ing_inconnu";
 }
 
-/** Emoji visuel neutre par défaut lorsqu'aucun ingrédient spécifique n'est reconnu ou choisi. */
-export const DEFAULT_INGREDIENT_ICON = "2753";
+/** Emoji visuel neutre par défaut lorsqu'aucun ingrédient spécifique n'est reconnu ou choisi (ensemble vide ∅). */
+export const DEFAULT_INGREDIENT_ICON = "2205";
 
 export const EMOJI_TO_HEX_MAP: Record<string, string> = {
+  "∅": "2205",
+  "Ø": "2205",
+  "ø": "2205",
   "🫒": "1FAD2",
   "🧈": "1F9C8",
   "🥣": "1F963",

@@ -42,7 +42,7 @@ export function EditDlcModal({
         <div className="mb-6 flex items-center justify-between">
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-8 w-8 items-center justify-center text-2xl select-none">
-              {item.icon ? <IngredientIcon iconHex={item.icon} size={28} /> : null}
+              {item.icon ? <IngredientIcon iconHex={item.icon} size={28} hideIfEmpty /> : null}
             </div>
             <div className="min-w-0">
               <p className="text-xs font-semibold tracking-[0.08em] text-[#7A8F7D] uppercase">Date d&apos;expiration</p>

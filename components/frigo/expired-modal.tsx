@@ -70,7 +70,7 @@ export function ExpiredModal({
                 className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-[#FEE2E2]"
               >
                 <div className="flex h-8 w-8 items-center justify-center text-2xl select-none" aria-hidden>
-                  {item.icon ? <IngredientIcon iconHex={item.icon} size={28} /> : null}
+                  {item.icon ? <IngredientIcon iconHex={item.icon} size={28} hideIfEmpty /> : null}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-bold text-[#1C2B1E]">{item.customName}</p>

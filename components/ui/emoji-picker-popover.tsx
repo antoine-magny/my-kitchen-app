@@ -105,6 +105,14 @@ export function EmojiPickerPopover({
       ? "h-7 w-7 text-lg rounded-lg hover:bg-[#EBF2EC]"
       : "h-9 w-9 text-xl rounded-xl hover:bg-[#EBF2EC]";
 
+  const isDefaultOrEmpty =
+    !currentIcon ||
+    currentIcon === DEFAULT_INGREDIENT_ICON ||
+    currentIcon === "2205" ||
+    currentIcon === "∅" ||
+    currentIcon === "Ø" ||
+    currentIcon === "ø";
+
   const popover =
     isOpen && popoverPos
       ? createPortal(
@@ -130,14 +138,14 @@ export function EmojiPickerPopover({
           >
             <button
               type="button"
-              title="Visuel neutre (aucun ingrédient spécifique)"
+              title="Sans icône (ensemble vide)"
               onClick={() => {
                 onSelectIcon(DEFAULT_INGREDIENT_ICON);
                 setIsOpen(false);
               }}
               className="flex h-9 w-9 items-center justify-center rounded-xl transition-all hover:bg-[#EBF2EC] active:scale-90 select-none cursor-pointer"
               style={{
-                background: currentIcon === DEFAULT_INGREDIENT_ICON ? "#EBF2EC" : "transparent",
+                background: isDefaultOrEmpty ? "#EBF2EC" : "transparent",
               }}
             >
               <IngredientIcon iconHex={DEFAULT_INGREDIENT_ICON} size={24} />
@@ -181,7 +189,13 @@ export function EmojiPickerPopover({
         className={`flex items-center justify-center transition-all select-none cursor-pointer ${sizeClasses}`}
         style={{ borderColor: size === "lg" ? "#E2EBE3" : "transparent" }}
       >
-        <IngredientIcon iconHex={currentIcon || DEFAULT_INGREDIENT_ICON} size={size === "lg" ? 32 : (size === "sm" ? 18 : 24)} />
+        {size === "lg" ? (
+          <IngredientIcon iconHex={currentIcon || DEFAULT_INGREDIENT_ICON} size={32} />
+        ) : isDefaultOrEmpty ? (
+          <span className="h-full w-full rounded-lg transition-colors group-hover:bg-[#F0F4EF]" />
+        ) : (
+          <IngredientIcon iconHex={currentIcon} size={size === "sm" ? 18 : 24} />
+        )}
       </button>
 
       {popover}
