@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { EyeIcon, EyeOffIcon, SpinnerIcon, XIcon } from "@/components/icons";
 import { createClient } from "@/lib/supabase/client";
@@ -69,8 +70,15 @@ export function EditProfileModal({
 
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
 
@@ -84,7 +92,7 @@ export function EditProfileModal({
       document.body.style.overflow = prevOverflow;
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [onClose, loading]);
+  }, [mounted, onClose, loading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -213,23 +221,29 @@ export function EditProfileModal({
     }
   };
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
-      style={{
-        background: "rgba(18, 28, 20, 0.65)",
-        backdropFilter: "blur(6px)",
-      }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget && !loading) onClose();
-      }}
+      className="fixed inset-0 z-[100]"
       role="dialog"
       aria-modal="true"
       aria-labelledby="edit-profile-title"
     >
       <div
-        className="scale-in relative flex max-h-[92vh] w-full max-w-[440px] flex-col rounded-3xl bg-white shadow-[0_24px_64px_rgba(20,31,22,0.24)] border border-[#E2EBE3]/80 overflow-hidden my-auto"
-      >
+        className="absolute inset-0"
+        style={{
+          background: "rgba(18, 28, 20, 0.65)",
+          backdropFilter: "blur(6px)",
+        }}
+        onClick={() => {
+          if (!loading) onClose();
+        }}
+        aria-hidden
+      />
+
+      <div className="pointer-events-none relative flex min-h-full items-center justify-center p-4 sm:p-6">
+        <div className="scale-in pointer-events-auto relative flex max-h-[min(92dvh,40rem)] w-full max-w-[440px] flex-col overflow-hidden rounded-3xl border border-[#E2EBE3]/80 bg-white shadow-[0_24px_64px_rgba(20,31,22,0.24)]">
         {/* En-tête */}
         <div className="flex shrink-0 items-center justify-between border-b border-[#F0F4EF] px-6 py-5 bg-white">
           <div className="flex items-center gap-3">
@@ -407,7 +421,7 @@ export function EditProfileModal({
 
                 <p className="text-[11px] leading-relaxed text-[#7A8F7D]">
                   {isGuestAccount
-                    ? "Permettra de vous reconnecter plus tard avec cet identifiant."
+                    ? "Le mot de passe vous permettra de vous reconnecter plus tard avec votre adresse mail."
                     : "Laissez vide pour conserver votre mot de passe actuel."}
                 </p>
               </div>
@@ -448,7 +462,9 @@ export function EditProfileModal({
             </div>
           </div>
         </form>
+        </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

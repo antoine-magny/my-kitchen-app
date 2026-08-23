@@ -10,6 +10,7 @@ Ce dépôt est modifié en parallèle par **Cursor** et **Antigravity** (local +
 ## Comportement attendu
 
 - Avant de commencer toute tâche (lecture comme modification) : partir de la dernière version distante — `git fetch` puis `git pull --rebase` s'il n'y a pas de conflit — avant de travailler.
+- Sur le mot-clé « Optimisation » : synchro GitHub complète d'abord (commit « Synchro pré optimisation »), puis seulement l'audit et le plan — voir `.cursorrules`.
 - Avant toute synchro ou push : toujours `git pull --rebase` ; ne jamais force-push.
 - En cas de conflit : s'arrêter, lister les fichiers, demander à l'utilisateur (ne pas résoudre seul si le conflit vient probablement d'Antigravity).
 - Ne pas écraser ni « corriger » des changements récents non commités / distants sans vérifier `git status` et `git log`.
