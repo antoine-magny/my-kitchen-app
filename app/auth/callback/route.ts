@@ -4,6 +4,7 @@ import {
   rejectGoogleLinkedToEmailAccount,
   safeAuthNextPath,
 } from "@/lib/auth-google";
+import { PASSWORD_RECOVERY_ERROR, UPDATE_PASSWORD_PATH } from "@/lib/auth-password";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: Request) {
@@ -40,6 +41,9 @@ export async function GET(request: Request) {
   }
 
   const loginUrl = new URL("/login", origin);
-  loginUrl.searchParams.set("error", "google");
+  loginUrl.searchParams.set(
+    "error",
+    next === UPDATE_PASSWORD_PATH ? PASSWORD_RECOVERY_ERROR : "google",
+  );
   return NextResponse.redirect(loginUrl);
 }

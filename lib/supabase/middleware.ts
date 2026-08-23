@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { GUEST_SIGN_IN_PATH, isDevAutoGuestEnabled } from '@/lib/auth-guest'
 import { Database } from './database.types'
 
 export async function updateSession(request: NextRequest) {
@@ -39,9 +40,16 @@ export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   const isLoginRoute = pathname.startsWith('/login')
   const isAuthCallback = pathname.startsWith('/auth/')
+  const isPasswordUpdate = pathname.startsWith('/nouveau-mot-de-passe')
 
   if (!user && !isLoginRoute && !isAuthCallback) {
     const url = request.nextUrl.clone()
+    if (isDevAutoGuestEnabled() && !isPasswordUpdate) {
+      const next = `${pathname}${request.nextUrl.search}`
+      url.pathname = GUEST_SIGN_IN_PATH
+      url.search = `?next=${encodeURIComponent(next)}`
+      return NextResponse.redirect(url)
+    }
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }

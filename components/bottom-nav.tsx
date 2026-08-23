@@ -16,7 +16,10 @@ const NAV_ITEMS = [
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const isAuthPage = pathname === "/login";
+  const isAuthPage =
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/nouveau-mot-de-passe") ||
+    pathname.startsWith("/auth");
 
   return (
     <>

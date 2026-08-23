@@ -9,8 +9,14 @@ import {
   loginOAuthErrorMessage,
   signInWithGoogle,
 } from '@/lib/auth-google'
-import { EyeIcon, EyeOffIcon, GoogleIcon } from '@/components/icons'
+import { EyeIcon, EyeOffIcon, GoogleIcon, UsersIcon } from '@/components/icons'
 import { useRouter } from 'next/navigation'
+import {
+  guestAuthErrorMessage,
+  guestQueryErrorMessage,
+  signInAsGuest,
+} from '@/lib/auth-guest'
+import { passwordRecoveryErrorMessage, REQUEST_RESET_PATH } from '@/lib/auth-password'
 import { getUserProviders } from './actions'
 
 const inputClass =
@@ -27,13 +33,33 @@ export function LoginForm({ oauthError, oauthEmail }: LoginFormProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [loading, setLoading] = useState<'email' | 'google' | null>(null)
-  const [error, setError] = useState<string | null>(loginOAuthErrorMessage(oauthError, oauthEmail))
+  const [loading, setLoading] = useState<'email' | 'google' | 'guest' | null>(null)
+  const [error, setError] = useState<string | null>(
+    loginOAuthErrorMessage(oauthError, oauthEmail) ??
+      passwordRecoveryErrorMessage(oauthError) ??
+      guestQueryErrorMessage(oauthError),
+  )
   const router = useRouter()
   const supabase = createClient()
 
   const isSignup = mode === 'signup'
   const busy = loading !== null
+
+  const handleGuestAuth = async () => {
+    setLoading('guest')
+    setError(null)
+    try {
+      const { error: guestError } = await signInAsGuest(supabase)
+      if (guestError) throw guestError
+      router.push('/')
+      router.refresh()
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? guestAuthErrorMessage(err) : guestAuthErrorMessage(null),
+      )
+      setLoading(null)
+    }
+  }
 
   const handleGoogleAuth = async () => {
     setLoading('google')
@@ -251,7 +277,46 @@ export function LoginForm({ oauthError, oauthEmail }: LoginFormProps) {
             >
               {loading === 'email' ? '...' : isSignup ? "S'inscrire" : 'Se connecter'}
             </button>
+
+            {!isSignup && (
+              <div className="text-center">
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => {
+                    const trimmed = email.trim()
+                    const query = trimmed ? `?email=${encodeURIComponent(trimmed)}` : ''
+                    router.push(`${REQUEST_RESET_PATH}${query}`)
+                  }}
+                  className="text-sm font-medium text-[#2E5B3E] hover:text-[#23452f] hover:underline disabled:opacity-50"
+                >
+                  Mot de passe oublié ?
+                </button>
+              </div>
+            )}
           </form>
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center" aria-hidden>
+              <div className="w-full border-t border-gray-200" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="bg-white px-2 text-gray-500">ou</span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => void handleGuestAuth()}
+            disabled={busy}
+            className="w-full flex items-center justify-center gap-2 py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2E5B3E] disabled:opacity-50"
+          >
+            <UsersIcon size={18} />
+            {loading === 'guest' ? 'Connexion...' : "Se connecter en tant qu'invité"}
+          </button>
+          <p className="mt-3 text-center text-xs text-gray-500">
+            Sans e-mail. La session disparaît si vous vous déconnectez.
+          </p>
         </div>
       </div>
     </div>

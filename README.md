@@ -39,8 +39,11 @@ Pour un contrôle de types complet : `npx tsc --noEmit`.
 app/                    Routes App Router (une page par écran)
   layout.tsx            Shell global : polices Nunito/Lora + BottomNav
   page.tsx              Accueil : repas du jour, frigo en un coup d'œil
-  login/                Connexion / inscription (email + Google)
-  auth/callback/        Échange PKCE du retour OAuth Google
+  login/                Connexion / inscription (email, Google, invité)
+  login/mot-de-passe-oublie/  Demande de réinitialisation du mot de passe
+  nouveau-mot-de-passe/ Choix du nouveau mot de passe (après le lien e-mail)
+  auth/callback/        Échange PKCE (OAuth Google + réinitialisation mot de passe)
+  auth/guest/           Page de connexion anonyme (bouton invité + auto-login local)
   frigo/                Inventaire frigo / congélateur / placards
   planning/             Planning hebdomadaire des repas
   recettes/             Liste des recettes + détail dynamique [id]
@@ -48,7 +51,8 @@ app/                    Routes App Router (une page par écran)
   parametres/           Profil & réglages (préférences, objectifs, équipements)
   api/                  Route Handlers (voir plus bas)
 components/             Composants React partagés
-  icons.tsx             Toutes les icônes SVG de l'app (props size / strokeWidth)
+  icons.tsx             Toutes les icônes SVG de l'app (props size / strokeWidth ; Eye, Google, Users…)
+  auth-card.tsx         Carte partagée des écrans d'authentification (`/login`, mot de passe oublié, invité)
   bottom-nav.tsx        Navigation fixe (5 onglets)
   ui/unit-select.tsx    Sélecteur d'unités par familles (Masse / Volume / Décompte)
   frigo/                Composants propres à la page frigo
@@ -62,6 +66,8 @@ lib/                    Logique métier, sans JSX
   user-name.ts          Prénom affiché (métadonnées Auth, puis `profiles.full_name`)
   auth-signup.ts        Détection d'un compte email déjà existant
   auth-google.ts        OAuth Google, sanitization du `next`, refus de liaison à un compte email
+  auth-password.ts      Réinitialisation du mot de passe (chemins, messages, URL de callback)
+  auth-guest.ts         Connexion anonyme (invité), auto-login en `next dev`
   shopping-list.ts      Export Planning → Courses (fusion / déduplication)
   fridge.ts             Inventaire local + transfert Courses → Frigo
   ingredients.ts        Référentiel canonique (ingredientId)
@@ -96,6 +102,10 @@ Quelques exemples de cette découpe, utiles comme modèles :
 - `app/courses/page.tsx` délègue fusion / transfert à `lib/shopping-list.ts` et
   `lib/fridge.ts` ; le bouton « Au frigo » appelle
   `transferCheckedShoppingItemsToFridge`.
+- Les écrans d'auth (`login-form`, mot de passe oublié, nouveau mot de passe,
+  invité) partagent `components/auth-card.tsx` ; la logique vit dans
+  `lib/auth-google.ts`, `lib/auth-signup.ts`, `lib/auth-password.ts` et
+  `lib/auth-guest.ts`.
 
 ### Icônes
 
@@ -142,11 +152,13 @@ envoyée à Supabase.
   `preference-card.tsx` (tags), `goals-card.tsx` (objectif + kcal/protéines),
   `equipment-card.tsx` (matériel disponible) et `settings-menu.tsx` (thème).
   Chacune garde son état dans un `useState` local, perdu au rechargement.
+- **Déconnexion** (`settings-menu.tsx`) : `localStorage.clear()` puis
+  `supabase.auth.signOut()`, redirection vers `/login`.
 - Boutons encore inertes, en attente de la logique métier : statistiques, test
-  de profil culinaire, gestion du compte, notifications, aide, déconnexion.
+  de profil culinaire, gestion du compte, notifications, aide, thème.
 
-Quand la persistance arrivera, elle devra suivre le modèle hybride du projet :
-`localStorage` d'abord, Supabase en arrière-plan.
+Quand la persistance des préférences arrivera, elle devra suivre le modèle
+hybride du projet : `localStorage` d'abord, Supabase en arrière-plan.
 
 ---
 
@@ -298,17 +310,55 @@ suppressions stockées côté client.
 
 ### Accès aux données & Sécurité (Multi-utilisateurs)
 
-L'application est multi-utilisateurs et protégée par un écran de connexion (`/login`).
-Deux modes d'authentification :
+L'application est multi-utilisateurs. Toutes les routes hors `/login` et `/auth/*`
+sont protégées par `middleware.ts` (session Supabase via cookies).
+`/nouveau-mot-de-passe` exige une session de recovery (posée par `/auth/callback`).
+La barre de navigation est masquée sur `/login`, `/nouveau-mot-de-passe` et `/auth`.
 
-- **Email / mot de passe** : à l'inscription, le prénom est enregistré dans les métadonnées Auth (`full_name`).
-- **Google** : `signInWithOAuth({ provider: "google" })` redirige vers Google, puis vers `/auth/callback` qui échange le code PKCE (`exchangeCodeForSession`) et pose les cookies de session. Inscription et connexion partagent le même bouton.
-- **Pas de double compte** : une adresse déjà utilisée (email ou Google) ne peut pas servir à une seconde inscription. Un `signUp` email sur une adresse existante est détecté via `isExistingAccountSignUp` (erreur `user_already_exists`, ou utilisateur « fantôme » sans `identities`). À l'inverse, si Google tente de se lier automatiquement à un compte email/mot de passe, `/auth/callback` refuse la liaison, déconnecte, et affiche « Vous avez déjà un compte ».
+#### Écran `/login`
 
-Le trigger `handle_new_user` recopie `full_name` (avec repli sur `name` / `given_name` pour Google) dans `profiles.full_name`.
-Toutes les routes de l'application (à l'exception de `/login` et `/auth/*`) sont protégées par un `middleware.ts` qui vérifie la présence d'une session Supabase valide via les cookies.
+Onglets Connexion / Inscription, puis dans l'ordre :
 
-**Activation Google (dashboard, pas de variable d'environnement Next.js)** :
+1. **Google** — un seul bouton pour inscription et connexion (`signInWithGoogle`).
+2. **Email / mot de passe** — à l'inscription, le prénom va dans les métadonnées
+   Auth (`full_name`). Affichage / masquage du mot de passe (`EyeIcon` /
+   `EyeOffIcon`). Lien « Mot de passe oublié ? » (préremplit l'e-mail s'il est
+   déjà saisi).
+3. **Invité** — `signInAnonymously()` (voir plus bas).
+
+Les messages d'erreur sont personnalisés (`lib/auth-google.ts`,
+`lib/auth-signup.ts`). Si l'adresse existe déjà côté Google mais pas en email,
+`getUserProviders` (`app/login/actions.ts`, via le client admin) affiche
+« Veuillez vous connecter avec Google » plutôt qu'un générique
+« Invalid login credentials ».
+
+#### Modes d'authentification
+
+- **Email / mot de passe** : `signUp` / `signInWithPassword`.
+- **Google** : `signInWithOAuth({ provider: "google" })` → `/auth/callback`
+  (`exchangeCodeForSession`, cookies). `prompt=select_account`.
+- **Invité** : utilisateur temporaire `is_anonymous`, même RLS (`auth.uid()`),
+  pas d'e-mail. Prénom affiché « Invité », libellé profil « Compte invité ».
+  Session perdue à la déconnexion, au nettoyage du navigateur, ou sur un autre
+  appareil. Connexion côté **navigateur** (`/auth/guest` + bouton login), pas
+  côté serveur.
+- **Auto-login local** : en `next dev`, une visite hors `/login`, `/auth/*` et
+  `/nouveau-mot-de-passe` sans session redirige vers `/auth/guest`. Désactiver
+  avec `DEV_AUTO_GUEST=0`. Jamais actif en production.
+- **Mot de passe oublié** : `/login/mot-de-passe-oublie` →
+  `resetPasswordForEmail` (ne révèle pas si l'adresse existe). Le lien e-mail
+  revient sur `/auth/callback?next=/nouveau-mot-de-passe`, puis
+  `updateUser({ password })` (minimum 6 caractères).
+- **Pas de double compte** : `isExistingAccountSignUp` (erreur
+  `user_already_exists`, ou utilisateur « fantôme » sans `identities`). Si
+  Google tente de se lier à un compte email déjà existant, `/auth/callback`
+  refuse (`rejectGoogleLinkedToEmailAccount` : unlink + signOut) et renvoie
+  vers `/login?error=account_exists`.
+
+Le trigger `handle_new_user` recopie `full_name` (repli `name` / `given_name`
+pour Google, « Invité » pour l'anonyme) dans `profiles.full_name`.
+
+**Activation dashboard (pas de variable d'environnement Next.js pour OAuth)** :
 
 1. [Google Auth Platform](https://console.cloud.google.com/auth/clients/create) → client OAuth **Web** :
    - origines JS : `http://localhost:3000` et `https://my-kitchen-app-liard.vercel.app` ;
@@ -316,15 +366,23 @@ Toutes les routes de l'application (à l'exception de `/login` et `/auth/*`) son
 2. [Fournisseur Google](https://supabase.com/dashboard/project/flzelbbjtzyuorpeaofe/auth/providers?provider=Google) : activer et coller Client ID + Client Secret.
 3. [URL Configuration](https://supabase.com/dashboard/project/flzelbbjtzyuorpeaofe/auth/url-configuration) → Redirect URLs :
    `http://localhost:3000/auth/callback` et `https://my-kitchen-app-liard.vercel.app/auth/callback`.
+4. [Fournisseurs Auth](https://supabase.com/dashboard/project/flzelbbjtzyuorpeaofe/auth/providers) → activer **Anonymous Sign-Ins** (requis pour le bouton invité).
 
-**Sécurité (RLS)** : La sécurité des données est assurée par le *Row Level Security* (RLS) de PostgreSQL. Chaque utilisateur ne peut lire, modifier ou supprimer que ses propres données, grâce à la colonne `user_id` présente sur toutes les tables.
+**Sécurité (RLS)** : chaque utilisateur ne lit / écrit / supprime que ses
+propres lignes (`user_id` = `auth.uid()`). Côté serveur, le client
+`@supabase/ssr` (`lib/supabase/server.ts`) applique l'identité de la session.
 
-Côté serveur, l'accès aux données s'effectue via le client `@supabase/ssr` (`lib/supabase/server.ts`) qui récupère automatiquement l'identité de l'utilisateur connecté pour l'appliquer aux requêtes.
+Le client administrateur (`createAdminClient`, clé secrète) sert uniquement à :
 
-*Note : Le client administrateur (`createAdminClient` dans `lib/supabase/admin.ts`) utilisant la clé secrète n'est conservé que pour le ping automatisé de maintien en éveil (`/api/keep-alive`).*
+- le ping keep-alive (`/api/keep-alive`) ;
+- `getUserProviders` (détection du fournisseur d'un e-mail déjà inscrit).
+
+Il ne doit jamais être importé depuis un composant client.
 
 **Isolation des données locales** :
-À la déconnexion, le `localStorage` du navigateur est entièrement effacé afin de garantir qu'aucune donnée (frigo, liste de courses, recettes locales) ne fuite entre deux sessions utilisateurs sur le même appareil.
+À la déconnexion, le `localStorage` est entièrement effacé pour qu'aucune
+donnée (frigo, courses, recettes locales) ne fuite entre deux sessions sur
+le même appareil.
 
 ### Schéma
 
@@ -357,7 +415,8 @@ planning et la liste de courses restent 100 % côté client.
 
 | Route | Rôle |
 | --- | --- |
-| `GET /auth/callback` | Échange le code OAuth Google contre une session (cookies) |
+| `GET /auth/callback` | Échange le code PKCE (OAuth Google ou réinitialisation mot de passe) contre une session (cookies) |
+| `/auth/guest` | Page de connexion anonyme (`signInAnonymously` côté navigateur), puis redirection vers `next` |
 | `POST /api/recipes` | Enregistre une recette dans Supabase |
 | `GET /api/fridge-inventory` | Lit l'inventaire (`pantry_items`) côté serveur |
 | `POST /api/generate-from-fridge` | Génère des recettes à partir du frigo (Gemini) |
@@ -406,9 +465,10 @@ production.
 | --- | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | oui | URL du projet Supabase |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | oui | Clé publique anonyme (pour l'authentification client) |
-| `SUPABASE_SECRET_KEY` | oui | Clé secrète serveur. Contourne la RLS (utilisée pour le cron de keep-alive) |
+| `SUPABASE_SECRET_KEY` | oui | Clé secrète serveur. Contourne la RLS (keep-alive + détection des fournisseurs Auth) |
 | `GEMINI_API_KEY` | pour l'IA | Clé Google Gemini. Sans elle, les routes de génération et d'import renvoient une erreur explicite, le reste de l'app fonctionne |
 | `GEMINI_MODEL` | non | Force un modèle précis. Par défaut `gemini-3.6-flash` (`GEMINI_FLASH_MODEL`) |
+| `DEV_AUTO_GUEST` | non | Uniquement en local. `0` / `false` désactive l'auto-connexion invité (`next dev` l'active par défaut) |
 
 
 

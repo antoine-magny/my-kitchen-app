@@ -1,4 +1,5 @@
 import type { SupabaseClient, User } from "@supabase/supabase-js";
+import { GUEST_DISPLAY_NAME, isAnonymousUser } from "@/lib/auth-guest";
 import type { Database } from "@/lib/supabase/database.types";
 
 function metaString(metadata: User["user_metadata"] | undefined, key: string): string {
@@ -33,6 +34,7 @@ export async function resolveUserFirstName(
   const fromMeta = firstNameFromUser(user);
   if (fromMeta) return fromMeta;
   if (!user) return "";
+  if (isAnonymousUser(user)) return GUEST_DISPLAY_NAME;
 
   const { data } = await supabase
     .from("profiles")
