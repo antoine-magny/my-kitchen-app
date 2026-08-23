@@ -173,7 +173,20 @@ function readList(): ShoppingItem[] {
 
 function writeList(items: ShoppingItem[]) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  const sanitized = items.map((item) =>
+    toShoppingItem({
+      id: item.id,
+      ingredientId: item.ingredientId,
+      customName: item.customName,
+      amount: item.amount,
+      unit: item.unit,
+      category: item.category,
+      icon: item.icon,
+      isChecked: item.isChecked,
+      createdAt: item.createdAt,
+    }),
+  );
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitized));
 }
 
 export function getShoppingList(): ShoppingItem[] {

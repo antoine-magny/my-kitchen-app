@@ -233,7 +233,9 @@ export function isApprovedIngredientVisual(value?: string): boolean {
   const trimmed = value.trim();
   if (EMPTY_ICON_TOKENS.has(trimmed)) return true;
   if (CATALOG_EMOJIS.has(trimmed)) return true;
-  if (Object.prototype.hasOwnProperty.call(EMOJI_TO_HEX_MAP, trimmed)) return true;
+  if (Object.prototype.hasOwnProperty.call(EMOJI_TO_HEX_MAP, trimmed)) {
+    return CATALOG_ICON_HEXES.has(EMOJI_TO_HEX_MAP[trimmed]);
+  }
   if (isIconHex(trimmed)) return CATALOG_ICON_HEXES.has(stripFe0fHex(trimmed));
   return false;
 }

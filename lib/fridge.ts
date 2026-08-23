@@ -300,7 +300,20 @@ export function getFridgeItems(): FridgeItem[] {
 
 export function setFridgeItems(items: FridgeItem[]) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(FRIDGE_STORAGE_KEY, JSON.stringify(items));
+  const sanitized = items.map((item) =>
+    createFridgeItem({
+      id: item.id,
+      ingredientId: item.ingredientId,
+      customName: item.customName,
+      amount: item.amount,
+      unit: item.unit,
+      category: item.category,
+      icon: item.icon,
+      expirationDate: item.expirationDate ?? null,
+      addedAt: item.addedAt,
+    }),
+  );
+  window.localStorage.setItem(FRIDGE_STORAGE_KEY, JSON.stringify(sanitized));
 }
 
 export function toFridgeSnapshotItem(
