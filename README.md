@@ -246,6 +246,7 @@ Clés `localStorage` utilisées :
 | --- | --- | --- |
 | `my-kitchen-fridge-items-v2` | Inventaire frigo/congélateur/placards (snapshot) | `lib/fridge.ts` |
 | `my-kitchen-shopping-list-v2` | Liste de courses (snapshot) | `lib/shopping-list.ts` |
+| `my-kitchen-meal-plans-v1` | Planning hebdomadaire des repas | `lib/planning.ts` |
 | `my-kitchen-custom-recipes` | Recettes créées par l'utilisateur | `lib/recipes.ts` |
 | `my-kitchen-recipe-overrides` | Modifications des recettes livrées | `lib/recipes.ts` |
 | `my-kitchen-deleted-recipes` | Recettes livrées masquées | `lib/recipes.ts` |
@@ -258,9 +259,10 @@ Deux exceptions au modèle `localStorage` :
 
 - Le bandeau « X articles exportés » (`my-kitchen-shopping-export-banner`) vit
   dans le **`sessionStorage`** (`lib/shopping-list.ts`).
-- Le **planning n'est pas persisté** : il reste dans l'état React de
-  `app/planning/page.tsx` et disparaît au rechargement. La table
-  `meal_plan_entries` existe dans le schéma mais n'est pas utilisée.
+- Le **planning est désormais persisté** localement. Il est conservé dans le
+  `localStorage` via la clé `my-kitchen-meal-plans-v1` et partagé avec
+  l'accueil pour afficher le repas du jour. La table `meal_plan_entries` 
+  existe dans le schéma Supabase mais n'est pas encore utilisée.
 
 ### Le pattern d'hydratation — à ne pas « corriger »
 

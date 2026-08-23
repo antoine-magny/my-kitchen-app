@@ -87,8 +87,8 @@ export default function FrigoPage() {
     setItems((prev) => prev.map((i) => (i.id === id ? { ...i, unit } : i)));
   };
 
-  const handleChangeEmoji = (id: string, emoji: string) => {
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, emoji } : i)));
+  const handleChangeIcon = (id: string, icon: string) => {
+    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, icon } : i)));
   };
 
   const handleUpdateDlc = (id: string, expirationDate: string | null) => {
@@ -167,7 +167,7 @@ export default function FrigoPage() {
                   borderBottom: isActive ? "2px solid #1C2B1E" : "2px solid transparent",
                 }}
               >
-                <span className="text-base leading-none">{tab.emoji}</span>
+                <span className="text-base leading-none">{tab.icon}</span>
                 <span>{tab.label}</span>
                 <span
                   className="rounded-md px-1.5 py-0.5 text-xs font-semibold"
@@ -273,7 +273,7 @@ export default function FrigoPage() {
                       item={item}
                       onAdjust={handleAdjust}
                       onChangeUnit={handleChangeUnit}
-                      onChangeEmoji={handleChangeEmoji}
+                      onChangeIcon={handleChangeIcon}
                       onDelete={handleDelete}
                       onEditDlc={setEditingDlcId}
                       onMove={handleMove}

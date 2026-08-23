@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { NewFridgeItem, TabId } from "@/components/frigo/shared";
 import { ChevronDownIcon, XIcon } from "@/components/icons";
-import { getIngredientDefaultUnit, DEFAULT_INGREDIENT_EMOJI, resolveEmoji } from "@/lib/ingredients";
+import { getIngredientDefaultUnit, DEFAULT_INGREDIENT_ICON, resolveIcon } from "@/lib/ingredients";
 import { UnitSelect } from "@/components/ui/unit-select";
 import { EmojiPickerPopover } from "@/components/ui/emoji-picker-popover";
 import { DEFAULT_UNIT, type UnitCode } from "@/lib/units";
@@ -17,7 +17,7 @@ export function AddModal({
   onAdd: (item: NewFridgeItem) => void;
   onClose: () => void;
 }) {
-  const [emoji, setEmoji] = useState(DEFAULT_INGREDIENT_EMOJI);
+  const [icon, setIcon] = useState(DEFAULT_INGREDIENT_ICON);
   const [name, setName] = useState("");
   const [qty, setQty] = useState("1");
   const [unit, setUnit] = useState<UnitCode>(DEFAULT_UNIT);
@@ -32,7 +32,7 @@ export function AddModal({
     e.preventDefault();
     if (!name.trim()) return;
     onAdd({
-      emoji,
+      icon,
       customName: name.trim(),
       amount: Number(qty) || 1,
       unit,
@@ -69,9 +69,9 @@ export function AddModal({
           <div className="flex items-start gap-3">
             <EmojiPickerPopover
               size="lg"
-              currentEmoji={emoji}
-              onSelectEmoji={(selectedEmoji, defaultUnit, itemName) => {
-                setEmoji(selectedEmoji);
+              currentIcon={icon}
+              onSelectIcon={(selectedIcon, defaultUnit, itemName) => {
+                setIcon(selectedIcon);
                 if (itemName && !name.trim()) {
                   setName(itemName);
                 }
@@ -93,8 +93,8 @@ export function AddModal({
                   if (unit === prevDefault || unit === "piece") {
                     setUnit(getIngredientDefaultUnit(newName));
                   }
-                  const resolvedEmoji = resolveEmoji(newName);
-                  setEmoji(resolvedEmoji ?? DEFAULT_INGREDIENT_EMOJI);
+                  const resolvedIcon = resolveIcon(newName);
+                  setIcon(resolvedIcon ?? DEFAULT_INGREDIENT_ICON);
                   setName(newName);
                 }}
                 placeholder="Ex : Tomates cerises"

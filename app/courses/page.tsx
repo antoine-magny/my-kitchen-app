@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckIcon, TrashIcon } from "@/components/icons";
+import { CheckIcon, TrashIcon, PlusIcon } from "@/components/icons";
 import { UnitSelect } from "@/components/ui/unit-select";
 import { EmojiPickerPopover } from "@/components/ui/emoji-picker-popover";
+import { AddShoppingItemModal } from "@/components/courses/add-shopping-item-modal";
 import { transferCheckedShoppingItemsToFridge } from "@/lib/fridge";
 import { groupByShoppingCategory } from "@/lib/shopping-categories";
 import {
@@ -15,6 +16,7 @@ import {
   removeShoppingItem,
   toggleShoppingItem,
   updateShoppingItem,
+  addShoppingItem,
   type ShoppingItem,
   type ShoppingItemPatch,
 } from "@/lib/shopping-list";
@@ -95,9 +97,9 @@ function ShoppingItemRow({
 
       <EmojiPickerPopover
         size="sm"
-        currentEmoji={item.emoji}
-        onSelectEmoji={(newEmoji) => {
-          onUpdate(item.id, { emoji: newEmoji });
+        currentIcon={item.icon}
+        onSelectIcon={(newIcon) => {
+          onUpdate(item.id, { icon: newIcon });
         }}
       />
 
@@ -166,6 +168,7 @@ export default function CoursesPage() {
   const [items, setItems] = useState<ShoppingItem[]>([]);
   const [ready, setReady] = useState(false);
   const [banner, setBanner] = useState<string | null>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   useEffect(() => {
     setItems(getShoppingList());
@@ -179,6 +182,11 @@ export default function CoursesPage() {
 
   function handleToggle(id: string) {
     setItems(toggleShoppingItem(id));
+  }
+
+  function handleAddItem(item: Parameters<typeof addShoppingItem>[0]) {
+    setItems(addShoppingItem(item));
+    setIsAddModalOpen(false);
   }
 
   function handleRemove(id: string) {
@@ -214,10 +222,27 @@ export default function CoursesPage() {
   return (
     <div className="min-h-screen bg-[#F6F8F3]">
       <div className="mx-auto max-w-md px-5 pt-10 pb-28">
-        <p className="mb-0.5 text-xs font-semibold tracking-[0.1em] text-[#7A8F7D] uppercase">
-          Liste
-        </p>
-        <h1 className="font-lora text-2xl font-bold text-[#1C2B1E]">Courses</h1>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="mb-0.5 text-xs font-semibold tracking-[0.1em] text-[#7A8F7D] uppercase">
+              Liste
+            </p>
+            <h1 className="font-lora text-2xl font-bold text-[#1C2B1E]">Courses</h1>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsAddModalOpen(true)}
+            className="flex items-center gap-2 rounded-2xl px-4 py-2 text-sm font-bold text-white transition-all hover:scale-105 active:scale-95"
+            style={{
+              background: "linear-gradient(135deg, #4A7C59, #5E9E72)",
+              boxShadow: "0 4px 18px rgba(74,124,89,0.30)",
+            }}
+          >
+            <PlusIcon size={16} />
+            <span className="hidden sm:inline">Ajouter un article</span>
+            <span className="sm:hidden">Ajouter</span>
+          </button>
+        </div>
 
         {banner && (
           <div
@@ -232,7 +257,7 @@ export default function CoursesPage() {
           <p className="mt-6 text-sm font-medium text-[#7A8F7D]">Chargement…</p>
         ) : items.length === 0 ? (
           <div
-            className="mt-6 rounded-3xl px-5 py-10 text-center"
+            className="mt-6 flex flex-col items-center rounded-3xl px-5 py-10 text-center"
             style={{
               background: "#FFFFFF",
               boxShadow: "0 4px 20px rgba(74,124,89,0.09)",
@@ -242,9 +267,17 @@ export default function CoursesPage() {
               🛒
             </p>
             <p className="font-lora mt-3 text-base font-bold text-[#1C2B1E]">Liste vide</p>
-            <p className="mt-1.5 text-sm font-medium text-[#7A8F7D]">
-              Exportez vos repas depuis le planning pour remplir la liste.
+            <p className="mt-1.5 max-w-[250px] text-sm font-medium text-[#7A8F7D]">
+              Exportez vos repas depuis le planning ou ajoutez un article manuellement.
             </p>
+            <button
+              type="button"
+              onClick={() => setIsAddModalOpen(true)}
+              className="mt-5 flex items-center gap-2 rounded-xl bg-[#F0F4EF] px-4 py-2.5 text-sm font-bold text-[#4A7C59] transition-colors hover:bg-[#E2EBE3]"
+            >
+              <PlusIcon size={16} />
+              Ajouter un article
+            </button>
           </div>
         ) : (
           <>
@@ -316,6 +349,12 @@ export default function CoursesPage() {
           </>
         )}
       </div>
+
+      <AddShoppingItemModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onAdd={handleAddItem}
+      />
     </div>
   );
 }

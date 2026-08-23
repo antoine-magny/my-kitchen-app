@@ -7,7 +7,7 @@
  * l'aliment canonique pour le matching avec les recettes et les courses.
  */
 
-import { describeIngredient, DEFAULT_INGREDIENT_EMOJI } from "@/lib/ingredients";
+import { describeIngredient, DEFAULT_INGREDIENT_ICON, toIconHex } from "@/lib/ingredients";
 import { normalizeProductName } from "@/lib/shopping-categories";
 import {
   coerceUnitCode,
@@ -67,14 +67,16 @@ export function countUsableFridgeItems(items: Array<{ name: string; quantity: nu
   return items.filter(isExploitableFridgeItem).length;
 }
 
-export const FRIDGE_TABS: {
+type TabDefinition = {
   id: FridgeStorageLocation;
   label: string;
-  emoji: string;
-}[] = [
-  { id: "fridge", label: "Réfrigérateur", emoji: "🧊" },
-  { id: "freezer", label: "Congélateur", emoji: "❄️" },
-  { id: "pantry", label: "Placards", emoji: "🏺" },
+  icon: string;
+};
+
+export const FRIDGE_TABS: TabDefinition[] = [
+  { id: "fridge", label: "Réfrigérateur", icon: "❄️" },
+  { id: "freezer", label: "Congélateur", icon: "🧊" },
+  { id: "pantry", label: "Placards", icon: "🥫" },
 ];
 
 export function createFridgeItemId(): string {
@@ -100,7 +102,7 @@ export function createFridgeItem(input: {
   amount: number;
   unit: UnitCode;
   category: FridgeStorageLocation;
-  emoji?: string;
+  icon?: string;
   expirationDate?: string | null;
   ingredientId?: string;
   id?: string;
@@ -108,10 +110,10 @@ export function createFridgeItem(input: {
 }): FridgeItem {
   const customName = input.customName.trim();
   const identity = describeIngredient(customName);
-  const emoji =
-    input.emoji && input.emoji !== DEFAULT_INGREDIENT_EMOJI
-      ? input.emoji
-      : identity.emoji ?? input.emoji ?? DEFAULT_INGREDIENT_EMOJI;
+  const icon =
+    input.icon && input.icon !== DEFAULT_INGREDIENT_ICON
+      ? toIconHex(input.icon)
+      : identity.icon ? toIconHex(identity.icon) : (input.icon ? toIconHex(input.icon) : DEFAULT_INGREDIENT_ICON);
 
   return {
     id: input.id ?? createFridgeItemId(),
@@ -120,7 +122,7 @@ export function createFridgeItem(input: {
     amount: Number.isFinite(input.amount) ? Math.max(0, input.amount) : 0,
     unit: input.unit,
     category: input.category,
-    emoji,
+    icon,
     addedAt: input.addedAt ?? new Date().toISOString(),
     ...(input.expirationDate ? { expirationDate: input.expirationDate } : {}),
   };
@@ -129,35 +131,35 @@ export function createFridgeItem(input: {
 /** Seed utilisé à la première visite (avant toute persistance). */
 export function createDefaultFridgeItems(): FridgeItem[] {
   const seed: Array<{
-    emoji: string;
+    icon: string;
     customName: string;
     amount: number;
     unit: UnitCode;
     expirationDate: string | null;
     category: FridgeStorageLocation;
   }> = [
-    { emoji: "🥚", customName: "Œufs", amount: 6, unit: "piece", expirationDate: daysFrom(7), category: "fridge" },
-    { emoji: "🥛", customName: "Lait demi-écrémé", amount: 1, unit: "l", expirationDate: daysFrom(2), category: "fridge" },
-    { emoji: "🧀", customName: "Comté", amount: 150, unit: "g", expirationDate: daysFrom(14), category: "fridge" },
-    { emoji: "🥩", customName: "Poulet fermier", amount: 500, unit: "g", expirationDate: daysFrom(0), category: "fridge" },
-    { emoji: "🍅", customName: "Tomates cerises", amount: 250, unit: "g", expirationDate: daysFrom(1), category: "fridge" },
-    { emoji: "🥕", customName: "Carottes", amount: 4, unit: "piece", expirationDate: daysFrom(6), category: "fridge" },
-    { emoji: "🧈", customName: "Beurre AOP", amount: 250, unit: "g", expirationDate: daysFrom(21), category: "fridge" },
-    { emoji: "🥗", customName: "Mesclun bio", amount: 100, unit: "g", expirationDate: daysFrom(2), category: "fridge" },
-    { emoji: "🍋", customName: "Citrons", amount: 3, unit: "piece", expirationDate: daysFrom(8), category: "fridge" },
-    { emoji: "🐟", customName: "Filets de saumon", amount: 2, unit: "piece", expirationDate: daysFrom(60), category: "freezer" },
-    { emoji: "🥦", customName: "Brocolis surgelés", amount: 400, unit: "g", expirationDate: daysFrom(90), category: "freezer" },
-    { emoji: "🍦", customName: "Sorbet citron", amount: 500, unit: "g", expirationDate: daysFrom(45), category: "freezer" },
-    { emoji: "🍖", customName: "Bœuf haché 5%", amount: 300, unit: "g", expirationDate: daysFrom(-2), category: "freezer" },
-    { emoji: "🫛", customName: "Petits pois", amount: 800, unit: "g", expirationDate: daysFrom(120), category: "freezer" },
-    { emoji: "🍝", customName: "Pâtes linguine", amount: 500, unit: "g", expirationDate: null, category: "pantry" },
-    { emoji: "🍚", customName: "Riz basmati", amount: 800, unit: "g", expirationDate: null, category: "pantry" },
-    { emoji: "🫒", customName: "Huile d'olive", amount: 750, unit: "ml", expirationDate: daysFrom(180), category: "pantry" },
-    { emoji: "🧂", customName: "Fleur de sel", amount: 200, unit: "g", expirationDate: null, category: "pantry" },
-    { emoji: "🌶️", customName: "Paprika fumé", amount: 50, unit: "g", expirationDate: daysFrom(300), category: "pantry" },
-    { emoji: "🍫", customName: "Chocolat noir 70%", amount: 200, unit: "g", expirationDate: daysFrom(60), category: "pantry" },
-    { emoji: "🧁", customName: "Farine T55", amount: 1, unit: "kg", expirationDate: daysFrom(180), category: "pantry" },
-    { emoji: "☕", customName: "Café en grains", amount: 250, unit: "g", expirationDate: daysFrom(90), category: "pantry" },
+    { icon: "1F95A", customName: "Œufs", amount: 6, unit: "piece", expirationDate: daysFrom(7), category: "fridge" },
+    { icon: "1F95B", customName: "Lait demi-écrémé", amount: 1, unit: "l", expirationDate: daysFrom(2), category: "fridge" },
+    { icon: "1F9C0", customName: "Comté", amount: 150, unit: "g", expirationDate: daysFrom(14), category: "fridge" },
+    { icon: "1F357", customName: "Poulet fermier", amount: 500, unit: "g", expirationDate: daysFrom(0), category: "fridge" },
+    { icon: "1F345", customName: "Tomates cerises", amount: 250, unit: "g", expirationDate: daysFrom(1), category: "fridge" },
+    { icon: "1F955", customName: "Carottes", amount: 4, unit: "piece", expirationDate: daysFrom(6), category: "fridge" },
+    { icon: "1F9C8", customName: "Beurre AOP", amount: 250, unit: "g", expirationDate: daysFrom(21), category: "fridge" },
+    { icon: "1F957", customName: "Mesclun bio", amount: 100, unit: "g", expirationDate: daysFrom(2), category: "fridge" },
+    { icon: "1F34B", customName: "Citrons", amount: 3, unit: "piece", expirationDate: daysFrom(8), category: "fridge" },
+    { icon: "1F41F", customName: "Filets de saumon", amount: 2, unit: "piece", expirationDate: daysFrom(60), category: "freezer" },
+    { icon: "1F966", customName: "Brocolis surgelés", amount: 400, unit: "g", expirationDate: daysFrom(90), category: "freezer" },
+    { icon: "1F368", customName: "Sorbet citron", amount: 500, unit: "g", expirationDate: daysFrom(45), category: "freezer" },
+    { icon: "1F969", customName: "Bœuf haché 5%", amount: 300, unit: "g", expirationDate: daysFrom(-2), category: "freezer" },
+    { icon: "1FAD6", customName: "Petits pois", amount: 800, unit: "g", expirationDate: daysFrom(120), category: "freezer" },
+    { icon: "1F35D", customName: "Pâtes linguine", amount: 500, unit: "g", expirationDate: null, category: "pantry" },
+    { icon: "1F35A", customName: "Riz basmati", amount: 800, unit: "g", expirationDate: null, category: "pantry" },
+    { icon: "1FAD4", customName: "Huile d'olive", amount: 750, unit: "ml", expirationDate: daysFrom(180), category: "pantry" },
+    { icon: "1F9C2", customName: "Fleur de sel", amount: 200, unit: "g", expirationDate: null, category: "pantry" },
+    { icon: "1F336-FE0F", customName: "Paprika fumé", amount: 50, unit: "g", expirationDate: daysFrom(300), category: "pantry" },
+    { icon: "1F36B", customName: "Chocolat noir 70%", amount: 200, unit: "g", expirationDate: daysFrom(60), category: "pantry" },
+    { icon: "1F33E", customName: "Farine T55", amount: 1, unit: "kg", expirationDate: daysFrom(180), category: "pantry" },
+    { icon: "2615", customName: "Café en grains", amount: 250, unit: "g", expirationDate: daysFrom(90), category: "pantry" },
   ];
 
   return seed.map((item) => createFridgeItem(item));
@@ -225,7 +227,12 @@ function sanitizeItem(raw: unknown): FridgeItem | null {
       typeof entry.category === "string" && isFridgeStorageLocation(entry.category)
         ? entry.category
         : "fridge",
-    emoji: typeof entry.emoji === "string" && entry.emoji ? entry.emoji : undefined,
+    icon:
+      typeof entry.icon === "string" && entry.icon
+        ? toIconHex(entry.icon)
+        : typeof (entry as any).emoji === "string" && (entry as any).emoji
+        ? toIconHex((entry as any).emoji)
+        : undefined,
     expirationDate: rawExpiration && /^\d{4}-\d{2}-\d{2}$/.test(rawExpiration) ? rawExpiration : null,
     addedAt: typeof entry.addedAt === "string" ? entry.addedAt : undefined,
   });
@@ -370,7 +377,7 @@ export function transferCheckedShoppingItemsToFridge(
         amount: shop.amount,
         unit: shop.unit,
         category: location,
-        emoji: shop.emoji,
+        icon: shop.icon,
         ingredientId: shop.ingredientId,
       }),
     );

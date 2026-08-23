@@ -2,6 +2,7 @@
 
 import { expiredSinceLabel, type Ingredient } from "@/components/frigo/shared";
 import { XIcon } from "@/components/icons";
+import { IngredientIcon } from "@/components/ingredient-icon";
 import { daysUntilDlc } from "@/lib/fridge";
 import { unitLabel } from "@/lib/units";
 
@@ -68,9 +69,9 @@ export function ExpiredModal({
                 }}
                 className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-[#FEE2E2]"
               >
-                <span className="text-2xl select-none" aria-hidden>
-                  {item.emoji}
-                </span>
+                <div className="flex h-8 w-8 items-center justify-center text-2xl select-none" aria-hidden>
+                  {item.icon ? <IngredientIcon iconHex={item.icon} size={28} /> : null}
+                </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-bold text-[#1C2B1E]">{item.customName}</p>
                   <p className="mt-0.5 text-xs font-semibold text-[#DC2626]">

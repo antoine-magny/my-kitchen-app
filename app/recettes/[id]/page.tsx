@@ -15,6 +15,7 @@ import {
   UsersIcon,
 } from "@/components/icons";
 import { MissingIngredientsBadges } from "@/components/missing-ingredients-badges";
+import { IngredientIcon } from "@/components/ingredient-icon";
 import { RecipeFormModal } from "@/components/recipe-form-modal";
 import {
   deleteRecipe,
@@ -365,8 +366,8 @@ export default function RecipeStepsPage({
                     background: missing ? "#FFF7ED" : undefined,
                   }}
                 >
-                  <span className="text-sm font-semibold text-[#1C2B1E]">
-                    {ing.emoji ? <span className="mr-2">{ing.emoji}</span> : null}
+                  <span className="flex items-center text-sm font-semibold text-[#1C2B1E]">
+                    {ing.icon ? <div className="mr-2 flex items-center justify-center"><IngredientIcon iconHex={ing.icon} size={20} /></div> : null}
                     {ing.name}
                   </span>
                   <span className="shrink-0 text-right">

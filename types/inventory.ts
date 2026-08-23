@@ -33,7 +33,7 @@ export interface RecipeIngredient {
   unit: UnitCode;
   /** Rayon magasin, utilisé au moment de l'export vers les courses. */
   category: ShoppingCategoryId;
-  emoji?: string;
+  icon?: string;
 }
 
 /** Article de la liste de courses — copie éphémère et librement éditable. */
@@ -48,7 +48,7 @@ export interface ShoppingItem {
   unit: UnitCode;
   /** Rayon magasin. */
   category: ShoppingCategoryId;
-  emoji?: string;
+  icon?: string;
   isChecked: boolean;
   /** ISO 8601. */
   createdAt: string;
@@ -66,7 +66,7 @@ export interface FridgeItem {
   unit: UnitCode;
   /** Emplacement de stockage. */
   category: FridgeStorageLocation;
-  emoji?: string;
+  icon?: string;
   /** ISO 8601. */
   addedAt: string;
   /** ISO date YYYY-MM-DD. Absente si l'article n'a pas de DLC. */
@@ -84,5 +84,5 @@ export type IngredientIdentity = {
   ingredientId: string;
   name: string;
   category: ShoppingCategoryId;
-  emoji?: string;
+  icon?: string;
 };

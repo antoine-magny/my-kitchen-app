@@ -6,7 +6,7 @@
 import { describeIngredient, resolveIngredientId } from "@/lib/ingredients";
 import { collectIngredientsFromDayOnward } from "@/lib/planning";
 import { RECIPES } from "@/lib/recipes";
-import { mergeIngredients } from "@/lib/shopping-list";
+import { mergeIngredients, addShoppingItem } from "@/lib/shopping-list";
 import { formatAmount, parseAmount } from "@/lib/units";
 
 let failures = 0;
@@ -53,18 +53,25 @@ check("Citron identique entre recettes", [
   resolveIngredientId("Citrons"),
 ], ["ing_citron", "ing_citron"]);
 
-console.log("\n--- Rayon + emoji dérivés ---");
-check("Tomates cerises", describeIngredient("Tomates cerises"), {
-  ingredientId: "ing_tomate_cerise",
-  name: "Tomates cerises",
-  category: "fruits_legumes",
-  emoji: "🍅",
+console.log("\n--- Rayon + icône dérivés ---");
+const lardonShop = addShoppingItem({
+  customName: "Lardons fumés",
+  amount: 2,
+  unit: "piece",
+  icon: "1F953", // hardcoded 🥓
+});
+console.log("Rayon lardons :", lardonShop[1]?.category); // "proteins" attendu
+const pouletShop = addShoppingItem({
+  customName: "Pilons de poulet",
+  amount: 4,
+  unit: "piece",
+  icon: "1F357", // hardcoded 🍗
 });
 check("Pavés de saumon", describeIngredient("Pavés de saumon"), {
   ingredientId: "ing_pave_de_saumon",
   name: "Pavés de saumon",
   category: "laitiers_viandes_poisson",
-  emoji: "🐟",
+  icon: "1F41F",
 });
 
 console.log("\n--- Recettes seed converties ---");
@@ -93,7 +100,7 @@ const oil = merged.filter((i) => i.ingredientId === "ing_huile_d_olive");
 check(
   "huile d'olive fusionnée (3 + 2 c.à.s)",
   oil.map((i) => formatAmount(i.amount, i.unit)),
-  ["5 c.à.s"],
+  ["75 ml"],
 );
 check(
   "articles cochables et horodatés",

@@ -11,9 +11,11 @@ import {
   sameDay,
   startOfWeek,
 } from "@/lib/date-paris";
-import { getRecipeById, ing, type RecipeIngredient } from "@/lib/recipes";
+import { getRecipeById, ing, type RecipeIngredient, type Recipe } from "@/lib/recipes";
 
 const LUNCH_RECIPE = getRecipeById(6)!;
+
+export const MEAL_PLANS_KEY = "my-kitchen-meal-plans-v1";
 
 export const MONTHS_FR = [
   "janvier",
@@ -183,4 +185,54 @@ export function mealSlotTitle(plan: DayPlan, mealType: MealSlot): string | null 
   const recipeId = mealType === "lunch" ? plan.lunchId : plan.dinnerId;
   if (recipeId == null) return null;
   return getRecipeById(recipeId)?.title ?? null;
+}
+
+export function getStoredMealPlans(): Record<string, Record<string, DayPlan>> {
+  if (typeof window === "undefined") return {};
+  const raw = window.localStorage.getItem(MEAL_PLANS_KEY);
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
+}
+
+export function saveMealPlans(plansByWeek: Record<string, Record<string, DayPlan>>): void {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(MEAL_PLANS_KEY, JSON.stringify(plansByWeek));
+}
+
+export function getPlanForDay(
+  date: Date,
+  plansByWeek?: Record<string, Record<string, DayPlan>>,
+): DayPlan {
+  const allPlans = plansByWeek ?? getStoredMealPlans();
+  const ws = startOfWeek(date);
+  const weekPlans = allPlans[dayKey(ws)];
+  if (!weekPlans) return { breakfast: null, lunchId: null, dinnerId: null };
+  return weekPlans[dayKey(date)] ?? { breakfast: null, lunchId: null, dinnerId: null };
+}
+
+export function getTodayMainMeal(todayDate: Date = parisCalendarDate()): {
+  mealType: MealSlot;
+  recipe?: Recipe;
+  breakfast?: BreakfastItem;
+} | null {
+  const plan = getPlanForDay(todayDate);
+  const isEvening = todayDate.getHours() >= 14;
+
+  if (isEvening && plan.dinnerId != null) {
+    return { mealType: "dinner", recipe: getRecipeById(plan.dinnerId) };
+  }
+  if (plan.lunchId != null) {
+    return { mealType: "lunch", recipe: getRecipeById(plan.lunchId) };
+  }
+  if (plan.dinnerId != null) {
+    return { mealType: "dinner", recipe: getRecipeById(plan.dinnerId) };
+  }
+  if (plan.breakfast != null) {
+    return { mealType: "breakfast", breakfast: plan.breakfast };
+  }
+  return null;
 }

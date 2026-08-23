@@ -26,7 +26,7 @@ export function IngredientRow({
   item,
   onAdjust,
   onChangeUnit,
-  onChangeEmoji,
+  onChangeIcon,
   onDelete,
   onEditDlc,
   onMove,
@@ -36,7 +36,7 @@ export function IngredientRow({
   item: Ingredient;
   onAdjust: (id: string, delta: number) => void;
   onChangeUnit: (id: string, unit: UnitCode) => void;
-  onChangeEmoji?: (id: string, emoji: string) => void;
+  onChangeIcon?: (id: string, icon: string) => void;
   onDelete: (id: string) => void;
   onEditDlc: (id: string) => void;
   onMove: (id: string, category: TabId) => void;
@@ -161,9 +161,9 @@ export function IngredientRow({
     >
       <EmojiPickerPopover
         size="sm"
-        currentEmoji={item.emoji}
-        onSelectEmoji={(newEmoji) => {
-          onChangeEmoji?.(item.id, newEmoji);
+        currentIcon={item.icon}
+        onSelectIcon={(newIcon) => {
+          onChangeIcon?.(item.id, newIcon);
         }}
       />
 
@@ -299,7 +299,7 @@ export function IngredientRow({
                     <MoveIcon size={14} />
                   </span>
                   <span className="flex items-center gap-2">
-                    <span aria-hidden>{tab.emoji}</span>
+                    <span aria-hidden>{tab.icon}</span>
                     {tab.label}
                   </span>
                 </button>

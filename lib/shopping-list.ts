@@ -8,8 +8,9 @@
 
 import {
   describeIngredient,
-  DEFAULT_INGREDIENT_EMOJI,
-  resolveEmoji,
+  DEFAULT_INGREDIENT_ICON,
+  resolveIcon,
+  toIconHex,
 } from "@/lib/ingredients";
 import {
   classifyProduct,
@@ -48,7 +49,7 @@ function toShoppingItem(input: {
   amount: number;
   unit: UnitCode;
   category?: string;
-  emoji?: string;
+  icon?: string;
   isChecked?: boolean;
   createdAt?: string;
 }): ShoppingItem {
@@ -58,10 +59,10 @@ function toShoppingItem(input: {
     input.category && isShoppingCategoryId(input.category)
       ? input.category
       : classifyProduct(customName);
-  const emoji =
-    input.emoji && input.emoji !== DEFAULT_INGREDIENT_EMOJI
-      ? input.emoji
-      : identity.emoji ?? input.emoji;
+  const icon =
+    input.icon && input.icon !== DEFAULT_INGREDIENT_ICON
+      ? toIconHex(input.icon)
+      : identity.icon ? toIconHex(identity.icon) : (input.icon ? toIconHex(input.icon) : undefined);
 
   let finalAmount = input.amount;
   let finalUnit = input.unit;
@@ -79,7 +80,7 @@ function toShoppingItem(input: {
     amount: Number.isFinite(finalAmount) ? Math.max(0, finalAmount) : 0,
     unit: finalUnit,
     category,
-    ...(emoji ? { emoji } : {}),
+    ...(icon ? { icon } : {}),
     isChecked: input.isChecked ?? false,
     createdAt: input.createdAt ?? new Date().toISOString(),
   };
@@ -102,7 +103,7 @@ function sanitizeItem(raw: unknown): ShoppingItem | null {
       amount: entry.amount,
       unit,
       category: typeof entry.category === "string" ? entry.category : undefined,
-      emoji: typeof entry.emoji === "string" ? entry.emoji : undefined,
+      icon: typeof entry.icon === "string" ? toIconHex(entry.icon) : (typeof (entry as any).emoji === "string" ? toIconHex((entry as any).emoji) : undefined),
       isChecked: Boolean(entry.isChecked),
       createdAt: typeof entry.createdAt === "string" ? entry.createdAt : undefined,
     });
@@ -177,7 +178,7 @@ export function removeShoppingItem(id: string): ShoppingItem[] {
 }
 
 export type ShoppingItemPatch = Partial<
-  Pick<ShoppingItem, "customName" | "amount" | "unit" | "category" | "emoji">
+  Pick<ShoppingItem, "customName" | "amount" | "unit" | "category" | "icon">
 >;
 
 /**
@@ -192,11 +193,11 @@ export function updateShoppingItem(id: string, patch: ShoppingItemPatch): Shoppi
     const customName = patch.customName?.trim() || item.customName;
     const renamed = customName !== item.customName;
     const category = patch.category ?? (renamed ? classifyProduct(customName) : item.category);
-    const resolvedEmoji =
-      renamed || !item.emoji || item.emoji === DEFAULT_INGREDIENT_EMOJI
-        ? resolveEmoji(customName)
-        : item.emoji;
-    const nextEmoji = patch.emoji ?? resolvedEmoji ?? item.emoji;
+    const resolvedIcon =
+      renamed || !item.icon || item.icon === DEFAULT_INGREDIENT_ICON
+        ? resolveIcon(customName)
+        : item.icon;
+    const nextIcon = patch.icon ?? resolvedIcon ?? item.icon;
 
     return {
       ...item,
@@ -204,7 +205,7 @@ export function updateShoppingItem(id: string, patch: ShoppingItemPatch): Shoppi
       amount: patch.amount ?? item.amount,
       unit: patch.unit ?? item.unit,
       category,
-      ...(nextEmoji ? { emoji: nextEmoji } : {}),
+      ...(nextIcon ? { icon: nextIcon } : {}),
     };
   });
   writeList(next);
@@ -279,7 +280,7 @@ export function mergeIngredients(ingredients: RecipeIngredient[]): ShoppingItem[
         amount: ing.amount,
         unit: ing.unit,
         category: ing.category,
-        emoji: ing.emoji,
+        icon: ing.icon,
       }),
     );
   }
@@ -329,10 +330,54 @@ export function appendIngredientsToShoppingList(
         amount: ing.amount,
         unit: ing.unit,
         category: ing.category,
-        emoji: ing.emoji,
+        icon: ing.icon,
       }),
     );
   }
+
+  writeList(list);
+  return list;
+}
+
+export function addShoppingItem(input: {
+  customName: string;
+  amount: number;
+  unit: UnitCode;
+  category?: ShoppingCategoryId;
+  icon?: string;
+}): ShoppingItem[] {
+  const list = readList();
+  const cleanName = normalizeProductName(input.customName);
+
+  const existing = list.find(
+    (item) => !item.isChecked && matchesShoppingItem(item, undefined, cleanName),
+  );
+
+  if (existing) {
+    const combined = combineQuantities(
+      existing.amount,
+      existing.unit,
+      input.amount,
+      input.unit,
+      input.customName,
+    );
+    if (combined) {
+      existing.amount = combined.amount;
+      existing.unit = combined.unit;
+      writeList(list);
+      return list;
+    }
+  }
+
+  list.push(
+    toShoppingItem({
+      customName: input.customName,
+      amount: input.amount,
+      unit: input.unit,
+      category: input.category,
+      icon: input.icon,
+    }),
+  );
 
   writeList(list);
   return list;
@@ -406,7 +451,7 @@ export function countExportImpact(
         amount: ing.amount,
         unit: ing.unit,
         category: ing.category,
-        emoji: ing.emoji,
+        icon: ing.icon,
       }),
     );
     count += 1;

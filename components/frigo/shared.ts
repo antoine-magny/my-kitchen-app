@@ -15,7 +15,7 @@ export type NewFridgeItem = {
   amount: number;
   unit: UnitCode;
   category: TabId;
-  emoji?: string;
+  icon?: string;
   expirationDate?: string | null;
 };
 

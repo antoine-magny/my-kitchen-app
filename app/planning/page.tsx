@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { GenerateFromFridgeModal } from "@/components/generate-from-fridge-modal";
 import {
   ClockIcon,
@@ -25,10 +25,13 @@ import { MEAL_TYPE_LABELS, type MealType } from "@/lib/meal-types";
 import {
   buildInitialPlans,
   collectIngredientsFromSelectedMeals,
+  getStoredMealPlans,
+  saveMealPlans,
   type DayPlan,
   type MealSlot,
   type SelectedMealTarget,
 } from "@/lib/planning";
+import { DAILY_TARGETS } from "@/lib/profile";
 import { getRecipeById, type Recipe } from "@/lib/recipes";
 import {
   appendIngredientsToShoppingList,
@@ -63,6 +66,18 @@ export default function PlanningPage() {
   const [exportMessage, setExportMessage] = useState<string | null>(null);
   const [generateMessage, setGenerateMessage] = useState<string | null>(null);
   const [generateModalOpen, setGenerateModalOpen] = useState(false);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    setPlansByWeek(getStoredMealPlans());
+    setReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (ready) {
+      saveMealPlans(plansByWeek);
+    }
+  }, [plansByWeek, ready]);
 
   const today = parisCalendarDate();
   const todayKey = dayKey(today);
@@ -120,8 +135,8 @@ export default function PlanningPage() {
     return { calories, proteins };
   }, [dayPlan.breakfast, lunch, dinner]);
 
-  const CALORIE_GOAL = 2000;
-  const PROTEIN_GOAL = 130;
+  const CALORIE_GOAL = DAILY_TARGETS.calories;
+  const PROTEIN_GOAL = DAILY_TARGETS.proteins;
 
   function updateDayPlan(patch: Partial<DayPlan>) {
     setPlansByWeek((prev) => {

@@ -2,19 +2,20 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { DEFAULT_INGREDIENT_EMOJI, UNIQUE_EMOJI_INGREDIENTS } from "@/lib/ingredients";
+import { DEFAULT_INGREDIENT_ICON, UNIQUE_EMOJI_INGREDIENTS } from "@/lib/ingredients";
+import { IngredientIcon } from "@/components/ingredient-icon";
 
 interface EmojiPickerPopoverProps {
-  currentEmoji?: string;
-  onSelectEmoji: (emoji: string, defaultUnit?: string, defaultName?: string) => void;
+  currentIcon?: string;
+  onSelectIcon: (icon: string, defaultUnit?: string, defaultName?: string) => void;
   size?: "sm" | "md" | "lg";
   className?: string;
   buttonTitle?: string;
 }
 
 export function EmojiPickerPopover({
-  currentEmoji = DEFAULT_INGREDIENT_EMOJI,
-  onSelectEmoji,
+  currentIcon = DEFAULT_INGREDIENT_ICON,
+  onSelectIcon,
   size = "md",
   className = "",
   buttonTitle = "Changer l'icône de l'ingrédient",
@@ -130,15 +131,15 @@ export function EmojiPickerPopover({
               type="button"
               title="Visuel neutre (aucun ingrédient spécifique)"
               onClick={() => {
-                onSelectEmoji(DEFAULT_INGREDIENT_EMOJI);
+                onSelectIcon(DEFAULT_INGREDIENT_ICON);
                 setIsOpen(false);
               }}
-              className="flex h-9 w-9 items-center justify-center rounded-xl text-xl transition-all hover:bg-[#EBF2EC] active:scale-90 select-none cursor-pointer"
+              className="flex h-9 w-9 items-center justify-center rounded-xl transition-all hover:bg-[#EBF2EC] active:scale-90 select-none cursor-pointer"
               style={{
-                background: currentEmoji === DEFAULT_INGREDIENT_EMOJI ? "#EBF2EC" : "transparent",
+                background: currentIcon === DEFAULT_INGREDIENT_ICON ? "#EBF2EC" : "transparent",
               }}
             >
-              {DEFAULT_INGREDIENT_EMOJI}
+              <IngredientIcon iconHex={DEFAULT_INGREDIENT_ICON} size={24} />
             </button>
             {UNIQUE_EMOJI_INGREDIENTS.map((item) => (
               <button
@@ -146,13 +147,13 @@ export function EmojiPickerPopover({
                 type="button"
                 title={item.name}
                 onClick={() => {
-                  onSelectEmoji(item.emoji, item.defaultUnit, item.name);
+                  onSelectIcon(item.icon, item.defaultUnit, item.name);
                   setIsOpen(false);
                 }}
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-xl transition-all hover:bg-[#EBF2EC] active:scale-90 select-none cursor-pointer"
-                style={{ background: currentEmoji === item.emoji ? "#EBF2EC" : "transparent" }}
+                className="flex h-9 w-9 items-center justify-center rounded-xl transition-all hover:bg-[#EBF2EC] active:scale-90 select-none cursor-pointer"
+                style={{ background: currentIcon === item.icon ? "#EBF2EC" : "transparent" }}
               >
-                {item.emoji}
+                <IngredientIcon iconHex={item.icon} size={24} />
               </button>
             ))}
           </div>,
@@ -177,7 +178,7 @@ export function EmojiPickerPopover({
         className={`flex items-center justify-center transition-all select-none cursor-pointer ${sizeClasses}`}
         style={{ borderColor: size === "lg" ? "#E2EBE3" : "transparent" }}
       >
-        {currentEmoji || DEFAULT_INGREDIENT_EMOJI}
+        <IngredientIcon iconHex={currentIcon || DEFAULT_INGREDIENT_ICON} size={size === "lg" ? 32 : (size === "sm" ? 18 : 24)} />
       </button>
 
       {popover}
