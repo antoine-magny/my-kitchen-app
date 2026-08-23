@@ -1,7 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import { initialFromName, resolveUserFirstName } from "@/lib/user-name";
 
 const NAV_ITEMS = [
   { icon: "🏠", label: "Accueil", href: "/" },
@@ -11,8 +14,30 @@ const NAV_ITEMS = [
   { icon: "🛒", label: "Courses", href: "/courses" },
 ] as const;
 
+export function AppShell({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const isAuthPage = pathname === "/login";
+
+  return (
+    <>
+      <div className={`flex min-h-full flex-1 flex-col ${isAuthPage ? "" : "pb-20"}`}>
+        {children}
+      </div>
+      {isAuthPage ? null : <BottomNav />}
+    </>
+  );
+}
+
 export function BottomNav() {
   const pathname = usePathname();
+  const [initial, setInitial] = useState("?");
+
+  useEffect(() => {
+    const supabase = createClient();
+    void supabase.auth.getUser().then(async ({ data: { user } }) => {
+      setInitial(initialFromName(await resolveUserFirstName(supabase, user)));
+    });
+  }, []);
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
@@ -40,7 +65,7 @@ export function BottomNav() {
         aria-label="Profil et paramètres"
         aria-current={isActive("/parametres") ? "page" : undefined}
       >
-        A
+        {initial}
       </Link>
 
       <div className="flex min-w-0 flex-1 items-center justify-around">

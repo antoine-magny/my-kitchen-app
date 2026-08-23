@@ -23,6 +23,8 @@ import {
 import { suggestRecipesFromFridge } from "@/lib/generate-from-fridge";
 import { getRecipeById, type Recipe } from "@/lib/recipes";
 import { getTodayMainMeal, type MealSlot } from "@/lib/planning";
+import { createClient } from "@/lib/supabase/client";
+import { initialFromName, resolveUserFirstName } from "@/lib/user-name";
 
 const FALLBACK_FRIDGE_RECIPES = [getRecipeById(3)!, getRecipeById(4)!, getRecipeById(8)!].filter(
   Boolean,
@@ -65,11 +67,17 @@ export default function Home() {
     recipe?: Recipe;
     breakfast?: unknown;
   } | null>(null);
+  const [firstName, setFirstName] = useState("");
 
   useEffect(() => {
     setFridgeItemsState(getFridgeItems());
     setTodayMeal(getTodayMainMeal(parisCalendarDate()));
     setFridgeReady(true);
+
+    const supabase = createClient();
+    void supabase.auth.getUser().then(async ({ data: { user } }) => {
+      setFirstName(await resolveUserFirstName(supabase, user));
+    });
   }, []);
 
   const fridgeRecipes = useMemo(() => {
@@ -103,7 +111,7 @@ export default function Home() {
                 {todayLabel}
               </p>
               <h1 className="font-lora mt-0.5 text-2xl leading-tight font-bold text-[#1C2B1E]">
-                Bonjour Antoine !<br />
+                Bonjour{firstName ? ` ${firstName}` : ""} !<br />
                 <span className="text-[#4A7C59]">Prêt à cuisiner ?</span>
               </h1>
             </div>
@@ -126,7 +134,7 @@ export default function Home() {
                 style={{ background: "linear-gradient(135deg, #4A7C59, #6FAE82)" }}
                 aria-label="Mon profil"
               >
-                A
+                {initialFromName(firstName)}
               </Link>
             </div>
           </div>

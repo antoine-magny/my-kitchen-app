@@ -39,6 +39,8 @@ Pour un contrôle de types complet : `npx tsc --noEmit`.
 app/                    Routes App Router (une page par écran)
   layout.tsx            Shell global : polices Nunito/Lora + BottomNav
   page.tsx              Accueil : repas du jour, frigo en un coup d'œil
+  login/                Connexion / inscription (email + Google)
+  auth/callback/        Échange PKCE du retour OAuth Google
   frigo/                Inventaire frigo / congélateur / placards
   planning/             Planning hebdomadaire des repas
   recettes/             Liste des recettes + détail dynamique [id]
@@ -57,6 +59,9 @@ components/             Composants React partagés
 lib/                    Logique métier, sans JSX
   units.ts              Familles d'unités + combineQuantities
   profile.ts            Données du profil utilisateur (démo, non persistées)
+  user-name.ts          Prénom affiché (métadonnées Auth, puis `profiles.full_name`)
+  auth-signup.ts        Détection d'un compte email déjà existant
+  auth-google.ts        OAuth Google, sanitization du `next`, refus de liaison à un compte email
   shopping-list.ts      Export Planning → Courses (fusion / déduplication)
   fridge.ts             Inventaire local + transfert Courses → Frigo
   ingredients.ts        Référentiel canonique (ingredientId)
@@ -294,7 +299,23 @@ suppressions stockées côté client.
 ### Accès aux données & Sécurité (Multi-utilisateurs)
 
 L'application est multi-utilisateurs et protégée par un écran de connexion (`/login`).
-Toutes les routes de l'application (à l'exception de `/login`) sont protégées par un `middleware.ts` qui vérifie la présence d'une session Supabase valide via les cookies.
+Deux modes d'authentification :
+
+- **Email / mot de passe** : à l'inscription, le prénom est enregistré dans les métadonnées Auth (`full_name`).
+- **Google** : `signInWithOAuth({ provider: "google" })` redirige vers Google, puis vers `/auth/callback` qui échange le code PKCE (`exchangeCodeForSession`) et pose les cookies de session. Inscription et connexion partagent le même bouton.
+- **Pas de double compte** : une adresse déjà utilisée (email ou Google) ne peut pas servir à une seconde inscription. Un `signUp` email sur une adresse existante est détecté via `isExistingAccountSignUp` (erreur `user_already_exists`, ou utilisateur « fantôme » sans `identities`). À l'inverse, si Google tente de se lier automatiquement à un compte email/mot de passe, `/auth/callback` refuse la liaison, déconnecte, et affiche « Vous avez déjà un compte ».
+
+Le trigger `handle_new_user` recopie `full_name` (avec repli sur `name` / `given_name` pour Google) dans `profiles.full_name`.
+Toutes les routes de l'application (à l'exception de `/login` et `/auth/*`) sont protégées par un `middleware.ts` qui vérifie la présence d'une session Supabase valide via les cookies.
+
+**Activation Google (dashboard, pas de variable d'environnement Next.js)** :
+
+1. [Google Auth Platform](https://console.cloud.google.com/auth/clients/create) → client OAuth **Web** :
+   - origines JS : `http://localhost:3000` et `https://my-kitchen-app-liard.vercel.app` ;
+   - URI de redirection : `https://flzelbbjtzyuorpeaofe.supabase.co/auth/v1/callback`.
+2. [Fournisseur Google](https://supabase.com/dashboard/project/flzelbbjtzyuorpeaofe/auth/providers?provider=Google) : activer et coller Client ID + Client Secret.
+3. [URL Configuration](https://supabase.com/dashboard/project/flzelbbjtzyuorpeaofe/auth/url-configuration) → Redirect URLs :
+   `http://localhost:3000/auth/callback` et `https://my-kitchen-app-liard.vercel.app/auth/callback`.
 
 **Sécurité (RLS)** : La sécurité des données est assurée par le *Row Level Security* (RLS) de PostgreSQL. Chaque utilisateur ne peut lire, modifier ou supprimer que ses propres données, grâce à la colonne `user_id` présente sur toutes les tables.
 
@@ -336,6 +357,7 @@ planning et la liste de courses restent 100 % côté client.
 
 | Route | Rôle |
 | --- | --- |
+| `GET /auth/callback` | Échange le code OAuth Google contre une session (cookies) |
 | `POST /api/recipes` | Enregistre une recette dans Supabase |
 | `GET /api/fridge-inventory` | Lit l'inventaire (`pantry_items`) côté serveur |
 | `POST /api/generate-from-fridge` | Génère des recettes à partir du frigo (Gemini) |

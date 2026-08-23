@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { ChevronLeftIcon, EditIcon } from "@/components/icons";
+import { initialFromName } from "@/lib/user-name";
 
-export function ProfileHeader() {
+type ProfileHeaderProps = {
+  firstName: string;
+  email: string;
+};
+
+export function ProfileHeader({ firstName, email }: ProfileHeaderProps) {
   return (
     <div className="pt-10 pb-6">
       <div className="mb-6 flex items-center justify-between">
@@ -27,11 +33,13 @@ export function ProfileHeader() {
           style={{ background: "linear-gradient(135deg, #4A7C59, #6FAE82)" }}
           aria-hidden
         >
-          A
+          {initialFromName(firstName)}
         </div>
         <div className="min-w-0 flex-1">
-          <h1 className="font-lora truncate text-2xl leading-tight font-bold text-[#1C2B1E]">Antoine</h1>
-          <p className="mt-0.5 truncate text-sm font-medium text-[#7A8F7D]">antoine@mykitchen.app</p>
+          <h1 className="font-lora truncate text-2xl leading-tight font-bold text-[#1C2B1E]">
+            {firstName || "Mon profil"}
+          </h1>
+          <p className="mt-0.5 truncate text-sm font-medium text-[#7A8F7D]">{email}</p>
         </div>
         <button
           type="button"
