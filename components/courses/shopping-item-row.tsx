@@ -20,7 +20,7 @@ export function ShoppingItemRow({
 }) {
   return (
     <div
-      className="flex items-center gap-3 px-4 py-3.5"
+      className="flex items-start gap-3 px-4 py-3.5"
       style={{
         borderBottom: isLast ? "none" : "1px solid #F0F4EF",
         opacity: item.isChecked ? 0.55 : 1,
@@ -43,6 +43,7 @@ export function ShoppingItemRow({
 
       <EmojiPickerPopover
         size="sm"
+        className="shrink-0"
         currentIcon={item.icon}
         onSelectIcon={(newIcon) => {
           onUpdate(item.id, { icon: newIcon });

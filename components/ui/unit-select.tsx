@@ -152,7 +152,7 @@ export function UnitSelect({
   return (
     <div
       ref={containerRef}
-      className={`relative ${compact ? "inline-block" : "w-full"}`}
+      className={`relative ${compact ? "min-w-0" : "w-full"}`}
       style={{ isolation: "isolate" }}
     >
       <button
@@ -176,7 +176,9 @@ export function UnitSelect({
             : "flex w-full items-center justify-between rounded-xl border border-[#E2EBE3] bg-[#FAFBF9] px-4 py-3 text-sm font-semibold text-[#1C2B1E] shadow-sm transition-all hover:border-[#4A7C59] focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/20 focus:outline-none")
         }
       >
-        <span className="truncate text-left">{selectedDisplayLabel}</span>
+        <span className={compact ? "whitespace-normal break-words text-left" : "truncate text-left"}>
+          {selectedDisplayLabel}
+        </span>
         {!compact && (
           <span
             className={`pointer-events-none ml-2 shrink-0 text-[#7A8F7D] transition-transform duration-200 ${

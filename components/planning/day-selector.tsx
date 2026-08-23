@@ -17,7 +17,7 @@ export function DaySelector({
   onSelectDay,
 }: DaySelectorProps) {
   return (
-    <div className="-mx-4 flex gap-3 overflow-x-auto snap-x snap-mandatory px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       {days.map((day) => {
         const selected = sameDay(day, selectedDay);
         const isToday = sameDay(day, today);
@@ -32,7 +32,6 @@ export function DaySelector({
               selected
                 ? {
                     background: "linear-gradient(160deg, #2E5B3E, #4A7C59)",
-                    boxShadow: "0 4px 14px rgba(46,91,62,0.28)",
                     color: "#fff",
                   }
                 : {

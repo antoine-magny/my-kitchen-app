@@ -118,3 +118,51 @@ export function formatDayShortFr(date: Date): string {
   const raw = WEEKDAYS_SHORT_FR[date.getUTCDay()];
   return raw.charAt(0).toUpperCase() + raw.slice(1);
 }
+
+/** En-têtes de grille, semaine lundi → dimanche. */
+export const WEEKDAY_LETTERS_FR = ["L", "M", "M", "J", "V", "S", "D"] as const;
+
+export function formatMonthYearFr(date: Date): string {
+  const name = MONTHS_LONG_FR[date.getUTCMonth()];
+  return `${name.charAt(0).toUpperCase()}${name.slice(1)} ${date.getUTCFullYear()}`;
+}
+
+export function formatDayLongFr(date: Date): string {
+  return `${WEEKDAYS_LONG_FR[date.getUTCDay()]} ${date.getUTCDate()} ${MONTHS_LONG_FR[date.getUTCMonth()]} ${date.getUTCFullYear()}`;
+}
+
+export function startOfMonth(date: Date): Date {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1, 12, 0, 0));
+}
+
+/** Décale une date calendaire Paris d’un nombre de mois (clamp le jour de fin de mois). */
+export function addMonths(date: Date, months: number): Date {
+  const year = date.getUTCFullYear();
+  const month = date.getUTCMonth() + months;
+  const day = date.getUTCDate();
+  const lastDay = new Date(Date.UTC(year, month + 1, 0, 12, 0, 0)).getUTCDate();
+  return new Date(Date.UTC(year, month, Math.min(day, lastDay), 12, 0, 0));
+}
+
+export type CalendarCell = {
+  iso: string;
+  day: number;
+  inMonth: boolean;
+};
+
+/** Cases d’un mois, y compris les jours des semaines chevauchantes (lun–dim). */
+export function buildMonthCells(year: number, monthIndex: number): CalendarCell[] {
+  const first = new Date(Date.UTC(year, monthIndex, 1, 12, 0, 0));
+  const start = startOfWeek(first);
+  const last = new Date(Date.UTC(year, monthIndex + 1, 0, 12, 0, 0));
+  const end = addDays(startOfWeek(last), 6);
+  const cells: CalendarCell[] = [];
+  for (let cursor = start; cursor.getTime() <= end.getTime(); cursor = addDays(cursor, 1)) {
+    cells.push({
+      iso: isoDateFromCalendar(cursor),
+      day: cursor.getUTCDate(),
+      inMonth: cursor.getUTCMonth() === monthIndex,
+    });
+  }
+  return cells;
+}

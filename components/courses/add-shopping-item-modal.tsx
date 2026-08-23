@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { XIcon, ChevronDownIcon } from "@/components/icons";
+import { CenteredModal } from "@/components/ui/centered-modal";
 import { EmojiPickerPopover } from "@/components/ui/emoji-picker-popover";
 import { UnitSelect } from "@/components/ui/unit-select";
 import { getIngredientDefaultUnit, resolveIcon, DEFAULT_INGREDIENT_ICON } from "@/lib/ingredients";
@@ -47,14 +47,6 @@ export function AddShoppingItemModal({ isOpen, onClose, onAdd }: AddShoppingItem
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    if (isOpen) window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
-
   if (!mounted || !isOpen) return null;
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -91,24 +83,9 @@ export function AddShoppingItemModal({ isOpen, onClose, onAdd }: AddShoppingItem
   const autoCategoryTitle =
     SHOPPING_CATEGORIES.find((c) => c.id === autoCategoryId)?.title ?? "Épicerie & Féculents";
 
-  return createPortal(
-    <div className="fixed inset-0 z-50 flex flex-col justify-end sm:items-center sm:justify-center">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 transition-opacity"
-        style={{ background: "rgba(20,31,22,0.55)", backdropFilter: "blur(4px)" }}
-        onClick={onClose}
-        aria-hidden="true"
-      />
-
-      {/* Modal Content */}
-      <div
-        className="relative flex w-full flex-col bg-white p-5 pb-8 sm:w-[440px] sm:rounded-3xl sm:pb-5 rounded-t-3xl"
-        style={{ boxShadow: "0 4px 24px rgba(20,31,22,0.12)" }}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="add-item-title"
-      >
+  return (
+    <CenteredModal titleId="add-item-title" onClose={onClose}>
+      <div className="p-5">
         <div className="mb-4 flex items-center justify-between">
           <h2 id="add-item-title" className="font-lora text-xl font-bold text-[#1C2B1E]">
             Ajouter un article
@@ -220,7 +197,6 @@ export function AddShoppingItemModal({ isOpen, onClose, onAdd }: AddShoppingItem
           </button>
         </form>
       </div>
-    </div>,
-    document.body,
+    </CenteredModal>
   );
 }

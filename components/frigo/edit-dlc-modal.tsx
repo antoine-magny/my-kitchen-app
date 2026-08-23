@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import type { Ingredient } from "@/components/frigo/shared";
 import { XIcon } from "@/components/icons";
 import { IngredientIcon } from "@/components/ingredient-icon";
+import { DlcDatePicker } from "@/components/frigo/dlc-date-picker";
 
 export function EditDlcModal({
   item,
@@ -15,11 +16,6 @@ export function EditDlcModal({
   onClose: () => void;
 }) {
   const [dlc, setDlc] = useState(item.expirationDate ?? "");
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,7 +32,7 @@ export function EditDlcModal({
       }}
     >
       <div
-        className="scale-in w-full rounded-t-3xl p-7 sm:w-auto sm:min-w-[400px] sm:rounded-3xl"
+        className="scale-in max-h-[90vh] w-full overflow-y-auto rounded-t-3xl p-7 sm:w-auto sm:min-w-[400px] sm:rounded-3xl"
         style={{ background: "#FFFFFF", boxShadow: "0 24px 64px rgba(20,31,22,0.22)" }}
       >
         <div className="mb-6 flex items-center justify-between">
@@ -65,14 +61,7 @@ export function EditDlcModal({
             <label className="mb-1.5 block text-xs font-bold tracking-wide text-[#7A8F7D]" style={{ letterSpacing: "0.04em" }}>
               DATE LIMITE DE CONSOMMATION
             </label>
-            <input
-              ref={inputRef}
-              type="date"
-              value={dlc}
-              onChange={(e) => setDlc(e.target.value)}
-              className="w-full rounded-xl bg-[#FAFBF9] px-4 py-3 text-sm font-semibold text-[#1C2B1E] outline-none transition-all focus:border-[#4A7C59]"
-              style={{ border: "1.5px solid #E2EBE3" }}
-            />
+            <DlcDatePicker value={dlc} onChange={setDlc} />
           </div>
 
           <div className="flex gap-3">

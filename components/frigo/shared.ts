@@ -43,6 +43,19 @@ export function expiredSinceLabel(dlc: string): string {
   return dlcLabel(dlc);
 }
 
+/** Libellé de compte à rebours pour le sélecteur de DLC. */
+export function dlcCountdownLabel(dlc: string | null | undefined): string {
+  if (!dlc) return "Aucune date choisie";
+  const diff = daysUntilDlc(dlc);
+  if (diff < 0) {
+    const days = Math.abs(diff);
+    return `Périmé depuis ${days} jour${days > 1 ? "s" : ""}`;
+  }
+  if (diff === 0) return "Expire aujourd'hui";
+  if (diff === 1) return "Expire demain";
+  return `Expire dans ${diff} jours`;
+}
+
 export const STATUS_STYLE = {
   urgent: { color: "#DC2626", bg: "#FEF2F2", dot: "#EF4444" },
   soon: { color: "#C2410C", bg: "#FFF7ED", dot: "#F97316" },

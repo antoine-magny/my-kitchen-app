@@ -2,8 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { NewFridgeItem, TabId } from "@/components/frigo/shared";
-import { ChevronDownIcon, XIcon } from "@/components/icons";
+import { XIcon } from "@/components/icons";
 import { getIngredientDefaultUnit, DEFAULT_INGREDIENT_ICON, resolveIcon } from "@/lib/ingredients";
+import { DlcDatePicker } from "@/components/frigo/dlc-date-picker";
+import { CenteredModal } from "@/components/ui/centered-modal";
 import { UnitSelect } from "@/components/ui/unit-select";
 import { EmojiPickerPopover } from "@/components/ui/emoji-picker-popover";
 import { DEFAULT_UNIT, type UnitCode } from "@/lib/units";
@@ -22,11 +24,16 @@ export function AddModal({
   const [qty, setQty] = useState("1");
   const [unit, setUnit] = useState<UnitCode>(DEFAULT_UNIT);
   const [dlc, setDlc] = useState("");
+  const [mounted, setMounted] = useState(false);
   const nameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    nameRef.current?.focus();
+    setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (mounted) nameRef.current?.focus();
+  }, [mounted]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,122 +49,113 @@ export function AddModal({
     onClose();
   };
 
+  if (!mounted) return null;
+
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
-      style={{ background: "rgba(20,31,22,0.55)", backdropFilter: "blur(4px)" }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div
-        className="scale-in w-full rounded-t-3xl p-7 sm:w-auto sm:min-w-[440px] sm:rounded-3xl"
-        style={{ background: "#FFFFFF", boxShadow: "0 24px 64px rgba(20,31,22,0.22)" }}
-      >
-        <div className="mb-6 flex items-center justify-between">
-          <h2 className="font-lora text-xl font-bold text-[#1C2B1E]">Nouvel ingrédient</h2>
+    <CenteredModal titleId="add-ingredient-title" onClose={onClose}>
+        <div className="flex items-center justify-between px-5 pt-4 pb-2">
+          <h2 id="add-ingredient-title" className="font-lora text-lg font-bold text-[#1C2B1E]">
+            Nouvel ingrédient
+          </h2>
           <button
             type="button"
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-xl text-[#7A8F7D] transition-colors hover:bg-[#F0F4EF]"
+            className="flex h-7 w-7 items-center justify-center rounded-xl text-[#7A8F7D] transition-colors hover:bg-[#F0F4EF]"
           >
-            <XIcon size={18} />
+            <XIcon size={16} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="flex items-start gap-3">
-            <EmojiPickerPopover
-              size="lg"
-              currentIcon={icon}
-              onSelectIcon={(selectedIcon, defaultUnit, itemName) => {
-                setIcon(selectedIcon);
-                if (itemName && !name.trim()) {
-                  setName(itemName);
-                }
-                if (defaultUnit) {
-                  setUnit(defaultUnit as UnitCode);
-                }
-              }}
-            />
-            <div className="flex-1">
-              <label className="mb-1.5 block text-xs font-bold tracking-wide text-[#7A8F7D]" style={{ letterSpacing: "0.04em" }}>
-                NOM DE L&apos;INGRÉDIENT
-              </label>
-              <input
-                ref={nameRef}
-                value={name}
-                onChange={(e) => {
-                  const newName = e.target.value;
-                  const prevDefault = getIngredientDefaultUnit(name);
-                  if (unit === prevDefault || unit === "piece") {
-                    setUnit(getIngredientDefaultUnit(newName));
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+          <div className="flex flex-col gap-2.5 overflow-y-auto px-5">
+            <div className="flex items-start gap-3">
+              <EmojiPickerPopover
+                size="lg"
+                currentIcon={icon}
+                onSelectIcon={(selectedIcon, defaultUnit, itemName) => {
+                  setIcon(selectedIcon);
+                  if (itemName && !name.trim()) {
+                    setName(itemName);
                   }
-                  const resolvedIcon = resolveIcon(newName);
-                  setIcon(resolvedIcon ?? DEFAULT_INGREDIENT_ICON);
-                  setName(newName);
+                  if (defaultUnit) {
+                    setUnit(defaultUnit as UnitCode);
+                  }
                 }}
-                placeholder="Ex : Tomates cerises"
-                required
-                className="w-full rounded-xl bg-[#FAFBF9] px-4 py-3 text-sm font-semibold text-[#1C2B1E] outline-none transition-all focus:border-[#4A7C59]"
-                style={{ border: "1.5px solid #E2EBE3" }}
               />
+              <div className="flex-1">
+                <label className="mb-1.5 block text-xs font-bold tracking-wide text-[#7A8F7D]" style={{ letterSpacing: "0.04em" }}>
+                  NOM DE L&apos;INGRÉDIENT
+                </label>
+                <input
+                  ref={nameRef}
+                  value={name}
+                  onChange={(e) => {
+                    const newName = e.target.value;
+                    const prevDefault = getIngredientDefaultUnit(name);
+                    if (unit === prevDefault || unit === "piece") {
+                      setUnit(getIngredientDefaultUnit(newName));
+                    }
+                    const resolvedIcon = resolveIcon(newName);
+                    setIcon(resolvedIcon ?? DEFAULT_INGREDIENT_ICON);
+                    setName(newName);
+                  }}
+                  placeholder="Ex : Tomates cerises"
+                  required
+                  className="w-full rounded-xl bg-[#FAFBF9] px-4 py-2 text-sm font-semibold text-[#1C2B1E] outline-none transition-all focus:border-[#4A7C59]"
+                  style={{ border: "1.5px solid #E2EBE3" }}
+                />
+              </div>
             </div>
-          </div>
 
-          <div className="flex gap-3">
-            <div className="flex-1">
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="mb-1.5 block text-xs font-bold tracking-wide text-[#7A8F7D]" style={{ letterSpacing: "0.04em" }}>
+                  QUANTITÉ
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  value={qty}
+                  onChange={(e) => setQty(e.target.value)}
+                  className="w-full rounded-xl bg-[#FAFBF9] px-4 py-2 text-sm font-semibold text-[#1C2B1E] outline-none transition-all focus:border-[#4A7C59]"
+                  style={{ border: "1.5px solid #E2EBE3" }}
+                />
+              </div>
+              <div className="flex-1">
+                <label className="mb-1.5 block text-xs font-bold tracking-wide text-[#7A8F7D]" style={{ letterSpacing: "0.04em" }}>
+                  UNITÉ
+                </label>
+                <UnitSelect
+                  value={unit}
+                  ingredientName={name}
+                  onChange={(next) => setUnit(next as UnitCode)}
+                  className="w-full flex items-center justify-between rounded-xl border-[1.5px] border-[#E2EBE3] bg-[#FAFBF9] py-2 px-4 text-sm font-semibold text-[#1C2B1E] outline-none transition-all hover:border-[#4A7C59] focus:border-[#4A7C59]"
+                />
+              </div>
+            </div>
+
+            <div>
               <label className="mb-1.5 block text-xs font-bold tracking-wide text-[#7A8F7D]" style={{ letterSpacing: "0.04em" }}>
-                QUANTITÉ
+                DATE LIMITE DE CONSOMMATION <span className="font-medium normal-case opacity-60">(optionnelle)</span>
               </label>
-              <input
-                type="number"
-                min="0"
-                step="any"
-                value={qty}
-                onChange={(e) => setQty(e.target.value)}
-                className="w-full rounded-xl bg-[#FAFBF9] px-4 py-3 text-sm font-semibold text-[#1C2B1E] outline-none transition-all focus:border-[#4A7C59]"
-                style={{ border: "1.5px solid #E2EBE3" }}
-              />
-            </div>
-            <div className="flex-1">
-              <label className="mb-1.5 block text-xs font-bold tracking-wide text-[#7A8F7D]" style={{ letterSpacing: "0.04em" }}>
-                UNITÉ
-              </label>
-              <UnitSelect
-                value={unit}
-                ingredientName={name}
-                onChange={(next) => setUnit(next as UnitCode)}
-                className="w-full flex items-center justify-between rounded-xl border-[1.5px] border-[#E2EBE3] bg-[#FAFBF9] py-3 px-4 text-sm font-semibold text-[#1C2B1E] outline-none transition-all hover:border-[#4A7C59] focus:border-[#4A7C59]"
-              />
+              <DlcDatePicker value={dlc} onChange={setDlc} />
             </div>
           </div>
 
-          <div>
-            <label className="mb-1.5 block text-xs font-bold tracking-wide text-[#7A8F7D]" style={{ letterSpacing: "0.04em" }}>
-              DATE LIMITE DE CONSOMMATION <span className="font-medium normal-case opacity-60">(optionnelle)</span>
-            </label>
-            <input
-              type="date"
-              value={dlc}
-              onChange={(e) => setDlc(e.target.value)}
-              className="w-full rounded-xl bg-[#FAFBF9] px-4 py-3 text-sm font-semibold text-[#1C2B1E] outline-none transition-all focus:border-[#4A7C59]"
-              style={{ border: "1.5px solid #E2EBE3" }}
-            />
+          <div className="px-5 pt-2 pb-4">
+            <button
+              type="submit"
+              className="w-full rounded-2xl py-2.5 text-sm font-bold text-white transition-all hover:opacity-90 active:scale-[0.98]"
+              style={{
+                background: "linear-gradient(135deg, #4A7C59, #5E9E72)",
+                boxShadow: "0 4px 16px rgba(74,124,89,0.28)",
+              }}
+            >
+              Ajouter l&apos;ingrédient
+            </button>
           </div>
-
-          <button
-            type="submit"
-            className="mt-1 w-full rounded-2xl py-3.5 text-sm font-bold text-white transition-all hover:opacity-90 active:scale-[0.98]"
-            style={{
-              background: "linear-gradient(135deg, #4A7C59, #5E9E72)",
-              boxShadow: "0 4px 16px rgba(74,124,89,0.28)",
-            }}
-          >
-            Ajouter l&apos;ingrédient
-          </button>
         </form>
-      </div>
-    </div>
+    </CenteredModal>
   );
 }

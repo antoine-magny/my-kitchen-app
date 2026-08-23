@@ -12,7 +12,7 @@ import { FridgeToolbar } from "@/components/frigo/fridge-toolbar";
 import { IngredientRow } from "@/components/frigo/ingredient-row";
 import { GroupedItemSection } from "@/components/ui/grouped-item-section";
 import { TABS, type Ingredient, type NewFridgeItem, type TabId } from "@/components/frigo/shared";
-import { DLC_GROUPS, groupByDlcStatus, groupIdForItem, type DlcGroupId } from "@/lib/fridge-dlc-groups";
+import { groupByDlcStatus, groupIdForItem, type DlcGroupId } from "@/lib/fridge-dlc-groups";
 import { createFridgeItem, dlcStatus, getFridgeItems, setFridgeItems } from "@/lib/fridge";
 import { describeIngredient, resolveStoredIngredientIcon } from "@/lib/ingredients";
 
@@ -22,7 +22,6 @@ export default function FrigoPage() {
   const [ready, setReady] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showClearAll, setShowClearAll] = useState(false);
-  const [clearGroupId, setClearGroupId] = useState<DlcGroupId | null>(null);
   const [showExpired, setShowExpired] = useState(false);
   const [editingDlcId, setEditingDlcId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -47,10 +46,6 @@ export default function FrigoPage() {
   const activeTabLabel = TABS.find((t) => t.id === activeTab)?.label ?? "";
 
   const grouped = useMemo(() => groupByDlcStatus(filtered), [filtered]);
-  const clearGroup = clearGroupId ? (DLC_GROUPS.find((g) => g.id === clearGroupId) ?? null) : null;
-  const clearGroupCount = clearGroupId
-    ? tabItems.filter((i) => groupIdForItem(i.expirationDate) === clearGroupId).length
-    : 0;
 
   const tabCounts = Object.fromEntries(
     TABS.map((tab) => [tab.id, items.filter((i) => i.category === tab.id).length]),
@@ -201,7 +196,7 @@ export default function FrigoPage() {
                   action={
                     <button
                       type="button"
-                      onClick={() => setClearGroupId(group.id)}
+                      onClick={() => handleClearGroup(group.id)}
                       className="shrink-0 rounded-lg px-2 py-0.5 text-xs font-bold text-[#B91C1C] transition-colors hover:bg-[#FEF2F2]"
                       aria-label={
                         group.id === "urgent"
@@ -255,21 +250,6 @@ export default function FrigoPage() {
           itemCount={tabItems.length}
           onConfirm={handleClearAll}
           onClose={() => setShowClearAll(false)}
-        />
-      )}
-
-      {clearGroup && clearGroupCount > 0 && (
-        <ClearAllModal
-          title="Vider la catégorie"
-          description={
-            clearGroup.id === "urgent"
-              ? `Supprimer tous les éléments périmés du ${activeTabLabel.toLowerCase()} ?`
-              : `Supprimer tous les éléments « ${clearGroup.title} » du ${activeTabLabel.toLowerCase()} ?`
-          }
-          itemCount={clearGroupCount}
-          confirmLabel="Vider"
-          onConfirm={() => handleClearGroup(clearGroup.id)}
-          onClose={() => setClearGroupId(null)}
         />
       )}
 
