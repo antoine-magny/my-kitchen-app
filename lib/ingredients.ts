@@ -201,6 +201,75 @@ export function resolveIngredientId(name: string): string {
 /** Emoji visuel neutre par défaut lorsqu'aucun ingrédient spécifique n'est reconnu ou choisi (ensemble vide ∅). */
 export const DEFAULT_INGREDIENT_ICON = "2205";
 
+const ICON_HEX_RE = /^[0-9A-Fa-f]{2,6}(-[0-9A-Fa-f]{2,6})*$/;
+
+export function isIconHex(value: string): boolean {
+  return ICON_HEX_RE.test(value.trim());
+}
+
+function stripFe0fHex(hex: string): string {
+  return hex
+    .toUpperCase()
+    .split("-")
+    .filter((part) => part !== "FE0F")
+    .join("-");
+}
+
+/** Hex OpenMoji du catalogue (plus l'ensemble vide). */
+export const CATALOG_ICON_HEXES: ReadonlySet<string> = new Set([
+  DEFAULT_INGREDIENT_ICON,
+  ...INGREDIENTS.map((item) => item.icon.toUpperCase()),
+]);
+
+const CATALOG_EMOJIS: ReadonlySet<string> = new Set(
+  INGREDIENTS.flatMap((item) => (item.emoji ? [item.emoji] : [])),
+);
+
+const EMPTY_ICON_TOKENS = new Set(["∅", "Ø", "ø", DEFAULT_INGREDIENT_ICON]);
+
+/** Visuel autorisé : émoji / hex du catalogue, ou clé encore mappée. */
+export function isApprovedIngredientVisual(value?: string): boolean {
+  if (!value?.trim()) return false;
+  const trimmed = value.trim();
+  if (EMPTY_ICON_TOKENS.has(trimmed)) return true;
+  if (CATALOG_EMOJIS.has(trimmed)) return true;
+  if (Object.prototype.hasOwnProperty.call(EMOJI_TO_HEX_MAP, trimmed)) return true;
+  if (isIconHex(trimmed)) return CATALOG_ICON_HEXES.has(stripFe0fHex(trimmed));
+  return false;
+}
+
+/**
+ * Icône à persister. Les glyphes hors liste (ex. 🧁 / 1F9C1) sont remplacés
+ * par l'icône déduite du nom, sans convertir un émoji catalogue en SVG.
+ */
+export function resolveStoredIngredientIcon(
+  inputIcon: string | undefined,
+  identityIcon?: string,
+): string {
+  const approvedIdentity =
+    identityIcon && isApprovedIngredientVisual(identityIcon) ? identityIcon : undefined;
+
+  if (inputIcon === undefined || !inputIcon.trim()) {
+    return approvedIdentity ?? DEFAULT_INGREDIENT_ICON;
+  }
+
+  const trimmed = inputIcon.trim();
+  if (EMPTY_ICON_TOKENS.has(trimmed)) return DEFAULT_INGREDIENT_ICON;
+
+  const inputIsHex = isIconHex(trimmed);
+  if (isApprovedIngredientVisual(trimmed) && !inputIsHex) {
+    return trimmed;
+  }
+
+  if (approvedIdentity) return approvedIdentity;
+
+  if (isApprovedIngredientVisual(trimmed) && inputIsHex) {
+    return stripFe0fHex(trimmed);
+  }
+
+  return DEFAULT_INGREDIENT_ICON;
+}
+
 export const EMOJI_TO_HEX_MAP: Record<string, string> = {
   "∅": "2205",
   "Ø": "2205",
@@ -284,8 +353,8 @@ export function toIconHex(input?: string): string {
   }
 
   // Si c'est déjà une chaîne hex valide (ex. 1F345, 2205, 1F336-FE0F)
-  if (/^[0-9A-Fa-f]{2,6}(-[0-9A-Fa-f]{2,6})*$/.test(trimmed)) {
-    return trimmed.toUpperCase();
+  if (isIconHex(trimmed)) {
+    return stripFe0fHex(trimmed);
   }
 
   // Conversion des points de code Unicode

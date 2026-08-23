@@ -10,6 +10,7 @@ import {
   describeIngredient,
   DEFAULT_INGREDIENT_ICON,
   resolveIcon,
+  resolveStoredIngredientIcon,
 } from "@/lib/ingredients";
 import {
   classifyProduct,
@@ -58,15 +59,8 @@ function toShoppingItem(input: {
     input.category && isShoppingCategoryId(input.category)
       ? input.category
       : classifyProduct(customName);
-  const isInputHex = input.icon ? /^[0-9A-Fa-f]{2,6}(-[0-9A-Fa-f]{2,6})*$/.test(input.icon.trim()) : false;
-  let icon: string | undefined = undefined;
-  if (input.icon && input.icon !== DEFAULT_INGREDIENT_ICON && !isInputHex) {
-    icon = input.icon;
-  } else if (identity.icon) {
-    icon = identity.icon;
-  } else if (input.icon && input.icon !== DEFAULT_INGREDIENT_ICON) {
-    icon = input.icon;
-  }
+  const storedIcon = resolveStoredIngredientIcon(input.icon, identity.icon);
+  const icon = storedIcon !== DEFAULT_INGREDIENT_ICON ? storedIcon : undefined;
 
   let finalAmount = input.amount;
   let finalUnit = input.unit;
@@ -138,11 +132,35 @@ function parseStoredList(raw: string | null): ShoppingItem[] {
   }
 }
 
+function persistNormalizedIcons(rawJson: string, items: ShoppingItem[]) {
+  try {
+    const parsed = JSON.parse(rawJson) as unknown;
+    if (!Array.isArray(parsed)) return;
+    const dirty = items.some((item, index) => {
+      const entry = parsed[index] as { icon?: unknown; emoji?: unknown } | undefined;
+      const previous =
+        typeof entry?.icon === "string" && entry.icon
+          ? entry.icon
+          : typeof entry?.emoji === "string"
+            ? entry.emoji
+            : "";
+      return previous !== (item.icon ?? "");
+    });
+    if (dirty) writeList(items);
+  } catch {
+    /* ignore */
+  }
+}
+
 function readList(): ShoppingItem[] {
   if (typeof window === "undefined") return [];
 
   const current = window.localStorage.getItem(STORAGE_KEY);
-  if (current != null) return parseStoredList(current);
+  if (current != null) {
+    const items = parseStoredList(current);
+    persistNormalizedIcons(current, items);
+    return items;
+  }
 
   // Migration unique depuis l'ancien format, puis on ne relit plus jamais v1.
   const legacy = parseStoredList(window.localStorage.getItem(LEGACY_STORAGE_KEY));
@@ -197,11 +215,10 @@ export function updateShoppingItem(id: string, patch: ShoppingItemPatch): Shoppi
     const customName = patch.customName?.trim() || item.customName;
     const renamed = customName !== item.customName;
     const category = patch.category ?? (renamed ? classifyProduct(customName) : item.category);
-    const resolvedIcon =
-      renamed || !item.icon || item.icon === DEFAULT_INGREDIENT_ICON
-        ? resolveIcon(customName)
-        : item.icon;
-    const nextIcon = patch.icon ?? resolvedIcon ?? item.icon;
+    const nextIcon = resolveStoredIngredientIcon(
+      patch.icon ?? (renamed ? undefined : item.icon),
+      resolveIcon(customName),
+    );
 
     return {
       ...item,

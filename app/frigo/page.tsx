@@ -14,6 +14,7 @@ import { GroupedItemSection } from "@/components/ui/grouped-item-section";
 import { TABS, type Ingredient, type NewFridgeItem, type TabId } from "@/components/frigo/shared";
 import { DLC_GROUPS, groupByDlcStatus, groupIdForItem, type DlcGroupId } from "@/lib/fridge-dlc-groups";
 import { createFridgeItem, dlcStatus, getFridgeItems, setFridgeItems } from "@/lib/fridge";
+import { describeIngredient, resolveStoredIngredientIcon } from "@/lib/ingredients";
 
 export default function FrigoPage() {
   const [activeTab, setActiveTab] = useState<TabId>("fridge");
@@ -103,7 +104,13 @@ export default function FrigoPage() {
   };
 
   const handleChangeIcon = (id: string, icon: string) => {
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, icon } : i)));
+    setItems((prev) =>
+      prev.map((i) =>
+        i.id === id
+          ? { ...i, icon: resolveStoredIngredientIcon(icon, describeIngredient(i.customName).icon) }
+          : i,
+      ),
+    );
   };
 
   const handleUpdateDlc = (id: string, expirationDate: string | null) => {

@@ -7,7 +7,7 @@
  * l'aliment canonique pour le matching avec les recettes et les courses.
  */
 
-import { describeIngredient, DEFAULT_INGREDIENT_ICON } from "@/lib/ingredients";
+import { describeIngredient, resolveStoredIngredientIcon } from "@/lib/ingredients";
 import { normalizeProductName } from "@/lib/shopping-categories";
 import {
   coerceUnitCode,
@@ -110,15 +110,7 @@ export function createFridgeItem(input: {
 }): FridgeItem {
   const customName = input.customName.trim();
   const identity = describeIngredient(customName);
-  const isInputHex = input.icon ? /^[0-9A-Fa-f]{2,6}(-[0-9A-Fa-f]{2,6})*$/.test(input.icon.trim()) : false;
-  let icon = DEFAULT_INGREDIENT_ICON;
-  if (input.icon && input.icon !== DEFAULT_INGREDIENT_ICON && !isInputHex) {
-    icon = input.icon;
-  } else if (identity.icon) {
-    icon = identity.icon;
-  } else if (input.icon && input.icon !== DEFAULT_INGREDIENT_ICON) {
-    icon = input.icon;
-  }
+  const icon = resolveStoredIngredientIcon(input.icon, identity.icon);
 
   return {
     id: input.id ?? createFridgeItemId(),
@@ -270,9 +262,35 @@ function readRaw(): FridgeItem[] | null {
   return null;
 }
 
+function persistNormalizedIcons(rawJson: string, items: FridgeItem[]) {
+  try {
+    const parsed = JSON.parse(rawJson) as unknown;
+    if (!Array.isArray(parsed)) return;
+    const dirty = items.some((item, index) => {
+      const entry = parsed[index] as { icon?: unknown; emoji?: unknown } | undefined;
+      const previous =
+        typeof entry?.icon === "string" && entry.icon
+          ? entry.icon
+          : typeof entry?.emoji === "string"
+            ? entry.emoji
+            : "";
+      return previous !== item.icon;
+    });
+    if (dirty) setFridgeItems(items);
+  } catch {
+    /* ignore */
+  }
+}
+
 export function getFridgeItems(): FridgeItem[] {
   const stored = readRaw();
-  if (stored && stored.length > 0) return stored;
+  if (stored && stored.length > 0) {
+    if (typeof window !== "undefined") {
+      const current = window.localStorage.getItem(FRIDGE_STORAGE_KEY);
+      if (current) persistNormalizedIcons(current, stored);
+    }
+    return stored;
+  }
   const seed = createDefaultFridgeItems();
   if (typeof window !== "undefined") {
     window.localStorage.setItem(FRIDGE_STORAGE_KEY, JSON.stringify(seed));
