@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { AuthCard } from "@/components/auth-card";
 import { GoogleIcon, UsersIcon } from "@/components/icons";
 import {
   AuthDivider,
@@ -136,123 +137,115 @@ export function LoginForm({ oauthError, oauthEmail }: LoginFormProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#F7F9F6] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-[#2E5B3E]">
-          My Kitchen App
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          {isSignup
-            ? "Créez votre compte pour commencer"
-            : "Vous avez déjà un compte ? Connectez-vous !"}
-        </p>
-      </div>
+    <AuthCard
+      title="My Kitchen App"
+      subtitle={
+        isSignup
+          ? "Créez votre compte pour commencer"
+          : "Vous avez déjà un compte ? Connectez-vous !"
+      }
+    >
+      <AuthModeToggle
+        isSignup={isSignup}
+        onLogin={() => {
+          setMode("login");
+          setError(null);
+        }}
+        onSignup={() => {
+          setMode("signup");
+          setError(null);
+        }}
+      />
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <AuthModeToggle
-            isSignup={isSignup}
-            onLogin={() => {
-              setMode("login");
-              setError(null);
-            }}
-            onSignup={() => {
-              setMode("signup");
-              setError(null);
-            }}
+      <button
+        type="button"
+        onClick={() => void handleGoogleAuth()}
+        disabled={busy}
+        className="w-full flex items-center justify-center gap-3 py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2E5B3E] disabled:opacity-50"
+      >
+        <GoogleIcon size={18} />
+        {loading === "google" ? "Redirection..." : "Continuer avec Google"}
+      </button>
+
+      <AuthDivider />
+
+      <form
+        className="space-y-6"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void handleAuth();
+        }}
+      >
+        {isSignup && (
+          <AuthTextField
+            id="firstName"
+            label="Prénom"
+            type="text"
+            autoComplete="given-name"
+            value={firstName}
+            onChange={setFirstName}
           />
+        )}
 
-          <button
-            type="button"
-            onClick={() => void handleGoogleAuth()}
-            disabled={busy}
-            className="w-full flex items-center justify-center gap-3 py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2E5B3E] disabled:opacity-50"
-          >
-            <GoogleIcon size={18} />
-            {loading === "google" ? "Redirection..." : "Continuer avec Google"}
-          </button>
+        <AuthTextField
+          id="email"
+          label="Email"
+          type="email"
+          autoComplete="email"
+          value={email}
+          onChange={setEmail}
+        />
 
-          <AuthDivider />
+        <AuthPasswordField
+          value={password}
+          showPassword={showPassword}
+          autoComplete={isSignup ? "new-password" : "current-password"}
+          onChange={setPassword}
+          onToggleVisibility={() => setShowPassword(!showPassword)}
+        />
 
-          <form
-            className="space-y-6"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void handleAuth();
-            }}
-          >
-            {isSignup && (
-              <AuthTextField
-                id="firstName"
-                label="Prénom"
-                type="text"
-                autoComplete="given-name"
-                value={firstName}
-                onChange={setFirstName}
-              />
-            )}
+        {error && <div className="text-red-600 text-sm">{error}</div>}
 
-            <AuthTextField
-              id="email"
-              label="Email"
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={setEmail}
-            />
+        <button
+          type="submit"
+          disabled={busy}
+          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#2E5B3E] hover:bg-[#23452f] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2E5B3E] disabled:opacity-50"
+        >
+          {loading === "email" ? "..." : isSignup ? "S'inscrire" : "Se connecter"}
+        </button>
 
-            <AuthPasswordField
-              value={password}
-              showPassword={showPassword}
-              autoComplete={isSignup ? "new-password" : "current-password"}
-              onChange={setPassword}
-              onToggleVisibility={() => setShowPassword(!showPassword)}
-            />
-
-            {error && <div className="text-red-600 text-sm">{error}</div>}
-
+        {!isSignup && (
+          <div className="text-center">
             <button
-              type="submit"
+              type="button"
               disabled={busy}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#2E5B3E] hover:bg-[#23452f] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2E5B3E] disabled:opacity-50"
+              onClick={() => {
+                const trimmed = email.trim();
+                const query = trimmed ? `?email=${encodeURIComponent(trimmed)}` : "";
+                router.push(`${REQUEST_RESET_PATH}${query}`);
+              }}
+              className="text-sm font-medium text-[#2E5B3E] hover:text-[#23452f] hover:underline disabled:opacity-50"
             >
-              {loading === "email" ? "..." : isSignup ? "S'inscrire" : "Se connecter"}
+              Mot de passe oublié ?
             </button>
+          </div>
+        )}
+      </form>
 
-            {!isSignup && (
-              <div className="text-center">
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => {
-                    const trimmed = email.trim();
-                    const query = trimmed ? `?email=${encodeURIComponent(trimmed)}` : "";
-                    router.push(`${REQUEST_RESET_PATH}${query}`);
-                  }}
-                  className="text-sm font-medium text-[#2E5B3E] hover:text-[#23452f] hover:underline disabled:opacity-50"
-                >
-                  Mot de passe oublié ?
-                </button>
-              </div>
-            )}
-          </form>
+      <AuthDivider />
 
-          <AuthDivider />
-
-          <button
-            type="button"
-            onClick={() => void handleGuestAuth()}
-            disabled={busy}
-            className="w-full flex items-center justify-center gap-2 py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2E5B3E] disabled:opacity-50"
-          >
-            <UsersIcon size={18} />
-            {loading === "guest" ? "Connexion..." : "Se connecter en tant qu'invité"}
-          </button>
-          <p className="mt-3 text-center text-xs text-gray-500">
-            Sans e-mail, la session disparaît si vous vous déconnectez.
-          </p>
-        </div>
-      </div>
-    </div>
+      <button
+        type="button"
+        onClick={() => void handleGuestAuth()}
+        disabled={busy}
+        className="w-full flex items-center justify-center gap-2 py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2E5B3E] disabled:opacity-50"
+      >
+        <UsersIcon size={18} />
+        {loading === "guest" ? "Connexion..." : "Se connecter en tant qu'invité"}
+      </button>
+      <p className="mt-3 text-center text-xs text-gray-500">
+        Sans e-mail, la session disparaît si vous vous déconnectez.
+      </p>
+    </AuthCard>
   );
 }

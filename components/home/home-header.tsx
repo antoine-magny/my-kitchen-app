@@ -32,7 +32,7 @@ export function HomeHeader({
         <div className="flex shrink-0 items-center gap-2.5">
           <Link
             href="/parametres"
-            className="flex h-11 w-11 items-center justify-center rounded-full text-[#4A7C59] transition-all hover:opacity-80 active:scale-95"
+            className="hidden h-11 w-11 items-center justify-center rounded-full text-[#4A7C59] transition-all hover:opacity-80 active:scale-95 sm:flex"
             style={{
               background: "#FFFFFF",
               border: "1.5px solid #E2EBE3",

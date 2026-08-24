@@ -29,22 +29,28 @@ export function RecipeHero({
         }}
       />
 
-      <Link
-        href="/recettes"
-        className="absolute top-4 left-4 z-10 flex h-10 w-10 items-center justify-center rounded-xl text-[#1C2B1E] transition-transform active:scale-95"
-        style={{ background: "rgba(255,255,255,0.92)", backdropFilter: "blur(8px)" }}
-        aria-label="Retour"
-      >
-        <ChevronLeftIcon size={18} strokeWidth={2.4} />
-      </Link>
+      <div className="absolute inset-x-0 top-0 z-10 flex items-start gap-2 px-4 pt-4">
+        <Link
+          href="/recettes"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[#1C2B1E] transition-transform active:scale-95"
+          style={{ background: "rgba(255,255,255,0.92)", backdropFilter: "blur(8px)" }}
+          aria-label="Retour"
+        >
+          <ChevronLeftIcon size={18} strokeWidth={2.4} />
+        </Link>
 
-      <RecipeActionsMenu onEdit={onEdit} onDelete={onDelete} />
+        {recipe.tagLabel ? (
+          <div className="flex min-w-0 flex-1 items-center self-center">
+            <span className="max-w-full truncate rounded-xl bg-[#4A7C59] px-3 py-1.5 text-xs font-extrabold tracking-wide text-white">
+              {recipe.tagLabel}
+            </span>
+          </div>
+        ) : (
+          <div className="min-w-0 flex-1" />
+        )}
 
-      {recipe.tagLabel && (
-        <div className="absolute top-4 right-16 z-10 rounded-xl bg-[#4A7C59] px-3 py-1.5 text-xs font-extrabold tracking-wide text-white">
-          {recipe.tagLabel}
-        </div>
-      )}
+        <RecipeActionsMenu onEdit={onEdit} onDelete={onDelete} />
+      </div>
 
       <div className="absolute right-0 bottom-0 left-0 px-5 pb-5">
         <h1 className="font-lora text-2xl leading-tight font-bold text-white">{recipe.title}</h1>

@@ -87,7 +87,7 @@ export function TodayMealCard({
                 <h3 className="font-lora mb-4 text-base leading-snug font-bold text-[#1C2B1E]">{recipe.title}</h3>
               </Link>
 
-              <div className="flex items-center gap-2.5">
+              <div className="flex flex-wrap items-center gap-2.5">
                 <div className="flex items-center gap-1.5 rounded-xl bg-[#FFF7ED] px-3 py-1.5">
                   <span className="text-[#F97316]"><FlameIcon size={13} /></span>
                   <span className="text-xs font-bold text-[#C2410C]">{recipe.calories} kcal</span>

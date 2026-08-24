@@ -54,18 +54,22 @@ export function SettingsMenu() {
         </div>
       ))}
 
-      <div className="flex items-center gap-3.5 px-5 py-4">
-        <span
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F0F4EF] text-base"
-          aria-hidden
-        >
-          🌙
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold text-[#1C2B1E]">Thème</p>
-          <p className="mt-0.5 text-xs font-medium text-[#7A8F7D]">Apparence de l&apos;application</p>
+      <div className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:gap-3.5">
+        <div className="flex min-w-0 items-center gap-3.5">
+          <span
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F0F4EF] text-base"
+            aria-hidden
+          >
+            🌙
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-bold text-[#1C2B1E]">Thème</p>
+            <p className="mt-0.5 truncate text-xs font-medium text-[#7A8F7D]">
+              Apparence de l&apos;application
+            </p>
+          </div>
         </div>
-        <div className="flex shrink-0 gap-1 rounded-xl bg-[#F0F4EF] p-1">
+        <div className="flex gap-1 rounded-xl bg-[#F0F4EF] p-1 sm:ml-auto sm:shrink-0">
           {THEMES.map((option) => {
             const active = option.id === theme;
             return (

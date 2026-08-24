@@ -25,7 +25,7 @@ export function GoalsCard() {
         </div>
       </div>
 
-      <div className="mt-3.5 grid grid-cols-3 gap-2">
+      <div className="mt-3.5 grid grid-cols-3 gap-1.5 sm:gap-2">
         {NUTRITION_GOALS.map((option) => {
           const active = option.id === goal;
           return (
@@ -34,7 +34,7 @@ export function GoalsCard() {
               type="button"
               onClick={() => setGoal(option.id)}
               aria-pressed={active}
-              className={`rounded-2xl border px-2 py-3 text-center transition-all active:scale-95 ${
+              className={`rounded-2xl border px-1.5 py-2.5 text-center transition-all active:scale-95 sm:px-2 sm:py-3 ${
                 active ? "border-[#4A7C59] bg-[#EBF2EC]" : "border-[#E2EBE3] bg-[#FAFBF9]"
               }`}
             >
@@ -42,13 +42,15 @@ export function GoalsCard() {
                 {option.emoji}
               </span>
               <span
-                className={`mt-1.5 block text-xs leading-tight font-bold ${
+                className={`mt-1.5 block text-[11px] leading-tight font-bold sm:text-xs ${
                   active ? "text-[#2E5C3A]" : "text-[#1C2B1E]"
                 }`}
               >
                 {option.label}
               </span>
-              <span className="mt-0.5 block text-[10px] font-medium text-[#7A8F7D]">{option.hint}</span>
+              <span className="mt-0.5 block text-[9px] leading-tight font-medium text-[#7A8F7D] sm:text-[10px]">
+                {option.hint}
+              </span>
             </button>
           );
         })}

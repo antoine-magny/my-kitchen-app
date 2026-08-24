@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ClockIcon, FlameIcon, ProteinIcon } from "@/components/icons";
+import { ClockIcon, FlameIcon, ProteinIcon, XIcon } from "@/components/icons";
 import { MissingIngredientsBadges } from "@/components/missing-ingredients-badges";
 import { type Recipe } from "@/lib/recipes";
 
@@ -49,7 +49,7 @@ export function RecipeCard({
           }}
           aria-label={`Supprimer le ${slotName}`}
         >
-          ❌
+          <XIcon size={16} className="text-[#DC2626]" />
         </button>
         <div
           className="pointer-events-none absolute bottom-3 left-3 z-10 flex items-center gap-1.5 rounded-xl px-3 py-1.5"

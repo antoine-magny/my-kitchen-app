@@ -62,7 +62,7 @@ export function RecipeActionsMenu({
   }
 
   return (
-    <div className="absolute top-4 right-4 z-20">
+    <div className="relative z-20 shrink-0">
       <button
         ref={buttonRef}
         type="button"

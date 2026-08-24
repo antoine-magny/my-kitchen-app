@@ -1,3 +1,4 @@
+import { XIcon } from "@/components/icons";
 import { MissingIngredientsBadges } from "@/components/missing-ingredients-badges";
 import { type Recipe } from "@/lib/recipes";
 
@@ -49,7 +50,7 @@ export function BreakfastCard({
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-base transition-colors hover:bg-[#FEF2F2] active:scale-95"
           aria-label="Supprimer le petit-déjeuner"
         >
-          ❌
+          <XIcon size={16} className="text-[#DC2626]" />
         </button>
       </div>
       <div className="border-t border-[#F0F4EF] px-4 py-3">

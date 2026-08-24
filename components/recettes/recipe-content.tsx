@@ -102,13 +102,13 @@ export function RecipeContent({
                     background: missing ? "#FFF7ED" : undefined,
                   }}
                 >
-                  <span className="flex items-center text-sm font-semibold text-[#1C2B1E]">
+                  <span className="flex min-w-0 flex-1 items-center text-sm font-semibold break-words text-[#1C2B1E]">
                     {ing.icon && ing.icon !== "2205" && ing.icon !== "2753" && ing.icon !== "∅" ? (
-                      <div className="mr-2 flex items-center justify-center">
+                      <div className="mr-2 flex shrink-0 items-center justify-center">
                         <IngredientIcon iconHex={ing.icon} size={20} />
                       </div>
                     ) : null}
-                    {ing.name}
+                    <span className="min-w-0 flex-1 break-words">{ing.name}</span>
                   </span>
                   <span className="shrink-0 text-right">
                     {missing ? (

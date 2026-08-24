@@ -34,11 +34,15 @@ export function StatsCard() {
         {WEEKLY_HIGHLIGHTS.map((stat, idx) => (
           <div
             key={stat.label}
-            className="px-2 py-4 text-center"
+            className="px-1.5 py-3 text-center sm:px-3 sm:py-4"
             style={{ borderLeft: idx > 0 ? "1px solid #F0F4EF" : "none" }}
           >
-            <p className="font-lora text-lg leading-none font-bold text-[#2E5B3E]">{stat.value}</p>
-            <p className="mt-1 text-xs font-medium text-[#7A8F7D]">{stat.label}</p>
+            <p className="font-lora text-base leading-none font-bold text-[#2E5B3E] sm:text-lg">
+              {stat.value}
+            </p>
+            <p className="mt-1 text-[10px] leading-tight font-medium text-[#7A8F7D] sm:text-xs">
+              {stat.label}
+            </p>
           </div>
         ))}
       </div>

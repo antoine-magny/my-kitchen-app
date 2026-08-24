@@ -95,8 +95,8 @@ export default function RecettesPage() {
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Rechercher une recette…"
-                className="min-w-0 flex-1 bg-transparent text-base font-medium text-[#1C2B1E] outline-none"
+                placeholder="Rechercher…"
+                className="min-w-0 flex-1 truncate bg-transparent text-base font-medium text-[#1C2B1E] outline-none"
               />
             </div>
 
