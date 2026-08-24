@@ -66,3 +66,4 @@ Tu partages cet environnement de développement local avec un autre agent IA nom
 2. RÈGLE DE MODIFICATION DE FICHIERS (GIT) :
    - Si nous sommes sur la même branche (ex: `main`) qu'Antigravity, tu ne dois JAMAIS modifier des fichiers en même temps que lui pour éviter les écrasements. Nous travaillons en alternance (tu dois utiliser la compétence "synchro git" au passage de relais).
    - Si nous avons besoin de travailler en parallèle de manière isolée, tu dois OBLIGATOIREMENT créer et basculer sur une nouvelle branche GitHub (ex: `git checkout -b feature/cursor-task`).
+   
