@@ -47,6 +47,19 @@ export function SearchIcon({ size = 16, strokeWidth = 2.2, className }: IconProp
   );
 }
 
+export function FilterIcon({ size = 16, strokeWidth = 2.2, className }: IconProps) {
+  return (
+    <StrokeIcon size={size} strokeWidth={strokeWidth} className={className}>
+      <path d="M4 8h4" />
+      <path d="M12 8h8" />
+      <circle cx="10" cy="8" r="2" />
+      <path d="M4 16h10" />
+      <path d="M18 16h2" />
+      <circle cx="16" cy="16" r="2" />
+    </StrokeIcon>
+  );
+}
+
 export function ClockIcon({ size = 13, strokeWidth = 2.5, className }: IconProps) {
   return (
     <StrokeIcon size={size} strokeWidth={strokeWidth} className={className}>

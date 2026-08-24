@@ -2,15 +2,39 @@ import { coerceUnitCode } from "@/lib/units";
 import { describeIngredient } from "@/lib/ingredients";
 import type { RecipeIngredient } from "@/types/inventory";
 import { RECIPES } from "@/lib/recipes-data";
-import { ingFromText, type Recipe, type RecipeFilter } from "@/lib/recipe-model";
+import {
+  coerceRecipeCost,
+  coerceRecipeDifficulty,
+  coerceRecipeTags,
+  ingFromText,
+  withDerivedTags,
+  type Recipe,
+} from "@/lib/recipe-model";
 
 export { RECIPES } from "@/lib/recipes-data";
 export {
+  ATTRIBUTE_TAGS,
+  DIFFICULTIES,
+  MEAL_TAGS,
+  RECIPE_COSTS,
+  RECIPE_COST_LABELS,
+  RECIPE_TAG_LABELS,
+  RECIPE_TAGS,
+  coerceRecipeCost,
+  coerceRecipeDifficulty,
+  coerceRecipeTag,
+  coerceRecipeTags,
   ing,
   ingFromText,
+  isRecipeTag,
+  tagToLabel,
+  recipeBadgeLabels,
+  withDerivedTags,
   type Recipe,
-  type RecipeFilter,
+  type RecipeCost,
+  type RecipeDifficulty,
   type RecipeStep,
+  type RecipeTag,
 } from "@/lib/recipe-model";
 export type { RecipeIngredient };
 
@@ -42,14 +66,23 @@ function sanitizeIngredient(raw: unknown): RecipeIngredient | null {
 
 function sanitizeRecipe(raw: unknown): Recipe | null {
   if (!raw || typeof raw !== "object") return null;
-  const recipe = raw as Recipe;
+  const recipe = raw as Recipe & { tag?: unknown };
   if (typeof recipe.id !== "number" || typeof recipe.title !== "string") return null;
   const ingredients = Array.isArray(recipe.ingredients)
     ? recipe.ingredients
         .map(sanitizeIngredient)
         .filter((ing): ing is RecipeIngredient => ing != null)
     : [];
-  return { ...recipe, ingredients };
+  const time = typeof recipe.time === "string" ? recipe.time : "30 min";
+  const tags = withDerivedTags(coerceRecipeTags(recipe.tags, recipe.tag), time);
+  return {
+    ...recipe,
+    time,
+    ingredients,
+    tags,
+    cost: coerceRecipeCost(recipe.cost),
+    difficulty: coerceRecipeDifficulty(recipe.difficulty),
+  };
 }
 
 function readCustomRecipes(): Recipe[] {
@@ -181,19 +214,4 @@ export function deleteRecipe(id: number): boolean {
   return true;
 }
 
-export const DIFFICULTIES = ["Facile", "Moyen", "Difficile"] as const;
-
-export const RECIPE_TAGS: Exclude<RecipeFilter, "Tout">[] = [
-  "Express",
-  "Végétarien",
-  "Riche en protéines",
-  "Desserts",
-];
-
-export function tagToLabel(tag: RecipeFilter | null): string | undefined {
-  if (!tag || tag === "Tout") return undefined;
-  if (tag === "Riche en protéines") return "Protéines";
-  if (tag === "Desserts") return "Dessert";
-  return tag;
-}
 

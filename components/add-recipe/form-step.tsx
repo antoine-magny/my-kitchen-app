@@ -3,6 +3,7 @@ import { FormStepIngredients } from "@/components/add-recipe/form-step-ingredien
 import { FormStepInstructions } from "@/components/add-recipe/form-step-instructions";
 import { FormStepMeta } from "@/components/add-recipe/form-step-meta";
 import type { RecipeFormIngredientRow } from "@/lib/recipe-import";
+import type { RecipeCost, RecipeDifficulty, RecipeTag } from "@/lib/recipes";
 
 export function FormStep({
   title, setTitle,
@@ -11,6 +12,9 @@ export function FormStep({
   servings, setServings,
   calories, setCalories,
   proteins, setProteins,
+  difficulty, setDifficulty,
+  tags, setTags,
+  cost, setCost,
   ingredients, setIngredients, updateIngredient,
   instructions, setInstructions,
   importPhotoDataUrl,
@@ -22,6 +26,9 @@ export function FormStep({
   servings: string; setServings: (val: string) => void;
   calories: string; setCalories: (val: string) => void;
   proteins: string; setProteins: (val: string) => void;
+  difficulty: RecipeDifficulty; setDifficulty: (val: RecipeDifficulty) => void;
+  tags: RecipeTag[]; setTags: (val: RecipeTag[]) => void;
+  cost: RecipeCost; setCost: (val: RecipeCost) => void;
   ingredients: RecipeFormIngredientRow[];
   setIngredients: (updater: (prev: RecipeFormIngredientRow[]) => RecipeFormIngredientRow[]) => void;
   updateIngredient: (index: number, field: keyof RecipeFormIngredientRow, value: string) => void;
@@ -56,6 +63,12 @@ export function FormStep({
           setCalories={setCalories}
           proteins={proteins}
           setProteins={setProteins}
+          difficulty={difficulty}
+          setDifficulty={setDifficulty}
+          tags={tags}
+          setTags={setTags}
+          cost={cost}
+          setCost={setCost}
           titleRef={titleRef}
         />
 

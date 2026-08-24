@@ -78,6 +78,9 @@ lib/                    Logique métier, sans JSX
   fridge.ts             Inventaire local + transfert Courses → Frigo
   ingredients.ts        Référentiel canonique (ingredientId)
   planning.ts           Construction de semaine + agrégation d'ingrédients
+  recipe-model.ts       Types Recipe : tags multiples, coût, difficulté
+  recipe-filters.ts     Filtrage du catalogue (tags, temps, difficulté, coût, recherche)
+  recipe-time.ts        parseMinutes (filtres, save-recipe, planning)
   ai/                   Client Gemini et prompts
   supabase/             Client admin + types générés du schéma
 types/
@@ -105,6 +108,10 @@ Quelques exemples de cette découpe, utiles comme modèles :
 - `app/planning/page.tsx` délègue le choix de recette à
   `components/select-recipe-modal.tsx` et la génération IA à
   `components/generate-from-fridge-modal.tsx`.
+- `app/recettes/page.tsx` orchestre la liste ; le filtrage (multi-tags, temps,
+  difficulté, coût, recherche titre + ingrédients) vit dans
+  `lib/recipe-filters.ts`. Les pilules et le panneau de filtres sont dans
+  `components/recettes/`.
 - `app/courses/page.tsx` délègue fusion / transfert à `lib/shopping-list.ts` et
   `lib/fridge.ts` ; le bouton « Au frigo » appelle
   `transferCheckedShoppingItemsToFridge`.
@@ -317,8 +324,15 @@ montage. Le drapeau `ready` évite d'écraser le stockage avec un état vide au
 premier passage de l'effet d'écriture.
 
 Les recettes livrées avec l'app sont un tableau en dur (`RECIPES` dans
-`lib/recipes.ts`), fusionné à l'exécution avec les créations, modifications et
-suppressions stockées côté client.
+`lib/recipes-data.ts`), fusionné à l'exécution avec les créations, modifications et
+suppressions stockées côté client (`lib/recipes.ts`).
+
+Chaque recette a **plusieurs tags** (`entree`, `plat`, `dessert`, `encas`,
+`express` si ≤ 15 min, `vegetarien`, `riche_en_proteines`) et un **coût**
+(`economique` | `moyen` | `premium`). L'ancien champ unique `tag` (libellés
+français) est encore lu au chargement du `localStorage` et migré vers `tags[]`.
+Les favoris restent à part (`lib/favorites.ts`). La recherche du catalogue porte
+sur le titre **et** les noms d'ingrédients.
 
 ---
 

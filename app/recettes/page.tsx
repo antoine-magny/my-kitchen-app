@@ -1,28 +1,41 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AddRecipeModal } from "@/components/add-recipe-modal";
-import { HeartIcon, PlusIcon, SearchIcon } from "@/components/icons";
+import { PlusIcon, SearchIcon } from "@/components/icons";
 import { FeaturedCard } from "@/components/recettes/featured-card";
 import { RecipeCard } from "@/components/recettes/recipe-card";
+import { RecipeFilterPills } from "@/components/recettes/recipe-filter-pills";
+import { RecipeFiltersPanel } from "@/components/recettes/recipe-filters-panel";
 import { DEFAULT_FAVORITES, readFavorites, writeFavorites } from "@/lib/favorites";
 import {
+  countAdvancedFilters,
+  countRecipesByTag,
+  filterRecipes,
+  hasActiveCatalogFilters,
+  type TimeFilterId,
+} from "@/lib/recipe-filters";
+import {
   RECIPES,
+  RECIPE_TAGS,
   addCustomRecipe,
   getAllRecipes,
   type NewRecipeInput,
   type Recipe,
-  type RecipeFilter,
+  type RecipeCost,
+  type RecipeDifficulty,
+  type RecipeTag,
 } from "@/lib/recipes";
-
-type Filter = RecipeFilter | "Favoris";
-
-const FILTERS: Filter[] = ["Tout", "Favoris", "Express", "Végétarien", "Riche en protéines", "Desserts"];
 
 export default function RecettesPage() {
   const [recipes, setRecipes] = useState<Recipe[]>(RECIPES);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [activeFilter, setActiveFilter] = useState<Filter>("Tout");
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<RecipeTag[]>([]);
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [timeFilter, setTimeFilter] = useState<TimeFilterId | null>(null);
+  const [difficulties, setDifficulties] = useState<RecipeDifficulty[]>([]);
+  const [costs, setCosts] = useState<RecipeCost[]>([]);
   const [favorites, setFavorites] = useState<Set<number>>(() => new Set(DEFAULT_FAVORITES));
   const [query, setQuery] = useState("");
 
@@ -46,28 +59,51 @@ export default function RecettesPage() {
     setRecipes(getAllRecipes());
   };
 
-  const showFavoritesOnly = activeFilter === "Favoris";
-  const featured = !showFavoritesOnly ? (recipes.find((r) => r.featured) ?? recipes[0]) : undefined;
-  const listSource = showFavoritesOnly
-    ? recipes.filter((r) => favorites.has(r.id))
-    : recipes.filter((r) => r.id !== featured?.id);
+  const catalogQuery = useMemo(
+    () => ({
+      selectedTags,
+      favoritesOnly,
+      favoriteIds: favorites,
+      timeFilter,
+      difficulties,
+      costs,
+      query,
+    }),
+    [selectedTags, favoritesOnly, favorites, timeFilter, difficulties, costs, query],
+  );
 
-  const filtered = listSource.filter((r) => {
-    const matchFilter =
-      activeFilter === "Tout" ||
-      activeFilter === "Favoris" ||
-      r.tag === activeFilter;
-    const matchQuery = query === "" || r.title.toLowerCase().includes(query.toLowerCase());
-    return matchFilter && matchQuery;
+  const showFeatured = !hasActiveCatalogFilters(catalogQuery);
+  const featured = showFeatured ? (recipes.find((r) => r.featured) ?? recipes[0]) : undefined;
+  const filtered = filterRecipes(recipes, {
+    ...catalogQuery,
+    excludeId: featured?.id,
   });
+  const advancedCount = countAdvancedFilters(catalogQuery);
 
-  const filterCounts: Record<string, number> = {
-    Tout: recipes.filter((r) => r.id !== featured?.id).length,
-    Favoris: recipes.filter((r) => favorites.has(r.id)).length,
-    Express: recipes.filter((r) => r.tag === "Express").length,
-    Végétarien: recipes.filter((r) => r.tag === "Végétarien").length,
-    "Riche en protéines": recipes.filter((r) => r.tag === "Riche en protéines").length,
-    Desserts: recipes.filter((r) => r.tag === "Desserts").length,
+  const tagCounts = Object.fromEntries(
+    RECIPE_TAGS.map((tag) => [tag, countRecipesByTag(recipes, tag)]),
+  ) as Record<RecipeTag, number>;
+
+  const resetAdvanced = () => {
+    setTimeFilter(null);
+    setDifficulties([]);
+    setCosts([]);
+  };
+
+  const toggleTag = (tag: RecipeTag) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
+    );
+  };
+
+  const toggleDifficulty = (value: RecipeDifficulty) => {
+    setDifficulties((prev) =>
+      prev.includes(value) ? prev.filter((d) => d !== value) : [...prev, value],
+    );
+  };
+
+  const toggleCost = (value: RecipeCost) => {
+    setCosts((prev) => (prev.includes(value) ? prev.filter((c) => c !== value) : [...prev, value]));
   };
 
   return (
@@ -95,7 +131,7 @@ export default function RecettesPage() {
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Rechercher…"
+                placeholder="Titre ou ingrédient…"
                 className="min-w-0 flex-1 truncate bg-transparent text-base font-medium text-[#1C2B1E] outline-none"
               />
             </div>
@@ -112,50 +148,29 @@ export default function RecettesPage() {
           </div>
         </div>
 
-        {featured && (
+        {featured ? (
           <FeaturedCard recipe={featured} onToggleFav={toggleFav} isFav={favorites.has(featured.id)} />
-        )}
+        ) : null}
 
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            {FILTERS.map((f) => {
-              const isActive = activeFilter === f;
-              const isFavoris = f === "Favoris";
-              return (
-                <button
-                  key={f}
-                  type="button"
-                  onClick={() => setActiveFilter(f)}
-                  className="flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold whitespace-nowrap transition-all duration-200"
-                  style={{
-                    background: isActive ? (isFavoris ? "#E85D75" : "#1C2B1E") : "#FFFFFF",
-                    color: isActive ? "#FFFFFF" : isFavoris ? "#E85D75" : "#4A7C59",
-                    border: isActive
-                      ? `1.5px solid ${isFavoris ? "#E85D75" : "#1C2B1E"}`
-                      : isFavoris
-                        ? "1.5px solid #F9C5CF"
-                        : "1.5px solid #C8E0CF",
-                    boxShadow: isActive
-                      ? `0 4px 12px ${isFavoris ? "rgba(232,93,117,0.25)" : "rgba(28,43,30,0.18)"}`
-                      : "0 1px 4px rgba(28,43,30,0.05)",
-                  }}
-                >
-                  {isFavoris && (
-                    <span className="flex items-center">
-                      <HeartIcon filled={isActive} light={isActive} />
-                    </span>
-                  )}
-                  {f}
-                  <span className="ml-1 text-xs" style={{ opacity: isActive ? 0.6 : 0.55 }}>
-                    {filterCounts[f]}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+          <RecipeFilterPills
+            selectedTags={selectedTags}
+            favoritesOnly={favoritesOnly}
+            favoriteCount={recipes.filter((r) => favorites.has(r.id)).length}
+            tagCounts={tagCounts}
+            totalCount={recipes.length}
+            advancedCount={advancedCount}
+            onSelectTout={() => {
+              setSelectedTags([]);
+              setFavoritesOnly(false);
+            }}
+            onToggleFavoris={() => setFavoritesOnly((prev) => !prev)}
+            onToggleTag={toggleTag}
+            onOpenFilters={() => setShowFilters(true)}
+          />
           <p className="text-sm font-medium text-[#7A8F7D]">
             <span className="font-bold text-[#1C2B1E]">{filtered.length}</span>{" "}
-            {showFavoritesOnly ? "favoris" : "recettes"}
+            {favoritesOnly ? "favoris" : "recettes"}
           </p>
         </div>
 
@@ -172,16 +187,16 @@ export default function RecettesPage() {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-24">
-            <div className="mb-4 text-5xl">{showFavoritesOnly ? "💔" : "🔍"}</div>
+            <div className="mb-4 text-5xl">{favoritesOnly ? "💔" : "🔍"}</div>
             <p className="font-lora text-base font-bold text-[#1C2B1E]">
-              {showFavoritesOnly ? "Aucun favori pour l'instant" : "Aucune recette trouvée"}
+              {favoritesOnly ? "Aucun favori pour l'instant" : "Aucune recette trouvée"}
             </p>
             <p className="mt-1 text-sm font-medium text-[#7A8F7D]">
-              {showFavoritesOnly
+              {favoritesOnly
                 ? "Touchez le cœur sur une recette pour l'ajouter ici"
                 : "Essayez un autre filtre ou mot-clé"}
             </p>
-            {!showFavoritesOnly && (
+            {!favoritesOnly ? (
               <button
                 type="button"
                 onClick={() => setShowAddModal(true)}
@@ -189,11 +204,10 @@ export default function RecettesPage() {
               >
                 <PlusIcon size={13} /> Ajouter une recette
               </button>
-            )}
-            {showFavoritesOnly && (
+            ) : (
               <button
                 type="button"
-                onClick={() => setActiveFilter("Tout")}
+                onClick={() => setFavoritesOnly(false)}
                 className="mt-5 flex items-center gap-2 rounded-xl bg-[#EBF2EC] px-4 py-2.5 text-sm font-bold text-[#4A7C59] transition-all hover:opacity-90"
               >
                 Voir toutes les recettes
@@ -203,9 +217,22 @@ export default function RecettesPage() {
         )}
       </main>
 
-      {showAddModal && (
+      {showAddModal ? (
         <AddRecipeModal onAdd={handleAdd} onClose={() => setShowAddModal(false)} />
-      )}
+      ) : null}
+
+      {showFilters ? (
+        <RecipeFiltersPanel
+          timeFilter={timeFilter}
+          difficulties={difficulties}
+          costs={costs}
+          onTimeFilter={setTimeFilter}
+          onToggleDifficulty={toggleDifficulty}
+          onToggleCost={toggleCost}
+          onReset={resetAdvanced}
+          onClose={() => setShowFilters(false)}
+        />
+      ) : null}
     </div>
   );
 }

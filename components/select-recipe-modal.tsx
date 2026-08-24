@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/modal-layout";
 import { useLockBodyScroll } from "@/lib/lock-body-scroll";
 import { getAllRecipes, type Recipe } from "@/lib/recipes";
+import { recipeMatchesQuery } from "@/lib/recipe-filters";
 
 const SLOT_LABELS = {
   breakfast: "petit-déjeuner",
@@ -37,14 +38,7 @@ export function SelectRecipeModal({
   }, []);
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return recipes;
-    return recipes.filter(
-      (r) =>
-        r.title.toLowerCase().includes(q) ||
-        (r.tagLabel ?? "").toLowerCase().includes(q) ||
-        (r.tag ?? "").toLowerCase().includes(q),
-    );
+    return recipes.filter((r) => recipeMatchesQuery(r, query));
   }, [recipes, query]);
 
   const title = currentRecipeId != null ? "Remplacer la recette" : "Choisir une recette";

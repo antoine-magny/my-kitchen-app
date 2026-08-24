@@ -2,12 +2,16 @@ import "server-only";
 
 import type { ParsedRecipe } from "@/lib/recipe-import";
 import {
+  coerceRecipeCost,
+  coerceRecipeDifficulty,
+  coerceRecipeTags,
   ing,
-  tagToLabel,
+  withDerivedTags,
   type NewRecipeInput,
   type RecipeIngredient,
   type RecipeStep,
 } from "@/lib/recipes";
+import { parseMinutes } from "@/lib/recipe-time";
 import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_UNIT, normalizeUnit, type UnitCode } from "@/lib/units";
 
@@ -21,8 +25,9 @@ export type RecipeFormPayload = Omit<ParsedRecipe, "ingredients"> & {
   ingredients: RecipeFormIngredient[];
   /** URL http(s) uniquement — les data URLs ne sont pas persistées en base. */
   photo_url?: string | null;
-  difficulty?: "Facile" | "Moyen" | "Difficile";
-  tag?: NewRecipeInput["tag"];
+  difficulty?: NewRecipeInput["difficulty"];
+  tags?: NewRecipeInput["tags"];
+  cost?: NewRecipeInput["cost"];
 };
 
 export type SavedRecipeResult = {
@@ -70,7 +75,7 @@ export async function saveRecipeToSupabase(
       ? (prepMinutes ?? 0) + (cookMinutes ?? 0)
       : null;
 
-  const difficultyUi = payload.difficulty ?? "Facile";
+  const difficultyUi = coerceRecipeDifficulty(payload.difficulty);
   const difficultyDb = toDbDifficulty(difficultyUi);
   const photoUrl = asHttpUrl(payload.photo_url) ?? null;
 
@@ -205,7 +210,7 @@ export function toNewRecipeInput(
     detail,
   }));
 
-  const tag = payload.tag ?? null;
+  const tags = withDerivedTags(coerceRecipeTags(payload.tags), time);
 
   return {
     title: payload.title.trim(),
@@ -214,9 +219,9 @@ export function toNewRecipeInput(
     calories: Math.max(0, Math.round(payload.calories_per_serving) || 0),
     proteins: Math.max(0, Math.round(payload.protein_per_serving) || 0),
     servings: Math.max(1, Math.round(payload.servings) || 1),
-    difficulty: payload.difficulty ?? "Facile",
-    tag,
-    tagLabel: tagToLabel(tag),
+    difficulty: coerceRecipeDifficulty(payload.difficulty),
+    tags,
+    cost: coerceRecipeCost(payload.cost),
     ingredients: recipeIngredients,
     steps,
   };
@@ -228,27 +233,9 @@ function toPositiveAmount(value: number | string): number {
   return n;
 }
 
-/** Extrait un nombre de minutes depuis "15 min", "1 h", "1h30", etc. */
-export function parseMinutes(value: string): number | null {
-  const raw = value.trim().toLowerCase();
-  if (!raw) return null;
+export { parseMinutes } from "@/lib/recipe-time";
 
-  const hourMin = raw.match(/(\d+)\s*h(?:\s*(\d+))?/);
-  if (hourMin) {
-    const h = Number(hourMin[1]) || 0;
-    const m = Number(hourMin[2]) || 0;
-    return h * 60 + m;
-  }
-
-  const mins = raw.match(/(\d+(?:[.,]\d+)?)\s*(?:min|minutes?)?/);
-  if (mins) {
-    return Math.round(Number(mins[1].replace(",", ".")));
-  }
-
-  return null;
-}
-
-function toDbDifficulty(value: "Facile" | "Moyen" | "Difficile"): string {
+function toDbDifficulty(value: NewRecipeInput["difficulty"]): string {
   if (value === "Facile") return "facile";
   if (value === "Difficile") return "difficile";
   return "moyen";

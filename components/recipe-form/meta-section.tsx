@@ -1,6 +1,13 @@
 import { ChevronDownIcon } from "@/components/icons";
+import { RecipeTagPills } from "@/components/recipe-form/tag-pills";
 import { inputClass, inputStyle, labelClass } from "@/components/recipe-form-styles";
-import { DIFFICULTIES, RECIPE_TAGS, type RecipeFilter } from "@/lib/recipes";
+import {
+  DIFFICULTIES,
+  RECIPE_COST_LABELS,
+  RECIPE_COSTS,
+  type RecipeCost,
+  type RecipeTag,
+} from "@/lib/recipes";
 
 export function MetaSection({
   titleRef,
@@ -10,7 +17,8 @@ export function MetaSection({
   calories, setCalories,
   proteins, setProteins,
   difficulty, setDifficulty,
-  tag, setTag,
+  tags, setTags,
+  cost, setCost,
 }: {
   titleRef: React.RefObject<HTMLInputElement | null>;
   title: string; setTitle: (val: string) => void;
@@ -19,7 +27,8 @@ export function MetaSection({
   calories: string; setCalories: (val: string) => void;
   proteins: string; setProteins: (val: string) => void;
   difficulty: typeof DIFFICULTIES[number]; setDifficulty: (val: typeof DIFFICULTIES[number]) => void;
-  tag: Exclude<RecipeFilter, "Tout"> | ""; setTag: (val: Exclude<RecipeFilter, "Tout"> | "") => void;
+  tags: RecipeTag[]; setTags: (val: RecipeTag[]) => void;
+  cost: RecipeCost; setCost: (val: RecipeCost) => void;
 }) {
   return (
     <>
@@ -116,19 +125,18 @@ export function MetaSection({
         </div>
         <div>
           <label className={labelClass} style={{ letterSpacing: "0.04em" }}>
-            CATÉGORIE
+            COÛT
           </label>
           <div className="relative">
             <select
-              value={tag}
-              onChange={(e) => setTag(e.target.value as Exclude<RecipeFilter, "Tout"> | "")}
+              value={cost}
+              onChange={(e) => setCost(e.target.value as RecipeCost)}
               className={`${inputClass} appearance-none pr-10`}
               style={inputStyle}
             >
-              <option value="">Aucune</option>
-              {RECIPE_TAGS.map((t) => (
-                <option key={t} value={t}>
-                  {t}
+              {RECIPE_COSTS.map((c) => (
+                <option key={c} value={c}>
+                  {RECIPE_COST_LABELS[c]}
                 </option>
               ))}
             </select>
@@ -137,6 +145,13 @@ export function MetaSection({
             </span>
           </div>
         </div>
+      </div>
+
+      <div>
+        <label className={labelClass} style={{ letterSpacing: "0.04em" }}>
+          CATÉGORIES
+        </label>
+        <RecipeTagPills selected={tags} onChange={setTags} />
       </div>
     </>
   );

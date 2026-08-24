@@ -1,20 +1,27 @@
 import { emptyIngredientRow, type RecipeFormIngredientRow } from "@/lib/recipe-import";
 import {
-  DIFFICULTIES,
+  coerceRecipeCost,
+  coerceRecipeDifficulty,
+  coerceRecipeTags,
   type Recipe,
-  type RecipeFilter,
+  type RecipeCost,
+  type RecipeDifficulty,
   type RecipeStep,
+  type RecipeTag,
 } from "@/lib/recipes";
 
-export type Difficulty = (typeof DIFFICULTIES)[number];
+export type Difficulty = RecipeDifficulty;
 
 export function toDifficulty(value: string): Difficulty {
-  return (DIFFICULTIES as readonly string[]).includes(value) ? (value as Difficulty) : "Facile";
+  return coerceRecipeDifficulty(value);
 }
 
-export function toTag(value: RecipeFilter | null | undefined): Exclude<RecipeFilter, "Tout"> | "" {
-  if (!value || value === "Tout") return "";
-  return value;
+export function toTags(recipe?: Recipe): RecipeTag[] {
+  return coerceRecipeTags(recipe?.tags);
+}
+
+export function toCost(recipe?: Recipe): RecipeCost {
+  return coerceRecipeCost(recipe?.cost);
 }
 
 export function initialIngredientRows(recipe?: Recipe): RecipeFormIngredientRow[] {

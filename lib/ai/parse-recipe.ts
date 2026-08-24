@@ -6,6 +6,14 @@ import {
   getGeminiApiKey,
   getGeminiModel,
 } from "@/lib/ai/gemini";
+import {
+  coerceRecipeCost,
+  coerceRecipeDifficulty,
+  coerceRecipeTags,
+  RECIPE_COSTS,
+  RECIPE_TAGS,
+  withDerivedTags,
+} from "@/lib/recipe-model";
 import type { ParsedRecipe } from "@/lib/recipe-import";
 import { normalizeUnit, UNIT_LIST } from "@/lib/units";
 
@@ -49,6 +57,24 @@ const PARSE_RESPONSE_SCHEMA = {
       type: Type.ARRAY,
       items: { type: Type.STRING },
     },
+    tags: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.STRING,
+        enum: [...RECIPE_TAGS],
+      },
+      description:
+        "Un ou plusieurs tags : entree, plat, dessert, encas, express (si ≤15 min), vegetarien, riche_en_proteines.",
+    },
+    difficulty: {
+      type: Type.STRING,
+      enum: ["Facile", "Moyen", "Difficile"],
+    },
+    cost: {
+      type: Type.STRING,
+      enum: [...RECIPE_COSTS],
+      description: "economique | moyen | premium selon les ingrédients.",
+    },
   },
   required: [
     "title",
@@ -59,6 +85,9 @@ const PARSE_RESPONSE_SCHEMA = {
     "protein_per_serving",
     "ingredients",
     "instructions",
+    "tags",
+    "difficulty",
+    "cost",
   ],
 } as const;
 
@@ -72,6 +101,9 @@ const SYSTEM_INSTRUCTION = [
   "Utilise l’unité « qs » avec amount 0 pour les quantités non chiffrables (sel, poivre, herbes à volonté).",
   "instructions : liste ordonnée d’étapes actionnables (une phrase claire par étape).",
   "calories_per_serving et protein_per_serving : estimations réalistes si absentes de la source.",
+  "tags : tableau d’un ou plusieurs codes parmi entree, plat, dessert, encas, express, vegetarien, riche_en_proteines. Inclus toujours au moins un type de plat (entree/plat/dessert/encas). express uniquement si le temps total estimé est ≤ 15 min.",
+  "difficulty : Facile, Moyen ou Difficile.",
+  "cost : economique (ingrédients basiques), moyen, ou premium (produits nobles, hors-saison, truffe, filet, etc.).",
 ].join(" ");
 
 /**
@@ -269,6 +301,10 @@ function coerceParsedRecipe(raw: string | undefined): ParsedRecipe {
     throw new ParseRecipeError("Aucune étape exploitable dans la réponse IA.");
   }
 
+  const timeHint = [asNonEmptyString(row.prep_time), asNonEmptyString(row.cook_time)]
+    .filter(Boolean)
+    .join(" ");
+
   return {
     title,
     prep_time: asNonEmptyString(row.prep_time) ?? "15 min",
@@ -278,6 +314,9 @@ function coerceParsedRecipe(raw: string | undefined): ParsedRecipe {
     protein_per_serving: Math.round(asPositiveNumber(row.protein_per_serving, 20)),
     ingredients,
     instructions,
+    tags: withDerivedTags(coerceRecipeTags(row.tags, row.tag), timeHint),
+    difficulty: coerceRecipeDifficulty(row.difficulty),
+    cost: coerceRecipeCost(row.cost),
   };
 }
 
