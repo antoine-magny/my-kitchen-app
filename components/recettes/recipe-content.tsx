@@ -33,7 +33,7 @@ export function RecipeContent({
 
   return (
     <>
-      <div className="px-5 pt-4 pb-28">
+      <div className="px-5 pt-4 pb-28 lg:pb-24">
         <MissingIngredientsBadges names={recipe.missingIngredients} className="mb-4" />
         <div
           className="mb-5 overflow-hidden rounded-2xl"
@@ -177,7 +177,7 @@ export function RecipeContent({
       </div>
 
       {tab === "steps" && (
-        <div className="fixed right-0 bottom-[var(--nav-offset)] left-0 z-40 px-4">
+        <div className="fixed right-0 bottom-[var(--nav-offset)] left-0 z-40 px-4 lg:left-[var(--sidebar-width)]">
           <div
             className="mx-auto flex max-w-md items-center gap-3 rounded-2xl px-4 py-3 sm:max-w-2xl lg:max-w-5xl"
             style={{

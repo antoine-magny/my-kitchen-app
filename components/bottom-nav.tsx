@@ -5,28 +5,28 @@ import { useEffect, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { initialFromName, resolveUserFirstName } from "@/lib/user-name";
-
-const NAV_ITEMS = [
-  { icon: "🏠", label: "Accueil", href: "/" },
-  { icon: "📖", label: "Recettes", href: "/recettes" },
-  { icon: "📅", label: "Planning", href: "/planning" },
-  { icon: "🧊", label: "Frigo", href: "/frigo" },
-  { icon: "🛒", label: "Courses", href: "/courses" },
-] as const;
+import { isAuthPath, isNavActive, NAV_ITEMS } from "@/components/nav-config";
+import { SideNav } from "@/components/side-nav";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const isAuthPage =
-    pathname.startsWith("/login") ||
-    pathname.startsWith("/nouveau-mot-de-passe") ||
-    pathname.startsWith("/auth");
+  const isAuthPage = isAuthPath(pathname);
 
   return (
     <>
-      <div className={`flex min-h-full flex-1 flex-col ${isAuthPage ? "" : "pb-[var(--nav-offset)]"}`}>
+      <div
+        className={`flex min-h-full flex-1 flex-col ${
+          isAuthPage ? "" : "pb-[var(--nav-offset)] lg:pb-8 lg:pl-[var(--sidebar-width)]"
+        }`}
+      >
         {children}
       </div>
-      {isAuthPage ? null : <BottomNav />}
+      {isAuthPage ? null : (
+        <>
+          <BottomNav />
+          <SideNav />
+        </>
+      )}
     </>
   );
 }
@@ -42,14 +42,9 @@ export function BottomNav() {
     });
   }, []);
 
-  const isActive = (href: string) => {
-    if (href === "/") return pathname === "/";
-    return pathname.startsWith(href);
-  };
-
   return (
     <nav
-      className="fixed right-0 bottom-0 left-0 z-50"
+      className="fixed right-0 bottom-0 left-0 z-50 lg:hidden"
       style={{
         background: "rgba(255,255,255,0.94)",
         backdropFilter: "blur(16px)",
@@ -65,17 +60,17 @@ export function BottomNav() {
           className="mr-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-extrabold text-white transition-transform active:scale-95"
           style={{
             background: "#1C2B1E",
-            boxShadow: isActive("/parametres") ? "0 0 0 2.5px #4A7C59" : "none",
+            boxShadow: isNavActive(pathname, "/parametres") ? "0 0 0 2.5px #4A7C59" : "none",
           }}
           aria-label="Profil et paramètres"
-          aria-current={isActive("/parametres") ? "page" : undefined}
+          aria-current={isNavActive(pathname, "/parametres") ? "page" : undefined}
         >
           {initial}
         </Link>
 
         <div className="flex min-w-0 flex-1 items-center justify-around">
           {NAV_ITEMS.map((item) => {
-            const active = isActive(item.href);
+            const active = isNavActive(pathname, item.href);
             return (
               <Link
                 key={item.label}
@@ -84,7 +79,7 @@ export function BottomNav() {
                 aria-current={active ? "page" : undefined}
               >
                 <span className="text-xl leading-none" aria-hidden>
-                  {item.icon}
+                  {item.emoji}
                 </span>
                 <span
                   className={`text-xs font-semibold ${active ? "text-[#4A7C59]" : "text-[#7A8F7D]"}`}

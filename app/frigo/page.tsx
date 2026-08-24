@@ -151,7 +151,7 @@ export default function FrigoPage() {
 
   return (
     <div className="min-h-screen bg-[#F6F8F3]">
-      <div className="mx-auto max-w-md px-5 pt-10 pb-28 sm:max-w-2xl lg:max-w-5xl lg:px-10">
+      <div className="mx-auto max-w-md px-5 pt-10 pb-28 sm:max-w-2xl lg:max-w-5xl lg:px-10 lg:pb-10">
         <FridgeHeader onAdd={() => setShowModal(true)} />
 
         <FridgeTabs

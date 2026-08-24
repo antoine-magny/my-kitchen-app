@@ -37,7 +37,7 @@ Pour un contrôle de types complet : `npx tsc --noEmit`.
 
 ```
 app/                    Routes App Router (une page par écran)
-  layout.tsx            Shell global : polices Nunito/Lora + BottomNav
+  layout.tsx            Shell global : polices Nunito/Lora + AppShell (BottomNav / SideNav)
   page.tsx              Accueil : date du jour (SSR) + repas / frigo (client)
   login/                Connexion / inscription (email, Google, invité)
   login/mot-de-passe-oublie/  Demande de réinitialisation du mot de passe
@@ -53,7 +53,9 @@ app/                    Routes App Router (une page par écran)
 components/             Composants React partagés
   icons.tsx             Toutes les icônes SVG de l'app (props size / strokeWidth ; Eye, Google, Users…)
   auth-card.tsx         Carte partagée des écrans d'authentification (`/login`, mot de passe oublié, invité)
-  bottom-nav.tsx        Navigation fixe (5 onglets)
+  bottom-nav.tsx        AppShell + barre du bas (< lg, 5 onglets + avatar)
+  side-nav.tsx          Navigation latérale desktop (lg+)
+  nav-config.ts         Onglets partagés + détection des pages auth
   ui/unit-select.tsx    Sélecteur d'unités par familles (Masse / Volume / Décompte)
   home/                 Accueil : en-tête, repas du jour, suggestions, DLC
   frigo/                Composants propres à la page frigo
@@ -316,6 +318,10 @@ L'application est multi-utilisateurs. Toutes les routes hors `/login` et `/auth/
 sont protégées par `middleware.ts` (session Supabase via cookies).
 `/nouveau-mot-de-passe` exige une session de recovery (posée par `/auth/callback`).
 La barre de navigation est masquée sur `/login`, `/nouveau-mot-de-passe` et `/auth`.
+En dessous de `lg`, c'est la barre du bas (`BottomNav`, `fixed bottom`, offset
+`--nav-offset` avec safe-area). Dès `lg`, une barre latérale gauche (`SideNav`,
+largeur `--sidebar-width`) remplace la tab bar ; le contenu a `lg:pl-[var(--sidebar-width)]`
+et `--nav-offset` redevient un petit padding bas.
 
 #### Écran `/login`
 

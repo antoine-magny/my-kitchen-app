@@ -225,6 +225,44 @@ export function CalendarIcon({ size = 14, strokeWidth = 2, className }: IconProp
   );
 }
 
+export function HomeIcon({ size = 20, strokeWidth = 2, className }: IconProps) {
+  return (
+    <StrokeIcon size={size} strokeWidth={strokeWidth} className={className}>
+      <path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" />
+    </StrokeIcon>
+  );
+}
+
+export function BookIcon({ size = 20, strokeWidth = 2, className }: IconProps) {
+  return (
+    <StrokeIcon size={size} strokeWidth={strokeWidth} className={className}>
+      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+    </StrokeIcon>
+  );
+}
+
+export function FridgeIcon({ size = 20, strokeWidth = 2, className }: IconProps) {
+  return (
+    <StrokeIcon size={size} strokeWidth={strokeWidth} className={className}>
+      <rect x="6" y="2" width="12" height="20" rx="2" />
+      <line x1="6" y1="10" x2="18" y2="10" />
+      <line x1="9" y1="5.5" x2="9" y2="7" />
+      <line x1="9" y1="13.5" x2="9" y2="16" />
+    </StrokeIcon>
+  );
+}
+
+export function CartIcon({ size = 20, strokeWidth = 2, className }: IconProps) {
+  return (
+    <StrokeIcon size={size} strokeWidth={strokeWidth} className={className}>
+      <circle cx="9" cy="20" r="1.2" />
+      <circle cx="18" cy="20" r="1.2" />
+      <path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.8a2 2 0 0 0 2-1.6L21 8H6" />
+    </StrokeIcon>
+  );
+}
+
 export function SettingsIcon({ size = 18, strokeWidth = 2, className }: IconProps) {
   return (
     <StrokeIcon size={size} strokeWidth={strokeWidth} className={className}>
