@@ -15,6 +15,7 @@ import {
   type Recipe,
   type RecipeIngredient,
 } from "@/lib/recipes";
+import { parseMinutes } from "@/lib/recipe-time";
 import { normalizeProductName } from "@/lib/shopping-categories";
 
 export type GenerateFromFridgeMode = "match_existing" | "ai_create";
@@ -101,22 +102,15 @@ function isStaple(ingredientName: string): boolean {
   return PANTRY_STAPLES.some((s) => n === s || n.includes(s) || s.includes(n));
 }
 
-function parseRecipeMinutes(time: string): number | null {
-  const match = time.match(/(\d+)/);
-  if (!match) return null;
-  const value = Number(match[1]);
-  return Number.isFinite(value) ? value : null;
-}
-
 function recipeFitsMealType(
   recipe: Recipe,
   mealType: MealType | undefined,
   excludeDesserts: boolean,
 ): boolean {
-  if (excludeDesserts && recipe.tag === "Desserts" && mealType !== "breakfast") return false;
+  if (excludeDesserts && recipe.tags.includes("dessert") && mealType !== "breakfast") return false;
   if (!mealType) return true;
   if (mealType === "breakfast") {
-    const minutes = parseRecipeMinutes(recipe.time);
+    const minutes = parseMinutes(recipe.time);
     if (minutes != null && minutes > 35) return false;
   }
   return true;

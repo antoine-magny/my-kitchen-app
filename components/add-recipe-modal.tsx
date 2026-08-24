@@ -10,7 +10,7 @@ import { PhotoStep } from "@/components/add-recipe/photo-step";
 import { UrlStep } from "@/components/add-recipe/url-step";
 import { emptyIngredientRow, type ParsedRecipe, type RecipeFormIngredientRow } from "@/lib/recipe-import";
 import { getIngredientDefaultUnit } from "@/lib/ingredients";
-import type { NewRecipeInput } from "@/lib/recipes";
+import type { NewRecipeInput, RecipeCost, RecipeDifficulty, RecipeTag } from "@/lib/recipes";
 
 type AddStep = "menu" | "photo" | "url" | "form";
 
@@ -35,6 +35,9 @@ export function AddRecipeModal({
   const [servings, setServings] = useState("4");
   const [calories, setCalories] = useState("400");
   const [proteins, setProteins] = useState("20");
+  const [difficulty, setDifficulty] = useState<RecipeDifficulty>("Facile");
+  const [tags, setTags] = useState<RecipeTag[]>(["plat"]);
+  const [cost, setCost] = useState<RecipeCost>("moyen");
   const [ingredients, setIngredients] = useState<RecipeFormIngredientRow[]>([emptyIngredientRow()]);
   const [instructions, setInstructions] = useState<string[]>([""]);
   const [importPhotoDataUrl, setImportPhotoDataUrl] = useState<string | null>(null);
@@ -54,6 +57,9 @@ export function AddRecipeModal({
     setServings(next.servings);
     setCalories(next.calories);
     setProteins(next.proteins);
+    setDifficulty(next.difficulty);
+    setTags(next.tags);
+    setCost(next.cost);
     setIngredients(next.ingredients);
     setInstructions(next.instructions);
     setImportPhotoDataUrl(photoDataUrl ?? null);
@@ -183,7 +189,9 @@ export function AddRecipeModal({
           ingredients: cleanedIngredients,
           instructions: cleanedInstructions,
           photo_url: importPhotoDataUrl?.startsWith("http") ? importPhotoDataUrl : null,
-          difficulty: "Facile" as const,
+          difficulty,
+          tags,
+          cost,
         }),
       });
       const data = (await res.json()) as {
@@ -270,6 +278,9 @@ export function AddRecipeModal({
         servings={servings} setServings={setServings}
         calories={calories} setCalories={setCalories}
         proteins={proteins} setProteins={setProteins}
+        difficulty={difficulty} setDifficulty={setDifficulty}
+        tags={tags} setTags={setTags}
+        cost={cost} setCost={setCost}
         ingredients={ingredients} setIngredients={setIngredients} updateIngredient={updateIngredient}
         instructions={instructions} setInstructions={setInstructions}
         importPhotoDataUrl={importPhotoDataUrl}

@@ -12,12 +12,15 @@ import {
   type MealType,
 } from "@/lib/meal-types";
 import {
-  DIFFICULTIES,
+  coerceRecipeCost,
+  coerceRecipeDifficulty,
+  coerceRecipeTags,
   ing,
   ingFromText,
+  RECIPE_COSTS,
   RECIPE_TAGS,
+  withDerivedTags,
   type NewRecipeInput,
-  type RecipeFilter,
 } from "@/lib/recipes";
 import { normalizeUnit, UNIT_LIST } from "@/lib/units";
 
@@ -40,8 +43,6 @@ const MEAL_TYPE_PROMPT: Record<MealType, string> = {
 const DEFAULT_PHOTO =
   "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=900&h=560&fit=crop&auto=format";
 
-const DIFFICULTY_SET = new Set<string>(DIFFICULTIES);
-const TAG_SET = new Set<string>(RECIPE_TAGS);
 const UNIT_CODES_HINT = UNIT_LIST.map((u) => u.code).join(" | ");
 
 const RECIPE_RESPONSE_SCHEMA = {
@@ -61,12 +62,19 @@ const RECIPE_RESPONSE_SCHEMA = {
             type: Type.STRING,
             enum: ["Facile", "Moyen", "Difficile"],
           },
-          tag: {
-            type: Type.STRING,
-            nullable: true,
-            description: "Express | Végétarien | Riche en protéines | Desserts | null",
+          tags: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.STRING,
+              enum: [...RECIPE_TAGS],
+            },
+            description:
+              "entree | plat | dessert | encas | express | vegetarien | riche_en_proteines",
           },
-          tagLabel: { type: Type.STRING, nullable: true },
+          cost: {
+            type: Type.STRING,
+            enum: [...RECIPE_COSTS],
+          },
           ingredients: {
             type: Type.ARRAY,
             items: {
@@ -114,6 +122,8 @@ const RECIPE_RESPONSE_SCHEMA = {
           "proteins",
           "servings",
           "difficulty",
+          "tags",
+          "cost",
           "ingredients",
           "steps",
           "matchedIngredients",
@@ -174,7 +184,8 @@ export async function createRecipesFromFridge(
     "Réponds uniquement avec un JSON strict (pas de markdown).",
     `Retourne exactement ${mealCount} recette${mealCount > 1 ? "s" : ""} distincte${mealCount > 1 ? "s" : ""} dans le tableau recipes.`,
     "Chaque recette doit inclure title, time, calories, proteins, servings, difficulty,",
-    "tag (Express|Végétarien|Riche en protéines|Desserts|null), tagLabel optionnel,",
+    "tags (tableau : entree, plat, dessert, encas, express si ≤15 min, vegetarien, riche_en_proteines),",
+    "cost (economique | moyen | premium),",
     `ingredients[{name, amount (nombre), unit (${UNIT_CODES_HINT})}]. Utilise g/kg pour les solides au poids, ml/cl/l/c_soupe/c_cafe pour les liquides, l'unité naturelle (gousse, tranche, feuille...) ou « piece » par défaut pour les décomptes/inconnus.`,
     "Pour une quantité non chiffrable (sel, poivre, herbes à volonté) : unit « qs » et amount 0.",
     "matchedIngredients, missing_ingredients et reason.",
@@ -281,11 +292,10 @@ function coerceAiRecipe(entry: unknown): AiRecipeCreation | null {
   const steps = coerceSteps(raw.steps);
   if (ingredients.length === 0 || steps.length === 0) return null;
 
-  const difficulty = asDifficulty(raw.difficulty);
-  const tag = asTag(raw.tag);
-  const tagLabel =
-    asNonEmptyString(raw.tagLabel) ??
-    (tag === "Riche en protéines" ? "Protéines" : tag === "Desserts" ? "Dessert" : tag ?? undefined);
+  const difficulty = coerceRecipeDifficulty(raw.difficulty);
+  const time = asNonEmptyString(raw.time) ?? "30 min";
+  const tags = withDerivedTags(coerceRecipeTags(raw.tags, raw.tag), time);
+  const cost = coerceRecipeCost(raw.cost);
 
   const matchedIngredients = asStringArray(raw.matchedIngredients);
   const missingIngredients = asStringArray(raw.missing_ingredients).length
@@ -301,13 +311,13 @@ function coerceAiRecipe(entry: unknown): AiRecipeCreation | null {
   const draft: NewRecipeInput = {
     title,
     photo: asHttpUrl(raw.photo) ?? DEFAULT_PHOTO,
-    time: asNonEmptyString(raw.time) ?? "30 min",
+    time,
     calories: asPositiveInt(raw.calories, 400),
     proteins: asPositiveInt(raw.proteins, 20),
     servings: asPositiveInt(raw.servings, 2),
     difficulty,
-    tag,
-    tagLabel,
+    tags,
+    cost,
     ingredients,
     steps,
     missingIngredients: cappedMissing,
@@ -370,21 +380,6 @@ function asPositiveAmount(value: unknown, fallback: number): number {
   const n = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
   if (!Number.isFinite(n) || n < 0) return fallback;
   return n;
-}
-
-function asDifficulty(value: unknown): NewRecipeInput["difficulty"] {
-  if (typeof value === "string" && DIFFICULTY_SET.has(value)) {
-    return value as NewRecipeInput["difficulty"];
-  }
-  return "Facile";
-}
-
-function asTag(value: unknown): Exclude<RecipeFilter, "Tout"> | null {
-  if (value == null || value === "" || value === "Tout") return null;
-  if (typeof value === "string" && TAG_SET.has(value)) {
-    return value as Exclude<RecipeFilter, "Tout">;
-  }
-  return null;
 }
 
 function asStringArray(value: unknown): string[] {

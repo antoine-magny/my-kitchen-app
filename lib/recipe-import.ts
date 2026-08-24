@@ -1,3 +1,4 @@
+import type { RecipeCost, RecipeDifficulty, RecipeTag } from "@/lib/recipe-model";
 import type { UnitCode } from "@/lib/units";
 
 /** Broullon extrait par Gemini / formulaire d’ajout. */
@@ -10,6 +11,9 @@ export type ParsedRecipe = {
   protein_per_serving: number;
   ingredients: Array<{ name: string; amount: number; unit: string }>;
   instructions: string[];
+  tags: RecipeTag[];
+  difficulty: RecipeDifficulty;
+  cost: RecipeCost;
 };
 
 export type RecipeFormIngredientRow = {

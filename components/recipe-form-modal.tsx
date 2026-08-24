@@ -4,11 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import type { RecipeFormIngredientRow } from "@/lib/recipe-import";
 import {
   ing,
-  tagToLabel,
+  withDerivedTags,
   type NewRecipeInput,
   type Recipe,
-  type RecipeFilter,
+  type RecipeCost,
   type RecipeStep,
+  type RecipeTag,
 } from "@/lib/recipes";
 import { getIngredientDefaultUnit } from "@/lib/ingredients";
 import { coerceUnitCode, DEFAULT_UNIT } from "@/lib/units";
@@ -16,8 +17,9 @@ import { FormFooter } from "@/components/recipe-form/form-footer";
 import {
   initialIngredientRows,
   initialSteps,
+  toCost,
   toDifficulty,
-  toTag,
+  toTags,
   type Difficulty,
 } from "@/components/recipe-form/form-state";
 import { RecipeFormShell } from "@/components/recipe-form/form-shell";
@@ -49,7 +51,8 @@ export function RecipeFormModal({
   const [proteins, setProteins] = useState(String(recipe?.proteins ?? 20));
   const [servings, setServings] = useState(String(recipe?.servings ?? 2));
   const [difficulty, setDifficulty] = useState<Difficulty>(toDifficulty(recipe?.difficulty ?? "Facile"));
-  const [tag, setTag] = useState<Exclude<RecipeFilter, "Tout"> | "">(toTag(recipe?.tag));
+  const [tags, setTags] = useState<RecipeTag[]>(toTags(recipe));
+  const [cost, setCost] = useState<RecipeCost>(toCost(recipe));
   const [ingredients, setIngredients] = useState<IngredientRow[]>(initialIngredientRows(recipe));
   const [steps, setSteps] = useState<RecipeStep[]>(initialSteps(recipe));
   const [error, setError] = useState("");
@@ -157,7 +160,7 @@ export function RecipeFormModal({
       return;
     }
 
-    const selectedTag = tag || null;
+    const selectedTags = withDerivedTags(tags, time.trim() || "30 min");
     onSave({
       title: title.trim(),
       photo: photo.trim(),
@@ -166,8 +169,9 @@ export function RecipeFormModal({
       proteins: Number(proteins) || 0,
       servings: Math.max(1, Number(servings) || 1),
       difficulty,
-      tag: selectedTag,
-      tagLabel: tagToLabel(selectedTag) ?? recipe?.tagLabel,
+      tags: selectedTags,
+      cost,
+      tagLabel: recipe?.tagLabel,
       ingredients: cleanedIngredients,
       steps: cleanedSteps,
       missingIngredients: recipe?.missingIngredients,
@@ -202,7 +206,8 @@ export function RecipeFormModal({
             calories={calories} setCalories={setCalories}
             proteins={proteins} setProteins={setProteins}
             difficulty={difficulty} setDifficulty={setDifficulty}
-            tag={tag} setTag={setTag}
+            tags={tags} setTags={setTags}
+            cost={cost} setCost={setCost}
           />
 
           <IngredientsSection

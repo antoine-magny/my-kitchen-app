@@ -1,15 +1,18 @@
 import Link from "next/link";
 import { ClockIcon, FlameIcon, HeartIcon, MuscleIcon } from "@/components/icons";
 import { MissingIngredientsBadges } from "@/components/missing-ingredients-badges";
-import type { Recipe } from "@/lib/recipes";
+import { recipeBadgeLabels, type Recipe } from "@/lib/recipes";
 
 const TAG_COLORS: Record<string, { bg: string; text: string }> = {
   Signature: { bg: "rgba(28,43,30,0.72)", text: "#E8F5EC" },
-  Express: { bg: "rgba(249,115,22,0.88)", text: "#FFF" },
-  Léger: { bg: "rgba(74,124,89,0.82)", text: "#FFF" },
-  Végétarien: { bg: "rgba(74,124,89,0.82)", text: "#FFF" },
-  Protéines: { bg: "rgba(59,130,246,0.80)", text: "#FFF" },
+  Entrée: { bg: "rgba(74,124,89,0.82)", text: "#FFF" },
+  Plat: { bg: "rgba(28,43,30,0.72)", text: "#E8F5EC" },
   Dessert: { bg: "rgba(219,85,108,0.85)", text: "#FFF" },
+  Encas: { bg: "rgba(161,124,61,0.85)", text: "#FFF" },
+  Express: { bg: "rgba(249,115,22,0.88)", text: "#FFF" },
+  Végétarien: { bg: "rgba(74,124,89,0.82)", text: "#FFF" },
+  "Riche en protéines": { bg: "rgba(59,130,246,0.80)", text: "#FFF" },
+  Léger: { bg: "rgba(74,124,89,0.82)", text: "#FFF" },
   Gastronomique: { bg: "rgba(161,124,61,0.85)", text: "#FFF" },
 };
 
@@ -22,7 +25,7 @@ export function RecipeCard({
   onToggleFav: (id: number) => void;
   isFav: boolean;
 }) {
-  const tagCfg = recipe.tagLabel ? (TAG_COLORS[recipe.tagLabel] ?? TAG_COLORS.Signature) : null;
+  const badges = recipeBadgeLabels(recipe);
 
   return (
     <div
@@ -48,14 +51,22 @@ export function RecipeCard({
             className="absolute inset-0"
             style={{ background: "linear-gradient(to top, rgba(28,43,30,0.48) 0%, transparent 55%)" }}
           />
-          {tagCfg && recipe.tagLabel && (
-            <div
-              className="absolute top-3 left-3 rounded-lg px-2.5 py-1 text-xs font-bold backdrop-blur-[4px]"
-              style={{ background: tagCfg.bg, color: tagCfg.text }}
-            >
-              {recipe.tagLabel}
+          {badges.length > 0 ? (
+            <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
+              {badges.map((label) => {
+                const cfg = TAG_COLORS[label] ?? TAG_COLORS.Signature;
+                return (
+                  <div
+                    key={label}
+                    className="rounded-lg px-2.5 py-1 text-xs font-bold backdrop-blur-[4px]"
+                    style={{ background: cfg.bg, color: cfg.text }}
+                  >
+                    {label}
+                  </div>
+                );
+              })}
             </div>
-          )}
+          ) : null}
         </div>
       </Link>
 

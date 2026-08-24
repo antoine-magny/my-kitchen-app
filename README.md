@@ -78,6 +78,9 @@ lib/                    Logique métier, sans JSX
   fridge.ts             Inventaire local + transfert Courses → Frigo
   ingredients.ts        Référentiel canonique (ingredientId)
   planning.ts           Construction de semaine + agrégation d'ingrédients
+  recipe-model.ts       Types Recipe : tags multiples, coût, difficulté
+  recipe-filters.ts     Filtrage du catalogue (tags, temps, difficulté, coût, recherche)
+  recipe-time.ts        parseMinutes (filtres, save-recipe, planning)
   ai/                   Client Gemini et prompts
   supabase/             Client admin + types générés du schéma
 types/
@@ -102,9 +105,10 @@ Quelques exemples de cette découpe, utiles comme modèles :
   (formulaire d'édition) et `components/add-recipe-modal.tsx` (parcours d'ajout
   en 3 modes), avec les styles de champs communs dans
   `components/recipe-form-styles.ts`.
-- `app/planning/page.tsx` délègue le choix de recette à
-  `components/select-recipe-modal.tsx` et la génération IA à
-  `components/generate-from-fridge-modal.tsx`.
+- `app/recettes/page.tsx` orchestre la liste ; le filtrage (multi-tags, temps,
+  difficulté, coût, recherche titre + ingrédients) vit dans
+  `lib/recipe-filters.ts`. Les pilules et le panneau de filtres sont dans
+  `components/recettes/`.
 - `app/courses/page.tsx` délègue fusion / transfert à `lib/shopping-list.ts` et
   `lib/fridge.ts` ; le bouton « Au frigo » appelle
   `transferCheckedShoppingItemsToFridge`.
@@ -280,6 +284,7 @@ Clés `localStorage` utilisées :
 | `my-kitchen-fridge-items-v2` | Inventaire frigo/congélateur/placards (snapshot) | `lib/fridge.ts` |
 | `my-kitchen-shopping-list-v2` | Liste de courses (snapshot) | `lib/shopping-list.ts` |
 | `my-kitchen-meal-plans-v1` | Planning hebdomadaire des repas | `lib/planning.ts` |
+| `my-kitchen-profile-v1` | Préférences, objectifs, équipements et réponses au quiz culinaire | `lib/profile-store.ts` |
 | `my-kitchen-custom-recipes` | Recettes créées par l'utilisateur | `lib/recipes.ts` |
 | `my-kitchen-recipe-overrides` | Modifications des recettes livrées | `lib/recipes.ts` |
 | `my-kitchen-deleted-recipes` | Recettes livrées masquées | `lib/recipes.ts` |
@@ -317,8 +322,15 @@ montage. Le drapeau `ready` évite d'écraser le stockage avec un état vide au
 premier passage de l'effet d'écriture.
 
 Les recettes livrées avec l'app sont un tableau en dur (`RECIPES` dans
-`lib/recipes.ts`), fusionné à l'exécution avec les créations, modifications et
-suppressions stockées côté client.
+`lib/recipes-data.ts`), fusionné à l'exécution avec les créations, modifications et
+suppressions stockées côté client (`lib/recipes.ts`).
+
+Chaque recette a **plusieurs tags** (`entree`, `plat`, `dessert`, `encas`,
+`express` si ≤ 15 min, `vegetarien`, `riche_en_proteines`) et un **coût**
+(`economique` | `moyen` | `premium`). L'ancien champ unique `tag` (libellés
+français) est encore lu au chargement du `localStorage` et migré vers `tags[]`.
+Les favoris restent à part (`lib/favorites.ts`). La recherche du catalogue porte
+sur le titre **et** les noms d'ingrédients.
 
 ---
 
@@ -424,8 +436,7 @@ vers `piece` / `c_soupe` / `c_cafe`.
 
 Tables réellement lues ou écrites aujourd'hui :
 
-- `profiles` — prénom / nom du compte (`lib/update-profile.ts`,
-  déclenché par la modale « Modifier mon profil ») ;
+- `profiles` — prénom / nom du compte (`lib/update-profile.ts`, déclenché par la modale « Modifier mon profil ») ainsi que les **préférences du profil (objectifs, quiz, tags)** via la synchronisation d'arrière-plan (`lib/profile-supabase.ts`). *Note : la colonne `preferences` (JSONB) doit être ajoutée manuellement à la table.*
 - `recipes` et `recipe_ingredients` — enregistrement d'une recette
   (`lib/save-recipe.ts`) ;
 - `ingredients` — résolution ou création d'un ingrédient au passage ;

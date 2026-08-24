@@ -1,10 +1,138 @@
 import { describeIngredient } from "@/lib/ingredients";
-import { coerceUnitCode, parseAmount, type UnitCode } from "@/lib/units";
+import { parseMinutes } from "@/lib/recipe-time";
+import { parseAmount, type UnitCode } from "@/lib/units";
 import type { RecipeIngredient } from "@/types/inventory";
 
 export type { RecipeIngredient };
 
-export type RecipeFilter = "Tout" | "Express" | "Végétarien" | "Riche en protéines" | "Desserts";
+export const RECIPE_TAGS = [
+  "entree",
+  "plat",
+  "dessert",
+  "encas",
+  "express",
+  "vegetarien",
+  "riche_en_proteines",
+] as const;
+
+export type RecipeTag = (typeof RECIPE_TAGS)[number];
+
+export const MEAL_TAGS = ["entree", "plat", "dessert", "encas"] as const satisfies readonly RecipeTag[];
+export const ATTRIBUTE_TAGS = [
+  "express",
+  "vegetarien",
+  "riche_en_proteines",
+] as const satisfies readonly RecipeTag[];
+
+export const RECIPE_TAG_LABELS: Record<RecipeTag, string> = {
+  entree: "Entrée",
+  plat: "Plat",
+  dessert: "Dessert",
+  encas: "Encas",
+  express: "Express",
+  vegetarien: "Végétarien",
+  riche_en_proteines: "Riche en protéines",
+};
+
+export const RECIPE_COSTS = ["economique", "moyen", "premium"] as const;
+export type RecipeCost = (typeof RECIPE_COSTS)[number];
+
+export const RECIPE_COST_LABELS: Record<RecipeCost, string> = {
+  economique: "Économique",
+  moyen: "Moyen",
+  premium: "Premium",
+};
+
+export const DIFFICULTIES = ["Facile", "Moyen", "Difficile"] as const;
+export type RecipeDifficulty = (typeof DIFFICULTIES)[number];
+
+const TAG_SET = new Set<string>(RECIPE_TAGS);
+const COST_SET = new Set<string>(RECIPE_COSTS);
+const DIFFICULTY_SET = new Set<string>(DIFFICULTIES);
+
+const LEGACY_TAG_MAP: Record<string, RecipeTag> = {
+  Express: "express",
+  express: "express",
+  "Végétarien": "vegetarien",
+  Vegetarien: "vegetarien",
+  vegetarien: "vegetarien",
+  "Riche en protéines": "riche_en_proteines",
+  "riche_en_proteines": "riche_en_proteines",
+  Desserts: "dessert",
+  Dessert: "dessert",
+  dessert: "dessert",
+  Entrée: "entree",
+  Entree: "entree",
+  entree: "entree",
+  Plat: "plat",
+  plat: "plat",
+  Encas: "encas",
+  encas: "encas",
+};
+
+export function isRecipeTag(value: unknown): value is RecipeTag {
+  return typeof value === "string" && TAG_SET.has(value);
+}
+
+export function isRecipeCost(value: unknown): value is RecipeCost {
+  return typeof value === "string" && COST_SET.has(value);
+}
+
+export function isRecipeDifficulty(value: unknown): value is RecipeDifficulty {
+  return typeof value === "string" && DIFFICULTY_SET.has(value);
+}
+
+export function coerceRecipeTag(value: unknown): RecipeTag | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed || trimmed === "Tout") return null;
+  if (isRecipeTag(trimmed)) return trimmed;
+  return LEGACY_TAG_MAP[trimmed] ?? null;
+}
+
+export function coerceRecipeTags(rawTags: unknown, legacyTag?: unknown): RecipeTag[] {
+  const collected: RecipeTag[] = [];
+  if (Array.isArray(rawTags)) {
+    for (const item of rawTags) {
+      const tag = coerceRecipeTag(item);
+      if (tag) collected.push(tag);
+    }
+  } else {
+    const fromLegacy = coerceRecipeTag(legacyTag);
+    if (fromLegacy) collected.push(fromLegacy);
+  }
+
+  const unique = [...new Set(collected)];
+  const hasMeal = unique.some((tag) => (MEAL_TAGS as readonly string[]).includes(tag));
+  return hasMeal ? unique : [...unique, "plat"];
+}
+
+export function coerceRecipeCost(value: unknown): RecipeCost {
+  return isRecipeCost(value) ? value : "moyen";
+}
+
+export function coerceRecipeDifficulty(value: unknown): RecipeDifficulty {
+  return isRecipeDifficulty(value) ? value : "Facile";
+}
+
+/** `express` est dérivé du temps (≤ 15 min), pas un choix décorrélé. */
+export function withDerivedTags(tags: RecipeTag[], time: string): RecipeTag[] {
+  const withoutExpress = tags.filter((tag) => tag !== "express");
+  const minutes = parseMinutes(time);
+  if (minutes != null && minutes <= 15) return [...withoutExpress, "express"];
+  return withoutExpress;
+}
+
+export function tagToLabel(tag: RecipeTag): string {
+  return RECIPE_TAG_LABELS[tag];
+}
+
+export function recipeBadgeLabels(recipe: Pick<Recipe, "tags" | "tagLabel">, max = 2): string[] {
+  if (recipe.tagLabel?.trim()) return [recipe.tagLabel.trim()];
+  const meal = recipe.tags.filter((tag) => (MEAL_TAGS as readonly string[]).includes(tag));
+  const attrs = recipe.tags.filter((tag) => (ATTRIBUTE_TAGS as readonly string[]).includes(tag));
+  return [...meal, ...attrs].slice(0, max).map(tagToLabel);
+}
 
 /**
  * Fabrique un ingrédient de recette : l'identité canonique (ingredientId, rayon,
@@ -34,8 +162,10 @@ export interface Recipe {
   calories: number;
   proteins: number;
   servings: number;
-  difficulty: "Facile" | "Moyen" | "Difficile";
-  tag: RecipeFilter | null;
+  difficulty: RecipeDifficulty;
+  tags: RecipeTag[];
+  cost: RecipeCost;
+  /** Libellé de vitrine optionnel (ex. « Signature »), distinct des tags. */
   tagLabel?: string;
   featured?: boolean;
   ingredients: RecipeIngredient[];
