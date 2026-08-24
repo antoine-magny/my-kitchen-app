@@ -28,15 +28,11 @@ export function ClearAllModal({
   return (
     <div
       className={MODAL_OVERLAY_ABOVE_NAV_CLASS}
-      style={{ background: "rgba(20,31,22,0.55)", backdropFilter: "blur(4px)" }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div
-        className={`${MODAL_PANEL_CLASS} p-7`}
-        style={{ background: "#FFFFFF", boxShadow: "0 24px 64px rgba(20,31,22,0.22)" }}
-      >
+      <div className={`${MODAL_PANEL_CLASS} p-7`}>
         <div className="mb-5 flex items-start justify-between gap-3">
           <div>
             <p className="text-xs font-semibold tracking-[0.08em] text-[#DC2626] uppercase">

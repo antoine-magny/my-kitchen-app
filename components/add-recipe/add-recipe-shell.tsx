@@ -23,15 +23,11 @@ export function AddRecipeShell({
   return (
     <div
       className={MODAL_OVERLAY_CLASS}
-      style={{ background: "rgba(20,31,22,0.55)", backdropFilter: "blur(4px)" }}
       onClick={(e) => {
         if (e.target === e.currentTarget && !closeDisabled) onClose();
       }}
     >
-      <div
-        className={MODAL_PANEL_WIDE_CLASS}
-        style={{ background: "#FFFFFF", boxShadow: "0 24px 64px rgba(20,31,22,0.22)" }}
-      >
+      <div className={MODAL_PANEL_WIDE_CLASS}>
         <div className="flex shrink-0 items-center justify-between border-b border-[#F0F4EF] px-6 py-5">
           <div className="flex items-center gap-2">
             {showBack && (

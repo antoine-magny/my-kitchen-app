@@ -106,14 +106,12 @@ export function ExportShoppingModal({
   return (
     <div
       className={MODAL_OVERLAY_CLASS}
-      style={{ background: "rgba(20,31,22,0.55)", backdropFilter: "blur(4px)" }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div
         className={MODAL_PANEL_CLASS}
-        style={{ background: "#FFFFFF", boxShadow: "0 24px 64px rgba(20,31,22,0.22)" }}
         role="dialog"
         aria-modal="true"
         aria-labelledby="export-shopping-title"

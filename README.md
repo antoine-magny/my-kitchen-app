@@ -56,6 +56,8 @@ components/             Composants React partagés
   bottom-nav.tsx        AppShell + barre du bas (< lg, 5 onglets + avatar)
   side-nav.tsx          Navigation latérale desktop (lg+)
   nav-config.ts         Onglets partagés + détection des pages auth
+  ui/modal-layout.ts    Classes overlay / panneau des modales (centré + flou)
+  ui/centered-modal.tsx Portail de modale compacte (nouvel ingrédient, DLC, courses)
   ui/unit-select.tsx    Sélecteur d'unités par familles (Masse / Volume / Décompte)
   home/                 Accueil : en-tête, repas du jour, suggestions, DLC
   frigo/                Composants propres à la page frigo
@@ -110,6 +112,16 @@ Quelques exemples de cette découpe, utiles comme modèles :
   invité) partagent `components/auth-card.tsx` ; la logique vit dans
   `lib/auth-google.ts`, `lib/auth-signup.ts`, `lib/auth-password.ts` et
   `lib/auth-guest.ts`.
+
+### Modales
+
+Toutes les feuilles (frigo, courses, planning, recettes) passent par
+`components/ui/modal-layout.ts` : overlay **centré** (`items-center`, `p-4`),
+carte `rounded-3xl` avec `max-w-md` / `max-w-xl`, `max-h-[85dvh]` et
+`overflow-y-auto`, flou d’arrière-plan identique au desktop
+(`bg-[rgba(20,31,22,0.55)]` + `backdrop-blur-[4px]`). Pas de bottom sheet
+(`items-end`, `rounded-t-3xl`, pleine largeur collée aux bords). Z-index
+inchangés : 60 / 70 / 100.
 
 ### Icônes
 
