@@ -287,6 +287,7 @@ Clés `localStorage` utilisées :
 | `my-kitchen-fridge-items-v2` | Inventaire frigo/congélateur/placards (snapshot) | `lib/fridge.ts` |
 | `my-kitchen-shopping-list-v2` | Liste de courses (snapshot) | `lib/shopping-list.ts` |
 | `my-kitchen-meal-plans-v1` | Planning hebdomadaire des repas | `lib/planning.ts` |
+| `my-kitchen-profile-v1` | Préférences, objectifs, équipements et réponses au quiz culinaire | `lib/profile-store.ts` |
 | `my-kitchen-custom-recipes` | Recettes créées par l'utilisateur | `lib/recipes.ts` |
 | `my-kitchen-recipe-overrides` | Modifications des recettes livrées | `lib/recipes.ts` |
 | `my-kitchen-deleted-recipes` | Recettes livrées masquées | `lib/recipes.ts` |
@@ -438,8 +439,7 @@ vers `piece` / `c_soupe` / `c_cafe`.
 
 Tables réellement lues ou écrites aujourd'hui :
 
-- `profiles` — prénom / nom du compte (`lib/update-profile.ts`,
-  déclenché par la modale « Modifier mon profil ») ;
+- `profiles` — prénom / nom du compte (`lib/update-profile.ts`, déclenché par la modale « Modifier mon profil ») ainsi que les **préférences du profil (objectifs, quiz, tags)** via la synchronisation d'arrière-plan (`lib/profile-supabase.ts`). *Note : la colonne `preferences` (JSONB) doit être ajoutée manuellement à la table.*
 - `recipes` et `recipe_ingredients` — enregistrement d'une recette
   (`lib/save-recipe.ts`) ;
 - `ingredients` — résolution ou création d'un ingrédient au passage ;
