@@ -29,7 +29,7 @@ export function ShoppingItemRow({
       <button
         type="button"
         onClick={() => onToggle(item.id)}
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-all active:scale-95"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg transition-all active:scale-95"
         style={{
           background: item.isChecked ? "#4A7C59" : "#F0F4EF",
           color: item.isChecked ? "#fff" : "transparent",
@@ -63,7 +63,7 @@ export function ShoppingItemRow({
       <button
         type="button"
         onClick={() => onRemove(item.id)}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[#9CA3AF] transition-colors hover:bg-[#FEF2F2] hover:text-[#B91C1C] active:scale-95"
+        className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-xl text-[#9CA3AF] transition-colors hover:bg-[#FEF2F2] hover:text-[#B91C1C] active:scale-95"
         aria-label={`Supprimer ${item.customName}`}
       >
         <TrashIcon size={14} />

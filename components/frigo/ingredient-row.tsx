@@ -9,7 +9,6 @@ import {
   type TabId,
 } from "@/components/frigo/shared";
 import { IngredientRowMenu } from "@/components/frigo/ingredient-row-menu";
-import { TrashIcon } from "@/components/icons";
 import { dlcStatus } from "@/lib/fridge";
 import type { UnitCode } from "@/lib/units";
 import { EmojiPickerPopover } from "@/components/ui/emoji-picker-popover";
@@ -99,16 +98,8 @@ export function IngredientRow({
         destinations={destinations}
         onEditDlc={onEditDlc}
         onMove={(category) => onMove(item.id, category)}
+        onDelete={handleDelete}
       />
-
-      <button
-        type="button"
-        onClick={handleDelete}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[#9CA3AF] transition-colors hover:bg-[#FEF2F2] hover:text-[#B91C1C] active:scale-95"
-        aria-label={`Supprimer ${item.customName}`}
-      >
-        <TrashIcon size={14} />
-      </button>
     </div>
   );
 }

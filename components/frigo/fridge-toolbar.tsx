@@ -18,7 +18,7 @@ export function FridgeToolbar({
 }) {
   return (
     <div className="mb-5">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4">
         <div
           className="flex flex-1 items-center gap-2.5 rounded-xl px-3.5 py-2.5"
           style={{ background: "#FFFFFF", border: "1.5px solid #E2EBE3" }}
@@ -31,7 +31,7 @@ export function FridgeToolbar({
             value={query}
             onChange={(e) => onQueryChange(e.target.value)}
             placeholder={`Rechercher dans le ${TABS.find((t) => t.id === activeTab)?.label.toLowerCase()}…`}
-            className="flex-1 bg-transparent text-sm font-medium text-[#1C2B1E] outline-none"
+            className="flex-1 bg-transparent text-base font-medium text-[#1C2B1E] outline-none"
           />
         </div>
 
@@ -42,7 +42,7 @@ export function FridgeToolbar({
               if (urgentCount > 0) onShowExpired();
             }}
             disabled={urgentCount === 0}
-            className={`flex shrink-0 items-center gap-1.5 rounded-xl border px-3 py-2 transition-all ${
+            className={`flex min-h-11 shrink-0 items-center gap-1.5 rounded-xl border px-2 py-2 sm:px-3 transition-all ${
               urgentCount > 0
                 ? "border-[#FECACA] bg-[#FEF2F2] active:scale-95 hover:bg-[#FEE2E2]"
                 : "cursor-default border-[#FED7AA] bg-[#FFF7ED]"
@@ -59,9 +59,14 @@ export function FridgeToolbar({
                 urgentCount > 0 ? "text-[#DC2626]" : "text-[#C2410C]"
               }`}
             >
-              {urgentCount > 0
-                ? `${urgentCount} expiré${urgentCount > 1 ? "s" : ""}`
-                : `${soonCount} bientôt`}
+              <span className="sm:hidden">
+                {urgentCount > 0 ? urgentCount : soonCount}
+              </span>
+              <span className="hidden sm:inline">
+                {urgentCount > 0
+                  ? `${urgentCount} expiré${urgentCount > 1 ? "s" : ""}`
+                  : `${soonCount} bientôt`}
+              </span>
             </span>
           </button>
         )}

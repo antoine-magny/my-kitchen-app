@@ -37,7 +37,7 @@ export function FormStepInstructions({
               }
               placeholder="Décrivez l’étape…"
               rows={2}
-              className="w-full resize-none rounded-xl bg-[#FAFBF9] px-3 py-2 text-sm font-medium text-[#1C2B1E] outline-none"
+              className="w-full resize-none rounded-xl bg-[#FAFBF9] px-3 py-2 text-base font-medium text-[#1C2B1E] outline-none"
               style={inputStyle}
             />
             {instructions.length > 1 && (

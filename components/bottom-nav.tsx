@@ -23,7 +23,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <>
-      <div className={`flex min-h-full flex-1 flex-col ${isAuthPage ? "" : "pb-20"}`}>
+      <div className={`flex min-h-full flex-1 flex-col ${isAuthPage ? "" : "pb-[var(--nav-offset)]"}`}>
         {children}
       </div>
       {isAuthPage ? null : <BottomNav />}
@@ -49,18 +49,19 @@ export function BottomNav() {
 
   return (
     <nav
-      className="fixed right-0 bottom-0 left-0 z-50 flex items-center gap-1 px-3 py-2.5"
+      className="fixed right-0 bottom-0 left-0 z-50 flex items-center gap-1 px-3 pt-2.5"
       style={{
         background: "rgba(255,255,255,0.94)",
         backdropFilter: "blur(16px)",
         borderTop: "1px solid #E2EBE3",
         boxShadow: "0 -4px 24px rgba(74,124,89,0.08)",
+        paddingBottom: "calc(0.625rem + env(safe-area-inset-bottom, 0px))",
       }}
       aria-label="Navigation principale"
     >
       <Link
         href="/parametres"
-        className="mr-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-extrabold text-white transition-transform active:scale-95"
+        className="mr-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-extrabold text-white transition-transform active:scale-95"
         style={{
           background: "#1C2B1E",
           boxShadow: isActive("/parametres") ? "0 0 0 2.5px #4A7C59" : "none",
@@ -78,7 +79,7 @@ export function BottomNav() {
             <Link
               key={item.label}
               href={item.href}
-              className="flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-xl px-1 py-1 transition-all"
+              className="flex min-h-11 min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 py-1 transition-all"
               aria-current={active ? "page" : undefined}
             >
               <span className="text-xl leading-none" aria-hidden>

@@ -51,7 +51,7 @@ export function EditProfilePasswordFields({
               onChange={(e) => onPasswordChange(e.target.value)}
               placeholder="••••••••"
               autoComplete="new-password"
-              className="w-full rounded-xl border border-[#E2EBE3] bg-white px-3.5 py-2.5 pr-10 text-sm font-medium text-[#1C2B1E] placeholder-[#9CA3AF] transition-all focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/10 focus:outline-none disabled:opacity-60"
+              className="w-full rounded-xl border border-[#E2EBE3] bg-white px-3.5 py-2.5 pr-10 text-base font-medium text-[#1C2B1E] placeholder-[#9CA3AF] transition-all focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/10 focus:outline-none disabled:opacity-60"
             />
             <button
               type="button"
@@ -81,7 +81,7 @@ export function EditProfilePasswordFields({
               onChange={(e) => onConfirmPasswordChange(e.target.value)}
               placeholder="••••••••"
               autoComplete="new-password"
-              className="w-full rounded-xl border border-[#E2EBE3] bg-white px-3.5 py-2.5 pr-10 text-sm font-medium text-[#1C2B1E] placeholder-[#9CA3AF] transition-all focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/10 focus:outline-none disabled:opacity-60"
+              className="w-full rounded-xl border border-[#E2EBE3] bg-white px-3.5 py-2.5 pr-10 text-base font-medium text-[#1C2B1E] placeholder-[#9CA3AF] transition-all focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/10 focus:outline-none disabled:opacity-60"
             />
             <button
               type="button"

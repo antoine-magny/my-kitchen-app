@@ -139,26 +139,26 @@ export default function CoursesPage() {
           </div>
         ) : (
           <>
-            <div className="mt-3 flex items-center justify-between gap-3">
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
               <p className="text-sm font-medium text-[#7A8F7D]">
                 <span className="font-bold text-[#1C2B1E]">{remaining}</span> restant
                 {remaining > 1 ? "s" : ""}
                 {checkedCount > 0 ? ` · ${checkedCount} coché${checkedCount > 1 ? "s" : ""}` : ""}
               </p>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {checkedCount > 0 && (
                   <>
                     <button
                       type="button"
                       onClick={handleTransferToFridge}
-                      className="rounded-xl bg-[#2E5B3E] px-2.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-[#254A32]"
+                      className="min-h-11 rounded-xl bg-[#2E5B3E] px-2.5 py-1.5 text-xs font-bold text-white transition-colors hover:bg-[#254A32]"
                     >
                       Au frigo
                     </button>
                     <button
                       type="button"
                       onClick={handleClearChecked}
-                      className="rounded-xl px-2.5 py-1.5 text-xs font-bold text-[#4A7C59] transition-colors hover:bg-[#EBF2EC]"
+                      className="min-h-11 rounded-xl px-2.5 py-1.5 text-xs font-bold text-[#4A7C59] transition-colors hover:bg-[#EBF2EC]"
                     >
                       Vider cochés
                     </button>
@@ -167,7 +167,7 @@ export default function CoursesPage() {
                 <button
                   type="button"
                   onClick={handleClearAll}
-                  className="rounded-xl px-2.5 py-1.5 text-xs font-bold text-[#B91C1C] transition-colors hover:bg-[#FEF2F2]"
+                  className="min-h-11 rounded-xl px-2.5 py-1.5 text-xs font-bold text-[#B91C1C] transition-colors hover:bg-[#FEF2F2]"
                 >
                   Tout effacer
                 </button>

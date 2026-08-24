@@ -14,7 +14,7 @@ export function FridgeSuggestions({ recipes }: { recipes: Recipe[] }) {
         </Link>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {recipes.map((recipe) => (
           <Link
             key={recipe.id}
@@ -38,7 +38,7 @@ export function FridgeSuggestions({ recipes }: { recipes: Recipe[] }) {
               />
             </div>
             <div className="px-2.5 py-2.5">
-              <p className="mb-1.5 text-xs leading-tight font-bold text-[#1C2B1E]">{recipe.title}</p>
+              <p className="mb-1.5 line-clamp-2 text-xs leading-tight font-bold text-[#1C2B1E]">{recipe.title}</p>
               <div className="flex items-center gap-1 text-[#7A8F7D]">
                 <ClockIcon size={13} />
                 <span className="text-xs font-medium">{recipe.time}</span>

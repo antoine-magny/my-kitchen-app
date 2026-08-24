@@ -73,20 +73,19 @@ export default function RecettesPage() {
   return (
     <div className="min-h-screen bg-[#F6F8F3]">
       <main className="mx-auto max-w-md px-5 py-8 sm:max-w-2xl lg:max-w-5xl lg:px-10 lg:py-10">
-        <div className="mb-8 flex items-center justify-between gap-3">
-          <div>
+        <div className="mb-8">
+          <div className="mb-4">
             <p className="mb-0.5 text-xs font-semibold tracking-[0.1em] text-[#7A8F7D] uppercase">Collection</p>
             <h1 className="font-lora text-2xl leading-none font-bold text-[#1C2B1E] lg:text-3xl">Mes Recettes</h1>
           </div>
 
           <div className="flex items-center gap-3">
             <div
-              className="hidden items-center gap-2.5 rounded-2xl px-4 py-2.5 sm:flex"
+              className="flex min-w-0 flex-1 items-center gap-2.5 rounded-2xl px-4 py-2.5"
               style={{
                 background: "#FFFFFF",
                 border: "1.5px solid #E2EBE3",
                 boxShadow: "0 2px 12px rgba(28,43,30,0.06)",
-                width: 240,
               }}
             >
               <span className="shrink-0 text-[#7A8F7D]">
@@ -97,7 +96,7 @@ export default function RecettesPage() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Rechercher une recette…"
-                className="flex-1 bg-transparent text-sm font-medium text-[#1C2B1E] outline-none"
+                className="min-w-0 flex-1 bg-transparent text-base font-medium text-[#1C2B1E] outline-none"
               />
             </div>
 

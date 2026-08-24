@@ -60,7 +60,7 @@ export function AddModal({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-6 w-6 items-center justify-center rounded-lg text-[#7A8F7D] transition-colors hover:bg-[#F0F4EF]"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-[#7A8F7D] transition-colors hover:bg-[#F0F4EF]"
           >
             <XIcon size={14} />
           </button>
@@ -101,7 +101,7 @@ export function AddModal({
                   }}
                   placeholder="Ex : Tomates cerises"
                   required
-                  className="w-full rounded-lg bg-[#FAFBF9] px-3 py-2 text-sm font-semibold text-[#1C2B1E] outline-none transition-all focus:border-[#4A7C59]"
+                  className="w-full rounded-lg bg-[#FAFBF9] px-3 py-2 text-base font-semibold text-[#1C2B1E] outline-none transition-all focus:border-[#4A7C59]"
                   style={{ border: "1.5px solid #E2EBE3" }}
                 />
               </div>
@@ -118,7 +118,7 @@ export function AddModal({
                   step="any"
                   value={qty}
                   onChange={(e) => setQty(e.target.value)}
-                  className="w-full rounded-lg bg-[#FAFBF9] px-3 py-1.5 text-sm font-semibold text-[#1C2B1E] outline-none transition-all focus:border-[#4A7C59]"
+                  className="w-full rounded-lg bg-[#FAFBF9] px-3 py-1.5 text-base font-semibold text-[#1C2B1E] outline-none transition-all focus:border-[#4A7C59]"
                   style={{ border: "1.5px solid #E2EBE3" }}
                 />
               </div>
@@ -130,7 +130,7 @@ export function AddModal({
                   value={unit}
                   ingredientName={name}
                   onChange={(next) => setUnit(next as UnitCode)}
-                  className="w-full flex items-center justify-between rounded-lg border-[1.5px] border-[#E2EBE3] bg-[#FAFBF9] py-1.5 px-3 text-sm font-semibold text-[#1C2B1E] outline-none transition-all hover:border-[#4A7C59] focus:border-[#4A7C59]"
+                  className="w-full flex items-center justify-between rounded-lg border-[1.5px] border-[#E2EBE3] bg-[#FAFBF9] py-1.5 px-3 text-base font-semibold text-[#1C2B1E] outline-none transition-all hover:border-[#4A7C59] focus:border-[#4A7C59]"
                 />
               </div>
             </div>

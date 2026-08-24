@@ -3,6 +3,7 @@
 :root {
   --background: #f6f8f3;
   --foreground: #1c2b1e;
+  --nav-offset: calc(5rem + env(safe-area-inset-bottom, 0px));
 }
 
 @theme inline {

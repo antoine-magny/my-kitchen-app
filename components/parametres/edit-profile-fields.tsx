@@ -46,7 +46,7 @@ export function EditProfileFields({
           value={firstName}
           onChange={(e) => onFirstNameChange(e.target.value)}
           placeholder={isGuestAccount ? "Votre prénom (ex : Antoine)" : "Ex : Antoine"}
-          className="w-full rounded-2xl border border-[#E2EBE3] bg-[#FAFBF9] px-4 py-3 text-sm font-semibold text-[#1C2B1E] placeholder-[#9CA3AF] transition-all focus:border-[#4A7C59] focus:bg-white focus:ring-4 focus:ring-[#4A7C59]/10 focus:outline-none disabled:opacity-60"
+          className="w-full rounded-2xl border border-[#E2EBE3] bg-[#FAFBF9] px-4 py-3 text-base font-semibold text-[#1C2B1E] placeholder-[#9CA3AF] transition-all focus:border-[#4A7C59] focus:bg-white focus:ring-4 focus:ring-[#4A7C59]/10 focus:outline-none disabled:opacity-60"
         />
       </div>
 
@@ -64,7 +64,7 @@ export function EditProfileFields({
           value={email}
           onChange={(e) => onEmailChange(e.target.value)}
           placeholder={isGuestAccount ? "ex : nom@domaine.fr" : "votre.email@exemple.com"}
-          className="w-full rounded-2xl border border-[#E2EBE3] bg-[#FAFBF9] px-4 py-3 text-sm font-semibold text-[#1C2B1E] placeholder-[#9CA3AF] transition-all focus:border-[#4A7C59] focus:bg-white focus:ring-4 focus:ring-[#4A7C59]/10 focus:outline-none disabled:opacity-60"
+          className="w-full rounded-2xl border border-[#E2EBE3] bg-[#FAFBF9] px-4 py-3 text-base font-semibold text-[#1C2B1E] placeholder-[#9CA3AF] transition-all focus:border-[#4A7C59] focus:bg-white focus:ring-4 focus:ring-[#4A7C59]/10 focus:outline-none disabled:opacity-60"
         />
       </div>
     </>

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Lora, Nunito } from "next/font/google";
 import { AppShell } from "@/components/bottom-nav";
 import "./globals.css";
@@ -18,6 +18,10 @@ const lora = Lora({
 export const metadata: Metadata = {
   title: "My Kitchen",
   description: "Planifiez vos repas, gérez votre frigo et découvrez des recettes adaptées.",
+};
+
+export const viewport: Viewport = {
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

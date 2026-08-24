@@ -3,6 +3,11 @@
 import { expiredSinceLabel, type Ingredient } from "@/components/frigo/shared";
 import { XIcon } from "@/components/icons";
 import { IngredientIcon } from "@/components/ingredient-icon";
+import {
+  MODAL_CLOSE_BTN_CLASS,
+  MODAL_OVERLAY_ABOVE_NAV_CLASS,
+  MODAL_PANEL_CLASS,
+} from "@/components/ui/modal-layout";
 import { daysUntilDlc } from "@/lib/fridge";
 import { unitLabel } from "@/lib/units";
 
@@ -25,14 +30,14 @@ export function ExpiredModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
+      className={MODAL_OVERLAY_ABOVE_NAV_CLASS}
       style={{ background: "rgba(20,31,22,0.55)", backdropFilter: "blur(4px)" }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div
-        className="scale-in w-full max-h-[85vh] overflow-y-auto rounded-t-3xl p-7 sm:w-auto sm:min-w-[420px] sm:max-w-md sm:rounded-3xl"
+        className={`${MODAL_PANEL_CLASS} overflow-y-auto p-7`}
         style={{ background: "#FFFFFF", boxShadow: "0 24px 64px rgba(20,31,22,0.22)" }}
       >
         <div className="mb-5 flex items-start justify-between gap-3">
@@ -48,7 +53,7 @@ export function ExpiredModal({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-[#7A8F7D] transition-colors hover:bg-[#F0F4EF]"
+            className={MODAL_CLOSE_BTN_CLASS}
             aria-label="Fermer"
           >
             <XIcon size={18} />

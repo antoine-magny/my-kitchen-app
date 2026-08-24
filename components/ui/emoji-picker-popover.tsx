@@ -21,7 +21,13 @@ export function EmojiPickerPopover({
   buttonTitle = "Changer l'icône de l'ingrédient",
 }: EmojiPickerPopoverProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [popoverPos, setPopoverPos] = useState<{ top: number; left: number; maxHeight: number } | null>(null);
+  const [popoverPos, setPopoverPos] = useState<{
+    top: number;
+    left: number;
+    maxHeight: number;
+    width: number;
+    sheet: boolean;
+  } | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
 
@@ -29,34 +35,43 @@ export function EmojiPickerPopover({
   function openPopover() {
     if (!buttonRef.current) return;
     const rect = buttonRef.current.getBoundingClientRect();
-    const POPOVER_WIDTH = 282;
     const POPOVER_MAX_HEIGHT = 256;
     const GAP = 6;
-    const BOTTOM_NAV_HEIGHT = 80; // Marge pour la barre de navigation
+    const BOTTOM_NAV_HEIGHT = 80;
+    const width = Math.min(282, window.innerWidth - 16);
+    const sheet = window.innerWidth < 400;
 
-    let top = rect.bottom + GAP + window.scrollY;
-    let left = rect.left + window.scrollX;
-    let maxHeight = POPOVER_MAX_HEIGHT;
-
-    // Empêcher débordement à droite
-    if (left + POPOVER_WIDTH > window.innerWidth - 8) {
-      left = window.innerWidth - POPOVER_WIDTH - 8;
+    if (sheet) {
+      setPopoverPos({
+        top: 0,
+        left: 8,
+        maxHeight: Math.min(POPOVER_MAX_HEIGHT, Math.round(window.innerHeight * 0.5)),
+        width,
+        sheet: true,
+      });
+      setIsOpen(true);
+      return;
     }
 
-    // Calcul de l'espace avec sécurité pour la barre du bas
+    let top = rect.bottom + GAP + window.scrollY;
+    let left = Math.max(8, rect.left + window.scrollX);
+    let maxHeight = POPOVER_MAX_HEIGHT;
+
+    if (left + width > window.innerWidth - 8) {
+      left = Math.max(8, window.innerWidth - width - 8);
+    }
+
     const spaceBelow = window.innerHeight - rect.bottom - GAP - BOTTOM_NAV_HEIGHT;
     const spaceAbove = rect.top - GAP;
 
-    // Ouvrir vers le haut si pas assez de place en bas ET plus de place en haut
     if (spaceBelow < POPOVER_MAX_HEIGHT && spaceAbove > spaceBelow) {
       maxHeight = Math.min(POPOVER_MAX_HEIGHT, spaceAbove - 8);
       top = rect.top - maxHeight - GAP + window.scrollY;
     } else {
-      // Sinon on ouvre vers le bas, mais on restreint la hauteur si l'écran est petit
       maxHeight = Math.min(POPOVER_MAX_HEIGHT, Math.max(120, spaceBelow - 8));
     }
 
-    setPopoverPos({ top, left, maxHeight });
+    setPopoverPos({ top, left, maxHeight, width, sheet: false });
     setIsOpen(true);
   }
 
@@ -121,14 +136,24 @@ export function EmojiPickerPopover({
             className="slide-down grid max-h-64 gap-1.5 overflow-y-auto rounded-2xl p-2.5"
             style={{
               position: "fixed",
-              top: popoverPos.top - window.scrollY,
-              left: popoverPos.left - window.scrollX,
+              ...(popoverPos.sheet
+                ? {
+                    top: "auto",
+                    bottom: 8,
+                    left: 8,
+                    right: 8,
+                    width: popoverPos.width,
+                  }
+                : {
+                    top: popoverPos.top - window.scrollY,
+                    left: popoverPos.left - window.scrollX,
+                    width: popoverPos.width,
+                  }),
               zIndex: 9999,
               background: "#FFFFFF",
               boxShadow: "0 10px 36px rgba(20,31,22,0.22)",
               border: "1px solid #E2EBE3",
-              gridTemplateColumns: "repeat(6, 1fr)",
-              width: 282,
+              gridTemplateColumns: "repeat(auto-fill, minmax(2.75rem, 1fr))",
               maxHeight: popoverPos.maxHeight,
               overflowX: "hidden",
               scrollbarWidth: "thin",
@@ -143,7 +168,7 @@ export function EmojiPickerPopover({
                 onSelectIcon(DEFAULT_INGREDIENT_ICON);
                 setIsOpen(false);
               }}
-              className="flex h-9 w-9 items-center justify-center rounded-xl transition-all hover:bg-[#EBF2EC] active:scale-90 select-none cursor-pointer"
+              className="flex min-h-11 min-w-11 items-center justify-center rounded-xl transition-all hover:bg-[#EBF2EC] active:scale-90 select-none cursor-pointer"
               style={{
                 background: isDefaultOrEmpty ? "#EBF2EC" : "transparent",
               }}
@@ -161,7 +186,7 @@ export function EmojiPickerPopover({
                   onSelectIcon(visual, item.defaultUnit, item.name);
                   setIsOpen(false);
                 }}
-                className="flex h-9 w-9 items-center justify-center rounded-xl transition-all hover:bg-[#EBF2EC] active:scale-90 select-none cursor-pointer"
+                className="flex min-h-11 min-w-11 items-center justify-center rounded-xl transition-all hover:bg-[#EBF2EC] active:scale-90 select-none cursor-pointer"
                 style={{ background: currentIcon === visual ? "#EBF2EC" : "transparent" }}
               >
                 <IngredientIcon iconHex={visual} size={24} />

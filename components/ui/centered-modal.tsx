@@ -2,6 +2,10 @@
 
 import { type ReactNode, useEffect } from "react";
 import { createPortal } from "react-dom";
+import {
+  MODAL_CENTERED_OVERLAY_CLASS,
+  MODAL_PANEL_CLASS,
+} from "@/components/ui/modal-layout";
 import { useLockBodyScroll } from "@/lib/lock-body-scroll";
 
 export function CenteredModal({
@@ -27,7 +31,7 @@ export function CenteredModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[100] grid place-items-center px-4"
+      className={MODAL_CENTERED_OVERLAY_CLASS}
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
@@ -39,7 +43,7 @@ export function CenteredModal({
         aria-hidden
       />
       <div
-        className={`scale-in relative mx-auto flex max-h-[90vh] w-full ${maxWidthClass} flex-col overflow-hidden rounded-3xl`}
+        className={`${MODAL_PANEL_CLASS} mx-auto ${maxWidthClass}`}
         style={{ background: "#FFFFFF", boxShadow: "0 24px 64px rgba(20,31,22,0.22)" }}
       >
         {children}

@@ -8,6 +8,11 @@ import {
   mealKey,
   type MealKey,
 } from "@/components/planning/export-day-section";
+import {
+  MODAL_CLOSE_BTN_CLASS,
+  MODAL_OVERLAY_CLASS,
+  MODAL_PANEL_CLASS,
+} from "@/components/ui/modal-layout";
 import { addDays, dayKey } from "@/lib/date-paris";
 import { useLockBodyScroll } from "@/lib/lock-body-scroll";
 import {
@@ -100,14 +105,14 @@ export function ExportShoppingModal({
 
   return (
     <div
-      className="fixed inset-x-0 top-0 bottom-20 z-[60] flex items-end justify-center sm:inset-0 sm:items-center"
+      className={MODAL_OVERLAY_CLASS}
       style={{ background: "rgba(20,31,22,0.55)", backdropFilter: "blur(4px)" }}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div
-        className="scale-in flex max-h-[85vh] w-full flex-col rounded-t-3xl sm:max-h-[88vh] sm:w-auto sm:min-w-[420px] sm:max-w-md sm:rounded-3xl"
+        className={MODAL_PANEL_CLASS}
         style={{ background: "#FFFFFF", boxShadow: "0 24px 64px rgba(20,31,22,0.22)" }}
         role="dialog"
         aria-modal="true"
@@ -121,7 +126,7 @@ export function ExportShoppingModal({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-xl text-[#7A8F7D] transition-colors hover:bg-[#F0F4EF]"
+            className={MODAL_CLOSE_BTN_CLASS}
             aria-label="Fermer"
           >
             <XIcon size={18} />

@@ -84,8 +84,8 @@ export function UnitSelect({
     const BOTTOM_NAV_HEIGHT = 80;
     const POPOVER_MAX_HEIGHT = 288;
 
-    const width = compact ? 210 : Math.max(240, rect.width);
-    let left = rect.left;
+    const width = Math.min(210, window.innerWidth - 16);
+    let left = Math.max(8, rect.left);
     if (left + width > window.innerWidth - 8) {
       left = Math.max(8, window.innerWidth - width - 8);
     }
@@ -180,7 +180,7 @@ export function UnitSelect({
           className ||
           (compact
             ? "inline-flex items-center justify-center gap-1 rounded-lg border border-transparent bg-transparent px-2 py-1 text-xs font-semibold text-[#7A8F7D] transition-all hover:bg-[#F0F4EF] hover:text-[#1C2B1E] focus:bg-[#F0F4EF] focus:ring-2 focus:ring-[#C8E0CF] focus:outline-none"
-            : "flex w-full items-center justify-between rounded-xl border border-[#E2EBE3] bg-[#FAFBF9] px-4 py-3 text-sm font-semibold text-[#1C2B1E] shadow-sm transition-all hover:border-[#4A7C59] focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/20 focus:outline-none")
+            : "flex w-full items-center justify-between rounded-xl border border-[#E2EBE3] bg-[#FAFBF9] px-4 py-3 text-base font-semibold text-[#1C2B1E] shadow-sm transition-all hover:border-[#4A7C59] focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/20 focus:outline-none")
         }
       >
         <span className={compact ? "whitespace-normal break-words text-left" : "truncate text-left"}>

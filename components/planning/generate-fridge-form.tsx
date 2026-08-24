@@ -1,11 +1,17 @@
 import Link from "next/link";
 import { MIN_USABLE_FRIDGE_ITEMS } from "@/lib/fridge";
-import { MEAL_TYPE_LABELS, MEAL_TYPES, type MealType } from "@/lib/meal-types";
+import { MEAL_TYPES, type MealType } from "@/lib/meal-types";
 
 const inputClass =
-  "w-full rounded-xl bg-[#FAFBF9] px-4 py-3 text-sm font-semibold text-[#1C2B1E] outline-none transition-all focus:border-[#4A7C59]";
+  "w-full rounded-xl bg-[#FAFBF9] px-4 py-3 text-base font-semibold text-[#1C2B1E] outline-none transition-all focus:border-[#4A7C59]";
 const inputStyle = { border: "1.5px solid #E2EBE3" } as const;
 const labelClass = "mb-1.5 block text-xs font-bold tracking-wide text-[#7A8F7D]";
+
+const MEAL_TYPE_SHORT_LABELS: Record<MealType, string> = {
+  breakfast: "P’tit déj",
+  lunch: "Déjeuner",
+  dinner: "Dîner",
+};
 
 const OPTION_COUNTS = [1, 2, 3] as const;
 
@@ -74,7 +80,7 @@ export function GenerateFridgeForm({
 
       <div>
         <p className={labelClass}>Type de repas</p>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           {MEAL_TYPES.map((type) => {
             const selected = mealType === type;
             return (
@@ -82,14 +88,14 @@ export function GenerateFridgeForm({
                 key={type}
                 type="button"
                 onClick={() => onMealTypeChange(type)}
-                className="rounded-xl px-2 py-2.5 text-xs font-bold transition-all"
+                className="min-h-11 rounded-xl px-2 py-2.5 text-xs font-bold transition-all"
                 style={{
                   background: selected ? "#4A7C59" : "#FAFBF9",
                   color: selected ? "#FFFFFF" : "#1C2B1E",
                   border: selected ? "1.5px solid #4A7C59" : "1.5px solid #E2EBE3",
                 }}
               >
-                {MEAL_TYPE_LABELS[type]}
+                {MEAL_TYPE_SHORT_LABELS[type]}
               </button>
             );
           })}
@@ -98,7 +104,7 @@ export function GenerateFridgeForm({
 
       <div>
         <p className={labelClass}>Nombre d&apos;options</p>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           {OPTION_COUNTS.map((count) => {
             const selected = optionCount === count;
             return (
@@ -106,14 +112,14 @@ export function GenerateFridgeForm({
                 key={count}
                 type="button"
                 onClick={() => onOptionCountChange(count)}
-                className="rounded-xl px-2 py-2.5 text-xs font-bold transition-all"
+                className="min-h-11 rounded-xl px-2 py-2.5 text-xs font-bold transition-all"
                 style={{
                   background: selected ? "#EBF2EC" : "#FAFBF9",
                   color: selected ? "#2E5C3A" : "#1C2B1E",
                   border: selected ? "1.5px solid #4A7C59" : "1.5px solid #E2EBE3",
                 }}
               >
-                Générer {count} option{count > 1 ? "s" : ""}
+                {count === 1 ? "1 option" : `${count} options`}
               </button>
             );
           })}

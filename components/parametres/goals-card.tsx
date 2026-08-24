@@ -82,7 +82,7 @@ function TargetField({
           inputMode="numeric"
           value={value}
           onChange={(e) => onChange(e.target.value.replace(/\D/g, ""))}
-          className="w-full min-w-0 bg-transparent text-sm font-bold text-[#1C2B1E] outline-none"
+          className="w-full min-w-0 bg-transparent text-base font-bold text-[#1C2B1E] outline-none"
         />
         <span className="shrink-0 text-xs font-bold text-[#7A8F7D]">{suffix}</span>
       </span>

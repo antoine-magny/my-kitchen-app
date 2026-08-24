@@ -26,7 +26,7 @@ export function FormStepIngredients({
           <PlusIcon size={12} /> Ajouter
         </button>
       </div>
-      <div className="mb-2 grid grid-cols-[1fr_4.5rem_5.5rem_auto] gap-2 px-0.5">
+      <div className="mb-2 hidden gap-2 px-0.5 sm:grid sm:grid-cols-[1fr_4.5rem_5.5rem_auto]">
         <span className="text-[10px] font-bold tracking-wide text-[#9CA3AF] uppercase">Nom</span>
         <span className="text-[10px] font-bold tracking-wide text-[#9CA3AF] uppercase">Qté</span>
         <span className="text-[10px] font-bold tracking-wide text-[#9CA3AF] uppercase">Unité</span>
@@ -34,12 +34,15 @@ export function FormStepIngredients({
       </div>
       <div className="space-y-2">
         {ingredients.map((ing, idx) => (
-          <div key={idx} className="grid grid-cols-[1fr_4.5rem_5.5rem_auto] items-center gap-2">
+          <div
+            key={idx}
+            className="grid grid-cols-[1fr_1fr_auto] items-center gap-2 sm:grid-cols-[1fr_4.5rem_5.5rem_auto]"
+          >
             <input
               value={ing.name}
               onChange={(e) => updateIngredient(idx, "name", e.target.value)}
               placeholder="Poulet"
-              className={inputClass}
+              className={`${inputClass} col-span-3 sm:col-span-1`}
               style={inputStyle}
             />
             <input

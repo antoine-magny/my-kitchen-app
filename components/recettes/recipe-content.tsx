@@ -177,7 +177,7 @@ export function RecipeContent({
       </div>
 
       {tab === "steps" && (
-        <div className="fixed right-0 bottom-20 left-0 z-40 px-4">
+        <div className="fixed right-0 bottom-[var(--nav-offset)] left-0 z-40 px-4">
           <div
             className="mx-auto flex max-w-md items-center gap-3 rounded-2xl px-4 py-3 sm:max-w-lg"
             style={{

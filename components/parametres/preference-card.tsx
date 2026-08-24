@@ -73,7 +73,7 @@ export function PreferenceCard({ group }: { group: PreferenceGroup }) {
               if (e.key === "Escape") setDraft(null);
             }}
             placeholder="Nom de l'aliment…"
-            className="w-36 rounded-xl border border-[#C8E0CF] bg-[#FAFBF9] px-3 py-1.5 text-xs font-semibold text-[#1C2B1E] outline-none"
+            className="w-36 rounded-xl border border-[#C8E0CF] bg-[#FAFBF9] px-3 py-1.5 text-base font-semibold text-[#1C2B1E] outline-none"
           />
         )}
       </div>

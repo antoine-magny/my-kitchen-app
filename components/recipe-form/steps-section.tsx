@@ -40,14 +40,14 @@ export function StepsSection({
                 value={step.title}
                 onChange={(e) => updateStep(idx, "title", e.target.value)}
                 placeholder="Titre de l'étape"
-                className="flex-1 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-[#1C2B1E] outline-none"
+                className="flex-1 rounded-lg bg-white px-3 py-2 text-base font-semibold text-[#1C2B1E] outline-none"
                 style={inputStyle}
               />
               <input
                 value={step.duration ?? ""}
                 onChange={(e) => updateStep(idx, "duration", e.target.value)}
                 placeholder="5 min"
-                className="w-20 shrink-0 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-[#1C2B1E] outline-none"
+                className="w-20 shrink-0 rounded-lg bg-white px-3 py-2 text-base font-semibold text-[#1C2B1E] outline-none"
                 style={inputStyle}
               />
               {steps.length > 1 && (
@@ -66,7 +66,7 @@ export function StepsSection({
               onChange={(e) => updateStep(idx, "detail", e.target.value)}
               placeholder="Description de l'étape…"
               rows={2}
-              className="w-full resize-none rounded-lg bg-white px-3 py-2 text-sm font-medium text-[#1C2B1E] outline-none"
+              className="w-full resize-none rounded-lg bg-white px-3 py-2 text-base font-medium text-[#1C2B1E] outline-none"
               style={inputStyle}
             />
           </div>

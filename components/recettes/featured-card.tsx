@@ -15,7 +15,7 @@ export function FeaturedCard({
     <div
       className="group relative mb-8 overflow-hidden rounded-3xl bg-[#1C2B1E]"
       style={{
-        height: 340,
+        height: 240,
         boxShadow: "0 12px 48px rgba(28,43,30,0.20)",
       }}
     >
@@ -47,7 +47,7 @@ export function FeaturedCard({
       <button
         type="button"
         onClick={() => onToggleFav(recipe.id)}
-        className="absolute top-5 right-5 z-10 flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200 hover:scale-110"
+        className="absolute top-5 right-5 z-10 flex min-h-11 min-w-11 items-center justify-center rounded-xl transition-all duration-200 hover:scale-110"
         style={{
           background: isFav ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.18)",
           backdropFilter: "blur(6px)",
@@ -57,29 +57,31 @@ export function FeaturedCard({
         <HeartIcon filled={isFav} light />
       </button>
 
-      <div className="pointer-events-none absolute right-0 bottom-0 left-0 z-10 px-6 py-5">
+      <div className="pointer-events-none absolute right-0 bottom-0 left-0 z-10 px-5 py-4">
         <h2
-          className="font-lora mb-3 text-2xl leading-tight font-bold text-white"
+          className="font-lora mb-3 text-xl leading-tight font-bold text-white sm:text-2xl"
           style={{ textShadow: "0 1px 12px rgba(0,0,0,0.4)" }}
         >
           {recipe.title}
         </h2>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1.5 text-white/75">
-            <ClockIcon size={12} />
-            <span className="text-xs font-semibold">{recipe.time}</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-white/75">
-            <FlameIcon size={12} />
-            <span className="text-xs font-semibold">{recipe.calories} kcal</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-white/75">
-            <MuscleIcon size={12} />
-            <span className="text-xs font-semibold">{recipe.proteins}g protéines</span>
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+            <div className="flex items-center gap-1.5 text-white/75">
+              <ClockIcon size={12} />
+              <span className="text-xs font-semibold">{recipe.time}</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-white/75">
+              <FlameIcon size={12} />
+              <span className="text-xs font-semibold">{recipe.calories} kcal</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-white/75">
+              <MuscleIcon size={12} />
+              <span className="text-xs font-semibold">{recipe.proteins}g protéines</span>
+            </div>
           </div>
           <Link
             href={`/recettes/${recipe.id}`}
-            className="pointer-events-auto ml-auto flex items-center gap-2 rounded-xl bg-[#4A7C59] px-4 py-2 text-xs font-bold text-white transition-all hover:scale-105"
+            className="pointer-events-auto flex w-fit items-center gap-2 rounded-xl bg-[#4A7C59] px-4 py-2 text-xs font-bold text-white transition-all hover:scale-105"
           >
             Voir les étapes
           </Link>

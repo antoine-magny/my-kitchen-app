@@ -41,7 +41,7 @@ export function EditDlcModal({
         <button
           type="button"
           onClick={onClose}
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[#7A8F7D] transition-colors hover:bg-[#F0F4EF]"
+          className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg text-[#7A8F7D] transition-colors hover:bg-[#F0F4EF]"
         >
           <XIcon size={14} />
         </button>

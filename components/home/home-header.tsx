@@ -69,7 +69,7 @@ export function HomeHeader({
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
           placeholder="Rechercher une recette, un ingrédient…"
-          className="flex-1 bg-transparent text-sm font-medium text-[#1C2B1E] outline-none"
+          className="flex-1 bg-transparent text-base font-medium text-[#1C2B1E] outline-none"
         />
       </div>
     </div>

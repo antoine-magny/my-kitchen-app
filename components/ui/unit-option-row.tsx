@@ -18,7 +18,7 @@ export function UnitOptionRow({
       role="option"
       aria-selected={isSelected}
       onClick={onSelect}
-      className={`group flex w-full items-center justify-between rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-all cursor-pointer ${
+      className={`group flex min-h-11 w-full items-center justify-between rounded-xl px-2.5 py-2.5 text-xs font-semibold transition-all cursor-pointer ${
         isSelected
           ? "bg-[#EBF3ED] text-[#2E5B3E] font-bold"
           : "text-[#1C2B1E] hover:bg-[#F0F5F1] hover:text-[#2E5B3E]"

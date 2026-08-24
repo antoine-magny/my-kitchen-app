@@ -69,7 +69,7 @@ export function RecipeCard({
           <button
             type="button"
             onClick={() => onToggleFav(recipe.id)}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl transition-all duration-200 hover:scale-110"
+            className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-xl transition-all duration-200 hover:scale-110"
             style={{ background: isFav ? "#FEE2E8" : "#F0F4EF" }}
             aria-label="Ajouter aux favoris"
           >
@@ -79,7 +79,7 @@ export function RecipeCard({
 
         <MissingIngredientsBadges names={recipe.missingIngredients} className="mb-3" />
 
-        <div className="mb-4 flex items-center gap-3">
+        <div className="mb-4 flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-1.5 text-[#4A7C59]">
             <ClockIcon size={12} />
             <span className="text-xs font-semibold text-[#4A7C59]">{recipe.time}</span>

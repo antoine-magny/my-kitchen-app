@@ -93,7 +93,7 @@ export function AddShoppingItemModal({ isOpen, onClose, onAdd }: AddShoppingItem
           <button
             type="button"
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F0F4EF] text-[#7A8F7D] transition-colors hover:bg-[#E2EBE3] hover:text-[#1C2B1E]"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-full bg-[#F0F4EF] text-[#7A8F7D] transition-colors hover:bg-[#E2EBE3] hover:text-[#1C2B1E]"
             aria-label="Fermer"
           >
             <XIcon size={16} />
@@ -117,7 +117,7 @@ export function AddShoppingItemModal({ isOpen, onClose, onAdd }: AddShoppingItem
                 value={name}
                 onChange={handleNameChange}
                 placeholder="Ex: Lait d'avoine, Courgettes..."
-                className="w-full rounded-xl border border-[#E2EBE3] bg-[#FAFBF9] px-4 py-3 text-sm font-semibold text-[#1C2B1E] outline-none transition-all focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/20"
+                className="w-full rounded-xl border border-[#E2EBE3] bg-[#FAFBF9] px-4 py-3 text-base font-semibold text-[#1C2B1E] outline-none transition-all focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/20"
                 required
               />
             </div>
@@ -135,7 +135,7 @@ export function AddShoppingItemModal({ isOpen, onClose, onAdd }: AddShoppingItem
                 inputMode="decimal"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="w-full rounded-xl border border-[#E2EBE3] bg-[#FAFBF9] px-4 py-3 text-sm font-semibold text-[#1C2B1E] outline-none transition-all focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/20"
+                className="w-full rounded-xl border border-[#E2EBE3] bg-[#FAFBF9] px-4 py-3 text-base font-semibold text-[#1C2B1E] outline-none transition-all focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/20"
               />
             </div>
             <div className="min-w-0 flex-1">
@@ -150,7 +150,7 @@ export function AddShoppingItemModal({ isOpen, onClose, onAdd }: AddShoppingItem
                   const next = coerceUnitCode(u);
                   if (next) setUnit(next);
                 }}
-                className="flex w-full items-center justify-between rounded-xl border border-[#E2EBE3] bg-[#FAFBF9] px-4 py-3 text-sm font-semibold text-[#1C2B1E] outline-none transition-all hover:border-[#4A7C59] focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/20"
+                className="flex w-full items-center justify-between rounded-xl border border-[#E2EBE3] bg-[#FAFBF9] px-4 py-3 text-base font-semibold text-[#1C2B1E] outline-none transition-all hover:border-[#4A7C59] focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/20"
               />
             </div>
           </div>
@@ -168,7 +168,7 @@ export function AddShoppingItemModal({ isOpen, onClose, onAdd }: AddShoppingItem
                 id="item-category"
                 value={category}
                 onChange={(e) => setCategory(e.target.value as ShoppingCategoryId | "")}
-                className="w-full appearance-none rounded-xl border border-[#E2EBE3] bg-[#FAFBF9] px-4 py-3 pr-10 text-sm font-semibold text-[#1C2B1E] outline-none transition-all focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/20"
+                className="w-full appearance-none rounded-xl border border-[#E2EBE3] bg-[#FAFBF9] px-4 py-3 pr-10 text-base font-semibold text-[#1C2B1E] outline-none transition-all focus:border-[#4A7C59] focus:ring-2 focus:ring-[#4A7C59]/20"
               >
                 <option value="">Automatique ({autoCategoryTitle})</option>
                 {SHOPPING_CATEGORIES.map((cat) => (
