@@ -41,7 +41,13 @@ export function UnitSelect({
   ...rest
 }: UnitSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [popoverPos, setPopoverPos] = useState<{ top: number; left: number; width: number; maxHeight: number } | null>(null);
+  const [popoverPos, setPopoverPos] = useState<{
+    top?: number;
+    bottom?: number;
+    left: number;
+    width: number;
+    maxHeight: number;
+  } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
@@ -79,25 +85,26 @@ export function UnitSelect({
     const POPOVER_MAX_HEIGHT = 288;
 
     const width = compact ? 210 : Math.max(240, rect.width);
-    let top = rect.bottom + GAP + window.scrollY;
-    let left = rect.left + window.scrollX;
-
+    let left = rect.left;
     if (left + width > window.innerWidth - 8) {
-      left = window.innerWidth - width - 8;
+      left = Math.max(8, window.innerWidth - width - 8);
     }
 
-    let maxHeight = POPOVER_MAX_HEIGHT;
     const spaceBelow = window.innerHeight - rect.bottom - GAP - BOTTOM_NAV_HEIGHT;
     const spaceAbove = rect.top - GAP;
+    const openAbove = spaceBelow < POPOVER_MAX_HEIGHT && spaceAbove > spaceBelow;
+    const maxHeight = openAbove
+      ? Math.min(POPOVER_MAX_HEIGHT, Math.max(120, spaceAbove - 8))
+      : Math.min(POPOVER_MAX_HEIGHT, Math.max(120, spaceBelow - 8));
 
-    if (spaceBelow < POPOVER_MAX_HEIGHT && spaceAbove > spaceBelow) {
-      maxHeight = Math.min(POPOVER_MAX_HEIGHT, spaceAbove - 8);
-      top = rect.top - maxHeight - GAP + window.scrollY;
-    } else {
-      maxHeight = Math.min(POPOVER_MAX_HEIGHT, Math.max(120, spaceBelow - 8));
-    }
-
-    setPopoverPos({ top, left, width, maxHeight });
+    setPopoverPos({
+      left,
+      width,
+      maxHeight,
+      ...(openAbove
+        ? { bottom: window.innerHeight - rect.top + GAP }
+        : { top: rect.bottom + GAP }),
+    });
     setIsOpen(true);
   }
 
@@ -199,8 +206,9 @@ export function UnitSelect({
           className="slide-down overflow-y-auto rounded-2xl border border-[#E2EBE3] bg-white/95 p-1.5 shadow-2xl backdrop-blur-md transition-all"
           style={{
             position: "fixed",
-            top: popoverPos.top - window.scrollY,
-            left: popoverPos.left - window.scrollX,
+            top: popoverPos.top,
+            bottom: popoverPos.bottom,
+            left: popoverPos.left,
             width: popoverPos.width,
             maxHeight: popoverPos.maxHeight,
             zIndex: 9999,

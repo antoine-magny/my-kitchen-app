@@ -100,7 +100,7 @@ export function EmojiPickerPopover({
 
   const sizeClasses =
     size === "lg"
-      ? "h-14 w-14 text-2xl rounded-2xl border-2 bg-[#F6F8F3] hover:border-[#4A7C59]"
+      ? "h-12 w-12 text-xl rounded-2xl border-2 bg-[#F6F8F3] hover:border-[#4A7C59]"
       : size === "sm"
       ? "h-7 w-7 text-lg rounded-lg hover:bg-[#EBF2EC]"
       : "h-9 w-9 text-xl rounded-xl hover:bg-[#EBF2EC]";
@@ -190,7 +190,7 @@ export function EmojiPickerPopover({
         style={{ borderColor: size === "lg" ? "#E2EBE3" : "transparent" }}
       >
         {size === "lg" ? (
-          <IngredientIcon iconHex={currentIcon || DEFAULT_INGREDIENT_ICON} size={32} />
+          <IngredientIcon iconHex={currentIcon || DEFAULT_INGREDIENT_ICON} size={26} />
         ) : isDefaultOrEmpty ? (
           <span className="h-full w-full rounded-lg transition-colors group-hover:bg-[#F0F4EF]" />
         ) : (

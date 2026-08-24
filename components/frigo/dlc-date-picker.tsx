@@ -48,10 +48,10 @@ export function DlcDatePicker({
 
   return (
     <div
-      className="mx-auto w-full max-w-[260px] rounded-2xl bg-[#FAFBF9] p-2.5"
+      className="mx-auto w-full max-w-[300px] rounded-2xl bg-[#FAFBF9] p-3"
       style={{ border: "1.5px solid #E2EBE3" }}
     >
-      <div className="mb-1.5 flex items-center justify-between">
+      <div className="mb-1 flex items-center justify-between">
         <p className="font-lora text-sm font-bold text-[#1C2B1E]">
           {formatMonthYearFr(cursor)}
         </p>
@@ -59,7 +59,7 @@ export function DlcDatePicker({
           <button
             type="button"
             onClick={() => setCursor((prev) => addMonths(startOfMonth(prev), -1))}
-            className="flex h-7 w-7 items-center justify-center rounded-xl text-[#4A7C59] transition-colors hover:bg-[#E8F0EA] active:scale-95"
+            className="flex h-8 w-8 items-center justify-center rounded-xl text-[#4A7C59] transition-colors hover:bg-[#E8F0EA] active:scale-95"
             aria-label="Mois précédent"
           >
             <ChevronLeftIcon size={16} />
@@ -67,7 +67,7 @@ export function DlcDatePicker({
           <button
             type="button"
             onClick={() => setCursor((prev) => addMonths(startOfMonth(prev), 1))}
-            className="flex h-7 w-7 items-center justify-center rounded-xl text-[#4A7C59] transition-colors hover:bg-[#E8F0EA] active:scale-95"
+            className="flex h-8 w-8 items-center justify-center rounded-xl text-[#4A7C59] transition-colors hover:bg-[#E8F0EA] active:scale-95"
             aria-label="Mois suivant"
           >
             <ChevronRightIcon size={16} />
@@ -99,7 +99,7 @@ export function DlcDatePicker({
               aria-current={isToday ? "date" : undefined}
               aria-label={date ? formatDayLongFr(date) : cell.iso}
               onClick={() => selectIso(cell.iso)}
-              className="flex h-7 items-center justify-center rounded-xl text-xs font-bold transition-all active:scale-95"
+              className="flex h-8 items-center justify-center rounded-xl text-xs font-bold transition-all active:scale-95"
               style={
                 selected
                   ? {
@@ -120,7 +120,7 @@ export function DlcDatePicker({
         })}
       </div>
 
-      <div className="mt-2 flex gap-1.5">
+      <div className="mt-1.5 flex gap-1.5">
         {SHORTCUTS.map((shortcut) => {
           const iso = isoDateFromCalendar(shortcut.apply(today));
           const active = iso === value;
@@ -129,7 +129,7 @@ export function DlcDatePicker({
               key={shortcut.id}
               type="button"
               onClick={() => selectIso(iso)}
-              className="flex-1 rounded-xl py-1.5 text-[11px] font-bold transition-all active:scale-95"
+              className="flex-1 rounded-xl py-2 text-[11px] font-bold transition-all active:scale-95"
               style={
                 active
                   ? {

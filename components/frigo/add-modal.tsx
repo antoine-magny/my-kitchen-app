@@ -52,23 +52,23 @@ export function AddModal({
   if (!mounted) return null;
 
   return (
-    <CenteredModal titleId="add-ingredient-title" onClose={onClose}>
-        <div className="flex items-center justify-between px-5 pt-4 pb-2">
-          <h2 id="add-ingredient-title" className="font-lora text-lg font-bold text-[#1C2B1E]">
+    <CenteredModal titleId="add-ingredient-title" onClose={onClose} maxWidthClass="max-w-[340px]">
+        <div className="flex items-center justify-between px-4 pt-3.5 pb-2">
+          <h2 id="add-ingredient-title" className="font-lora text-base font-bold text-[#1C2B1E]">
             Nouvel ingrédient
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="flex h-7 w-7 items-center justify-center rounded-xl text-[#7A8F7D] transition-colors hover:bg-[#F0F4EF]"
+            className="flex h-6 w-6 items-center justify-center rounded-lg text-[#7A8F7D] transition-colors hover:bg-[#F0F4EF]"
           >
-            <XIcon size={16} />
+            <XIcon size={14} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
-          <div className="flex flex-col gap-2.5 overflow-y-auto px-5">
-            <div className="flex items-start gap-3">
+          <div className="flex flex-col gap-1.5 px-4">
+            <div className="flex items-center gap-2.5">
               <EmojiPickerPopover
                 size="lg"
                 currentIcon={icon}
@@ -83,7 +83,7 @@ export function AddModal({
                 }}
               />
               <div className="flex-1">
-                <label className="mb-1.5 block text-xs font-bold tracking-wide text-[#7A8F7D]" style={{ letterSpacing: "0.04em" }}>
+                <label className="mb-1.5 block text-[11px] font-bold tracking-wide text-[#7A8F7D]" style={{ letterSpacing: "0.04em" }}>
                   NOM DE L&apos;INGRÉDIENT
                 </label>
                 <input
@@ -101,15 +101,15 @@ export function AddModal({
                   }}
                   placeholder="Ex : Tomates cerises"
                   required
-                  className="w-full rounded-xl bg-[#FAFBF9] px-4 py-2 text-sm font-semibold text-[#1C2B1E] outline-none transition-all focus:border-[#4A7C59]"
+                  className="w-full rounded-lg bg-[#FAFBF9] px-3 py-2 text-sm font-semibold text-[#1C2B1E] outline-none transition-all focus:border-[#4A7C59]"
                   style={{ border: "1.5px solid #E2EBE3" }}
                 />
               </div>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex gap-2.5">
               <div className="flex-1">
-                <label className="mb-1.5 block text-xs font-bold tracking-wide text-[#7A8F7D]" style={{ letterSpacing: "0.04em" }}>
+                <label className="mb-1 block text-[11px] font-bold tracking-wide text-[#7A8F7D]" style={{ letterSpacing: "0.04em" }}>
                   QUANTITÉ
                 </label>
                 <input
@@ -118,32 +118,32 @@ export function AddModal({
                   step="any"
                   value={qty}
                   onChange={(e) => setQty(e.target.value)}
-                  className="w-full rounded-xl bg-[#FAFBF9] px-4 py-2 text-sm font-semibold text-[#1C2B1E] outline-none transition-all focus:border-[#4A7C59]"
+                  className="w-full rounded-lg bg-[#FAFBF9] px-3 py-1.5 text-sm font-semibold text-[#1C2B1E] outline-none transition-all focus:border-[#4A7C59]"
                   style={{ border: "1.5px solid #E2EBE3" }}
                 />
               </div>
               <div className="flex-1">
-                <label className="mb-1.5 block text-xs font-bold tracking-wide text-[#7A8F7D]" style={{ letterSpacing: "0.04em" }}>
+                <label className="mb-1 block text-[11px] font-bold tracking-wide text-[#7A8F7D]" style={{ letterSpacing: "0.04em" }}>
                   UNITÉ
                 </label>
                 <UnitSelect
                   value={unit}
                   ingredientName={name}
                   onChange={(next) => setUnit(next as UnitCode)}
-                  className="w-full flex items-center justify-between rounded-xl border-[1.5px] border-[#E2EBE3] bg-[#FAFBF9] py-2 px-4 text-sm font-semibold text-[#1C2B1E] outline-none transition-all hover:border-[#4A7C59] focus:border-[#4A7C59]"
+                  className="w-full flex items-center justify-between rounded-lg border-[1.5px] border-[#E2EBE3] bg-[#FAFBF9] py-1.5 px-3 text-sm font-semibold text-[#1C2B1E] outline-none transition-all hover:border-[#4A7C59] focus:border-[#4A7C59]"
                 />
               </div>
             </div>
 
             <div>
-              <label className="mb-1.5 block text-xs font-bold tracking-wide text-[#7A8F7D]" style={{ letterSpacing: "0.04em" }}>
+              <label className="mb-1 block text-[11px] font-bold tracking-wide text-[#7A8F7D]" style={{ letterSpacing: "0.04em" }}>
                 DATE LIMITE DE CONSOMMATION <span className="font-medium normal-case opacity-60">(optionnelle)</span>
               </label>
               <DlcDatePicker value={dlc} onChange={setDlc} />
             </div>
           </div>
 
-          <div className="px-5 pt-2 pb-4">
+          <div className="px-4 pt-2 pb-3">
             <button
               type="submit"
               className="w-full rounded-2xl py-2.5 text-sm font-bold text-white transition-all hover:opacity-90 active:scale-[0.98]"

@@ -8,10 +8,12 @@ export function CenteredModal({
   titleId,
   onClose,
   children,
+  maxWidthClass = "max-w-[400px]",
 }: {
   titleId: string;
   onClose: () => void;
   children: ReactNode;
+  maxWidthClass?: string;
 }) {
   useLockBodyScroll();
 
@@ -37,7 +39,7 @@ export function CenteredModal({
         aria-hidden
       />
       <div
-        className="scale-in relative mx-auto flex max-h-[90vh] w-full max-w-[400px] flex-col overflow-hidden rounded-3xl"
+        className={`scale-in relative mx-auto flex max-h-[90vh] w-full ${maxWidthClass} flex-col overflow-hidden rounded-3xl`}
         style={{ background: "#FFFFFF", boxShadow: "0 24px 64px rgba(20,31,22,0.22)" }}
       >
         {children}
