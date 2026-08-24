@@ -28,12 +28,6 @@ Quand l'utilisateur écrit "synchro git", "synchro", ou "met à jour github" :
 4. Une fois le code aligné et sans conflit, exécute la commande terminal : `git push`
 5. Confirme à l'utilisateur que le PC et GitHub sont alignés, et que la mise à jour Vercel est lancée s'il y a eu un push.
 
---- RÈGLE : COMMANDE "VISU" / "VISUALISATION" ---
-Quand l'utilisateur écrit "visu", "visualisation" ou "Visualisation" :
-1. Démarre le serveur de développement via `npm run dev` en arrière-plan s'il n'est pas déjà actif.
-2. Lance la prévisualisation dans l'onglet interne d'Antigravity ("Jetski Preview" sur `http://localhost:3000`), sans ouvrir de navigateur externe.
-3. Confirme que le serveur et la prévisualisation sont prêts.
-
 --- RÈGLE : OPTIMISATION ET REFACTORING SUR DEMANDE ---
 Quand l'utilisateur écrit le mot-clé "optimisation", "Optimisation", "optimise le code" ou "refactoring" :
 Tu dois adopter le rôle d'un Architecte Logiciel Senior chargé d'auditer et de nettoyer le projet en profondeur.
@@ -60,3 +54,15 @@ N'applique JAMAIS toutes les modifications d'un coup. Procède obligatoirement a
 - Étape 2 (Validation) : Arrête-toi et attends mon feu vert ("Go pour l'étape X"). Ne génère aucun code de refactoring avant ma réponse.
 - Étape 3 (Action) : Exécute le refactoring progressivement, fichier par fichier.
 - Étape 4 (Sauvegarde) : Une fois le nettoyage terminé avec succès, propose-moi de faire un "synchro git".
+
+--- RÈGLE : COHABITATION AVEC ANTIGRAVITY ET GESTION DU LOCALHOST ---
+Tu partages cet environnement de développement local avec un autre agent IA nommé "Antigravity". Pour éviter tout conflit de serveur et de fichiers sur "My kitchen app" :
+
+1. PORTS LOCALHOST RÉSERVÉS :
+   - Tu (Cursor) es le serveur principal. Lorsque tu dois lancer, tester ou me demander de lancer le serveur de développement Next.js, tu utiliseras TOUJOURS le port par défaut : `3000`.
+   - La commande de lancement que tu dois utiliser ou suggérer est : `npm run dev` (ou `npm run dev -- -p 3000`).
+   - Le port `3001` est strictement interdit pour toi, il est réservé à Antigravity.
+
+2. RÈGLE DE MODIFICATION DE FICHIERS (GIT) :
+   - Si nous sommes sur la même branche (ex: `main`) qu'Antigravity, tu ne dois JAMAIS modifier des fichiers en même temps que lui pour éviter les écrasements. Nous travaillons en alternance (tu dois utiliser la compétence "synchro git" au passage de relais).
+   - Si nous avons besoin de travailler en parallèle de manière isolée, tu dois OBLIGATOIREMENT créer et basculer sur une nouvelle branche GitHub (ex: `git checkout -b feature/cursor-task`).

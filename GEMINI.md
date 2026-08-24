@@ -43,19 +43,13 @@ Quand l'utilisateur écrit "synchro git", "synchro", ou "met à jour github" :
 4. Une fois le code aligné et sans conflit, exécute la commande terminal : `git push`
 5. Confirme à l'utilisateur que le PC et GitHub sont alignés, et que la mise à jour Vercel est lancée s'il y a eu un push.
 
-## RÈGLE : COMMANDE "VISU" / "VISUALISATION"
-Quand l'utilisateur écrit "visu", "visualisation" ou "Visualisation" :
-1. Démarre le serveur de développement via `npm run dev` en arrière-plan (processus daemon) s'il n'est pas déjà actif.
-2. Lance la prévisualisation dans l'onglet interne "Jetski Preview" d'Antigravity (à côté des fichiers de code sur `http://localhost:3000`), sans jamais ouvrir de nouvel onglet ou fenêtre dans les navigateurs externes de la machine.
-3. Confirme que le serveur et la prévisualisation interne Jetski Preview sont opérationnels.
-
 ## RÈGLE : OPTIMISATION ET REFACTORING SUR DEMANDE
 Quand l'utilisateur écrit le mot-clé "optimisation", "optimise le code" ou "refactoring" :
 Tu dois adopter le rôle d'un Architecte Logiciel Senior chargé d'auditer et de nettoyer le projet en profondeur.
 
 Objectif : Faire une restructuration et une optimisation profonde de la base de code de l'application, SANS modifier aucune fonctionnalité existante ("Zéro Régression"). Le but est de rendre le code le plus lisible, modulaire et concis possible (DRY) pour économiser la fenêtre de contexte IA.
 
-### Règles d'or absolues
+### Règles d'or absolues de l'optimisation
 1. **NE RIEN CASSER (Zéro Régression)** : L'application doit fonctionner de manière 100% identique. Ne modifie JAMAIS la logique du `localStorage` (hydratation), le fonctionnement de l'API Gemini, les requêtes Supabase, ni les règles complexes de fusion des listes de courses.
 2. **CONCIS & MODULAIRE** : Divise les fichiers trop longs (idéalement pas plus de 150/200 lignes). Si une page contient des modales ou des sections indépendantes, extrais-les dans des composants dédiés dans `components/`.
 3. **SÉPARATION DES RESPONSABILITÉS** : Respecte l'architecture du projet. Le dossier `app/` ne doit faire que du rendu UI. Toute logique complexe, calcul, ou transformation de données doit être isolée dans `lib/`. Le dossier `lib/` ne doit jamais contenir de JSX.
@@ -69,3 +63,16 @@ N'applique JAMAIS toutes les modifications d'un coup. Procède obligatoirement a
 - **Étape 4 (Sauvegarde)** : Une fois le nettoyage terminé avec succès, propose-moi de faire un "synchro git".
 
 
+## RÈGLE DE COHABITATION avec cursor (LOCALHOST ET GIT) 
+
+Tu tournes actuellement sur la même machine locale qu'un autre agent IA nommé "Cursor". Pour que vous puissiez travailler en parallèle sans faire crasher Next.js ou écraser vos fichiers respectifs, tu dois appliquer ces règles absolues :
+
+1. PORT LOCALHOST DÉDIÉ (3001) :
+   - Le port `3000` est formellement réservé à Cursor. Tu n'as pas le droit de l'utiliser.
+   - Lorsque tu lances le serveur Next.js pour tester tes développements, tu dois OBLIGATOIREMENT le forcer sur le port `3001`.
+   - Utilise la commande de lancement : `npm run dev -- -p 3001` (ou configure la variable d'environnement `PORT=3001`).
+
+2. ISOLATION DU CODE ET DES BRANCHES :
+   - Interdiction formelle de modifier les mêmes fichiers que Cursor en même temps si vous êtes sur la même branche. Dans ce cas, travaille uniquement quand on te passe le relais (après une synchronisation Git).
+   - Si tu dois exécuter une tâche en totale autonomie et en parallèle de Cursor, tu dois IMPÉRATIVEMENT créer une nouvelle branche Git avant de commencer à coder (ex: `git checkout -b feature/antigravity-task`).
+   
