@@ -213,8 +213,6 @@ export function UnitSelect({
             maxHeight: popoverPos.maxHeight,
             zIndex: 9999,
             boxShadow: "0 12px 32px rgba(20, 31, 22, 0.16)",
-            scrollbarWidth: "thin",
-            scrollbarColor: "#C8E0CF transparent",
           }}
           onClick={(e) => e.stopPropagation()}
         >

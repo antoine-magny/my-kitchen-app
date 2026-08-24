@@ -156,8 +156,6 @@ export function EmojiPickerPopover({
               gridTemplateColumns: "repeat(auto-fill, minmax(2.75rem, 1fr))",
               maxHeight: popoverPos.maxHeight,
               overflowX: "hidden",
-              scrollbarWidth: "thin",
-              scrollbarColor: "#C8E0CF transparent",
             }}
             onClick={(e) => e.stopPropagation()}
           >

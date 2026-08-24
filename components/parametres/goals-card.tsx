@@ -1,6 +1,7 @@
 "use client";
 
-import { CheckIcon, ChevronRightIcon, Edit2Icon, SaveIcon } from "@/components/icons";
+import { CheckIcon, EditIcon, PlusIcon } from "@/components/icons";
+import { CalcGoalsModal } from "@/components/parametres/calc-goals-modal";
 import { NUTRITION_GOALS, type NutritionGoalId } from "@/lib/profile";
 import { useState } from "react";
 
@@ -8,20 +9,32 @@ type GoalsCardProps = {
   goal: NutritionGoalId;
   calories: number;
   proteins: number;
+  weightKg?: number;
+  heightCm?: number;
   onGoalChange: (goal: NutritionGoalId) => void;
   onCaloriesChange: (calories: number) => void;
   onProteinsChange: (proteins: number) => void;
+  onCalculatedTargets: (result: {
+    calories: number;
+    proteins: number;
+    weightKg: number;
+    heightCm: number;
+  }) => void;
 };
 
 export function GoalsCard({
   goal,
   calories,
   proteins,
+  weightKg,
+  heightCm,
   onGoalChange,
   onCaloriesChange,
   onProteinsChange,
+  onCalculatedTargets,
 }: GoalsCardProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [calcOpen, setCalcOpen] = useState(false);
   const [draftCalories, setDraftCalories] = useState(calories.toString());
   const [draftProteins, setDraftProteins] = useState(proteins.toString());
 
@@ -71,27 +84,45 @@ export function GoalsCard({
       </div>
 
       <div className="rounded-2xl bg-[#FAFBF9] p-4">
-        <div className="mb-3 flex items-center justify-between">
+        <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <h4 className="text-sm font-bold text-[#1C2B1E]">Cibles journalières</h4>
-          {isEditing ? (
-            <button
-              onClick={handleSave}
-              className="flex h-7 w-7 items-center justify-center rounded-full bg-[#4A7C59] text-white"
-            >
-              <SaveIcon size={14} />
-            </button>
-          ) : (
-            <button
-              onClick={() => {
-                setDraftCalories(calories.toString());
-                setDraftProteins(proteins.toString());
-                setIsEditing(true);
-              }}
-              className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-[#7A8F7D] shadow-sm hover:text-[#4A7C59]"
-            >
-              <Edit2Icon size={14} />
-            </button>
-          )}
+          <div className="flex flex-wrap items-center gap-1.5">
+            {!isEditing && (
+              <button
+                type="button"
+                onClick={() => setCalcOpen(true)}
+                className="flex h-7 items-center gap-1 rounded-full bg-[#4A7C59] px-2.5 text-[11px] font-bold text-white shadow-sm hover:bg-[#3D6649]"
+                title="Calculer les cibles selon le poids et la taille"
+              >
+                <PlusIcon size={12} />
+                Calcul des cibles
+              </button>
+            )}
+            {isEditing ? (
+              <button
+                type="button"
+                onClick={handleSave}
+                className="flex h-7 items-center gap-1 rounded-full bg-[#4A7C59] px-2.5 text-[11px] font-bold text-white"
+              >
+                <CheckIcon size={12} />
+                Enregistrer
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setDraftCalories(calories.toString());
+                  setDraftProteins(proteins.toString());
+                  setIsEditing(true);
+                }}
+                className="flex h-7 items-center gap-1 rounded-full bg-white px-2.5 text-[11px] font-bold text-[#7A8F7D] shadow-sm hover:text-[#4A7C59]"
+                title="Modifier manuellement les calories et les protéines"
+              >
+                <EditIcon size={12} />
+                Modification manuelle
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -138,6 +169,20 @@ export function GoalsCard({
           </div>
         </div>
       </div>
+
+      {calcOpen && (
+        <CalcGoalsModal
+          goal={goal}
+          initialWeightKg={weightKg}
+          initialHeightCm={heightCm}
+          onConfirm={(result) => {
+            onCalculatedTargets(result);
+            setIsEditing(false);
+            setCalcOpen(false);
+          }}
+          onClose={() => setCalcOpen(false)}
+        />
+      )}
     </div>
   );
 }

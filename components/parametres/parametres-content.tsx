@@ -83,9 +83,12 @@ export function ParametresContent() {
             goal={profile.goal}
             calories={profile.calories}
             proteins={profile.proteins}
+            weightKg={profile.weightKg}
+            heightCm={profile.heightCm}
             onGoalChange={(goal) => patch({ goal })}
             onCaloriesChange={(calories) => patch({ calories })}
             onProteinsChange={(proteins) => patch({ proteins })}
+            onCalculatedTargets={(result) => patch(result)}
           />
           <EquipmentCard selected={equipmentSet} onToggle={handleEquipmentToggle} />
         </div>

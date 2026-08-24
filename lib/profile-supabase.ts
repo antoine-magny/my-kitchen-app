@@ -23,6 +23,8 @@ export async function syncProfileToSupabase(profile: UserProfile) {
       allergyTags: profile.allergyTags,
       equipmentIds: profile.equipmentIds,
       quizCompletedAt: profile.quizCompletedAt,
+      weightKg: profile.weightKg,
+      heightCm: profile.heightCm,
     };
 
     const { error } = await supabase

@@ -8,6 +8,10 @@ export type UserProfile = {
   goal: NutritionGoalId;
   calories: number;
   proteins: number;
+  /** Dernier poids saisi pour le calcul automatique des cibles (kg). */
+  weightKg?: number;
+  /** Dernière taille saisie pour le calcul automatique des cibles (cm). */
+  heightCm?: number;
 
   // Préférences culinaires
   diet: DietType;
@@ -40,6 +44,10 @@ export const DEFAULT_PROFILE: UserProfile = {
 
 const STORAGE_KEY = "my-kitchen-profile-v1";
 
+function positiveNumberOrUndefined(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : undefined;
+}
+
 /**
  * Lit le profil depuis le localStorage (côté client).
  */
@@ -59,6 +67,8 @@ export function getUserProfile(): UserProfile {
       favoriteTags: Array.isArray(parsed.favoriteTags) ? parsed.favoriteTags : [],
       dislikedTags: Array.isArray(parsed.dislikedTags) ? parsed.dislikedTags : [],
       equipmentIds: Array.isArray(parsed.equipmentIds) ? parsed.equipmentIds : [],
+      weightKg: positiveNumberOrUndefined(parsed.weightKg),
+      heightCm: positiveNumberOrUndefined(parsed.heightCm),
     };
   } catch {
     return DEFAULT_PROFILE;
