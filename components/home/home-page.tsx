@@ -69,7 +69,7 @@ export function HomePage({ todayLabel }: { todayLabel: string }) {
 
   return (
     <div className="min-h-screen bg-[#F6F8F3]">
-      <div className="mx-auto max-w-md px-4 pb-10">
+      <div className="mx-auto max-w-md px-4 pb-10 sm:max-w-2xl lg:max-w-5xl lg:px-10">
         <HomeHeader
           todayLabel={todayLabel}
           firstName={firstName}
@@ -77,13 +77,17 @@ export function HomePage({ todayLabel }: { todayLabel: string }) {
           query={query}
           onQueryChange={setQuery}
         />
-        <TodayMealCard
-          recipe={todayMeal?.recipe}
-          saved={saved}
-          onToggleSaved={() => setSaved(!saved)}
-        />
-        <FridgeSuggestions recipes={fridgeRecipes} />
-        <ExpiringSection items={expiring} />
+        <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-8">
+          <div className="min-w-0">
+            <TodayMealCard
+              recipe={todayMeal?.recipe}
+              saved={saved}
+              onToggleSaved={() => setSaved(!saved)}
+            />
+            <FridgeSuggestions recipes={fridgeRecipes} />
+          </div>
+          <ExpiringSection items={expiring} />
+        </div>
       </div>
     </div>
   );

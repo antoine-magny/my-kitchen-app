@@ -233,7 +233,7 @@ export default function PlanningPage() {
 
   return (
     <div className="min-h-screen bg-[#F6F8F3]">
-      <div className="mx-auto max-w-md px-4 pb-10">
+      <div className="mx-auto max-w-md px-4 pb-10 sm:max-w-2xl lg:max-w-5xl lg:px-10">
         <header className="fade-up pt-10 pb-5">
           <p className="mb-0.5 text-xs font-semibold tracking-[0.1em] text-[#7A8F7D] uppercase">
             Planificateur

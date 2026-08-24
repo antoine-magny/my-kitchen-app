@@ -83,7 +83,7 @@ export default function RecipeStepsPage({
 
   return (
     <div className="min-h-screen bg-[#F6F8F3]">
-      <div className="relative mx-auto max-w-md overflow-hidden sm:max-w-lg">
+      <div className="relative mx-auto max-w-md overflow-hidden sm:max-w-2xl lg:max-w-5xl">
         <RecipeHero
           recipe={recipe}
           onEdit={() => setShowEditModal(true)}
