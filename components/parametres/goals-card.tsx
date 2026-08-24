@@ -1,93 +1,143 @@
 "use client";
 
+import { CheckIcon, ChevronRightIcon, Edit2Icon, SaveIcon } from "@/components/icons";
+import { NUTRITION_GOALS, type NutritionGoalId } from "@/lib/profile";
 import { useState } from "react";
-import { DAILY_TARGETS, NUTRITION_GOALS, type NutritionGoalId } from "@/lib/profile";
 
-export function GoalsCard() {
-  const [goal, setGoal] = useState<NutritionGoalId>("balance");
-  const [calories, setCalories] = useState(String(DAILY_TARGETS.calories));
-  const [proteins, setProteins] = useState(String(DAILY_TARGETS.proteins));
+type GoalsCardProps = {
+  goal: NutritionGoalId;
+  calories: number;
+  proteins: number;
+  onGoalChange: (goal: NutritionGoalId) => void;
+  onCaloriesChange: (calories: number) => void;
+  onProteinsChange: (proteins: number) => void;
+};
+
+export function GoalsCard({
+  goal,
+  calories,
+  proteins,
+  onGoalChange,
+  onCaloriesChange,
+  onProteinsChange,
+}: GoalsCardProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [draftCalories, setDraftCalories] = useState(calories.toString());
+  const [draftProteins, setDraftProteins] = useState(proteins.toString());
+
+  const handleSave = () => {
+    const c = parseInt(draftCalories, 10);
+    const p = parseInt(draftProteins, 10);
+    if (!isNaN(c) && c > 0) onCaloriesChange(c);
+    if (!isNaN(p) && p > 0) onProteinsChange(p);
+    setIsEditing(false);
+  };
 
   return (
-    <div
-      className="rounded-3xl px-5 py-4"
-      style={{ background: "#FFFFFF", boxShadow: "0 4px 20px rgba(74,124,89,0.09)" }}
-    >
-      <div className="flex items-start gap-3">
-        <span className="text-lg leading-none" aria-hidden>
+    <div className="rounded-3xl border border-[#E2EBE3] bg-white p-5 shadow-sm">
+      <div className="mb-5 flex items-center justify-between">
+        <div>
+          <h3 className="font-bold text-[#1C2B1E]">Objectif nutritionnel</h3>
+          <p className="text-xs text-[#7A8F7D]">Oriente les recommandations de l'IA</p>
+        </div>
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#F0F4EF] text-lg">
           🎯
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold text-[#1C2B1E]">Objectifs nutritionnels</p>
-          <p className="mt-0.5 text-xs font-medium text-[#7A8F7D]">
-            Ajuste les portions et les recettes proposées
-          </p>
         </div>
       </div>
 
-      <div className="mt-3.5 grid grid-cols-3 gap-1.5 sm:gap-2">
-        {NUTRITION_GOALS.map((option) => {
-          const active = option.id === goal;
+      <div className="mb-6 flex flex-col gap-2">
+        {NUTRITION_GOALS.map((g) => {
+          const isActive = g.id === goal;
           return (
             <button
-              key={option.id}
+              key={g.id}
               type="button"
-              onClick={() => setGoal(option.id)}
-              aria-pressed={active}
-              className={`rounded-2xl border px-1.5 py-2.5 text-center transition-all active:scale-95 sm:px-2 sm:py-3 ${
-                active ? "border-[#4A7C59] bg-[#EBF2EC]" : "border-[#E2EBE3] bg-[#FAFBF9]"
+              onClick={() => onGoalChange(g.id)}
+              className={`flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition-colors ${
+                isActive
+                  ? "border-[#4A7C59] bg-[#EBF2EC]"
+                  : "border-[#E2EBE3] bg-[#FAFBF9] hover:bg-[#EBF2EC]/50"
               }`}
             >
-              <span className="block text-lg leading-none" aria-hidden>
-                {option.emoji}
-              </span>
-              <span
-                className={`mt-1.5 block text-[11px] leading-tight font-bold sm:text-xs ${
-                  active ? "text-[#2E5C3A]" : "text-[#1C2B1E]"
-                }`}
-              >
-                {option.label}
-              </span>
-              <span className="mt-0.5 block text-[9px] leading-tight font-medium text-[#7A8F7D] sm:text-[10px]">
-                {option.hint}
-              </span>
+              <span className="text-xl">{g.emoji}</span>
+              <div className="flex-1">
+                <span className="block text-sm font-bold text-[#1C2B1E]">{g.label}</span>
+                <span className="block text-xs text-[#7A8F7D]">{g.hint}</span>
+              </div>
+              {isActive && <CheckIcon size={20} className="text-[#4A7C59]" />}
             </button>
           );
         })}
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-3">
-        <TargetField label="Calories / jour" suffix="kcal" value={calories} onChange={setCalories} />
-        <TargetField label="Protéines / jour" suffix="g" value={proteins} onChange={setProteins} />
+      <div className="rounded-2xl bg-[#FAFBF9] p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <h4 className="text-sm font-bold text-[#1C2B1E]">Cibles journalières</h4>
+          {isEditing ? (
+            <button
+              onClick={handleSave}
+              className="flex h-7 w-7 items-center justify-center rounded-full bg-[#4A7C59] text-white"
+            >
+              <SaveIcon size={14} />
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                setDraftCalories(calories.toString());
+                setDraftProteins(proteins.toString());
+                setIsEditing(true);
+              }}
+              className="flex h-7 w-7 items-center justify-center rounded-full bg-white text-[#7A8F7D] shadow-sm hover:text-[#4A7C59]"
+            >
+              <Edit2Icon size={14} />
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-xl border border-[#E2EBE3] bg-white p-3">
+            <span className="block text-[10px] font-bold tracking-wider text-[#7A8F7D] uppercase">
+              Calories
+            </span>
+            {isEditing ? (
+              <div className="mt-1 flex items-center gap-1">
+                <input
+                  type="number"
+                  value={draftCalories}
+                  onChange={(e) => setDraftCalories(e.target.value)}
+                  className="w-full bg-transparent text-lg font-bold text-[#1C2B1E] outline-none"
+                />
+                <span className="text-xs text-[#7A8F7D]">kcal</span>
+              </div>
+            ) : (
+              <span className="mt-1 block text-lg font-bold text-[#1C2B1E]">
+                {calories} <span className="text-xs font-medium text-[#7A8F7D]">kcal</span>
+              </span>
+            )}
+          </div>
+
+          <div className="rounded-xl border border-[#E2EBE3] bg-white p-3">
+            <span className="block text-[10px] font-bold tracking-wider text-[#7A8F7D] uppercase">
+              Protéines
+            </span>
+            {isEditing ? (
+              <div className="mt-1 flex items-center gap-1">
+                <input
+                  type="number"
+                  value={draftProteins}
+                  onChange={(e) => setDraftProteins(e.target.value)}
+                  className="w-full bg-transparent text-lg font-bold text-[#1C2B1E] outline-none"
+                />
+                <span className="text-xs text-[#7A8F7D]">g</span>
+              </div>
+            ) : (
+              <span className="mt-1 block text-lg font-bold text-[#1C2B1E]">
+                {proteins} <span className="text-xs font-medium text-[#7A8F7D]">g</span>
+              </span>
+            )}
+          </div>
+        </div>
       </div>
     </div>
-  );
-}
-
-function TargetField({
-  label,
-  suffix,
-  value,
-  onChange,
-}: {
-  label: string;
-  suffix: string;
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <label className="block">
-      <span className="text-xs font-semibold text-[#7A8F7D]">{label}</span>
-      <span className="mt-1.5 flex items-center gap-1.5 rounded-2xl border border-[#E2EBE3] bg-[#FAFBF9] px-3.5 py-2.5">
-        <input
-          type="text"
-          inputMode="numeric"
-          value={value}
-          onChange={(e) => onChange(e.target.value.replace(/\D/g, ""))}
-          className="w-full min-w-0 bg-transparent text-base font-bold text-[#1C2B1E] outline-none"
-        />
-        <span className="shrink-0 text-xs font-bold text-[#7A8F7D]">{suffix}</span>
-      </span>
-    </label>
   );
 }

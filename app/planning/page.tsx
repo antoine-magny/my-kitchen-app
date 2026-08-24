@@ -30,7 +30,7 @@ import {
   type MealSlot,
   type SelectedMealTarget,
 } from "@/lib/planning";
-import { DAILY_TARGETS } from "@/lib/profile";
+import { useProfile } from "@/lib/use-profile";
 import { getRecipeById, type Recipe } from "@/lib/recipes";
 import {
   appendIngredientsToShoppingList,
@@ -42,6 +42,7 @@ const HORIZON_DAYS = 14;
 
 export default function PlanningPage() {
   const router = useRouter();
+  const { profile } = useProfile();
   const [selectedDate, setSelectedDate] = useState(() => parisCalendarDate());
   const [plansByWeek, setPlansByWeek] = useState<Record<string, Record<string, DayPlan>>>({});
   const [pickerSlot, setPickerSlot] = useState<MealSlot | null>(null);
@@ -247,8 +248,8 @@ export default function PlanningPage() {
           selectedDay={selectedDay}
           calories={totals.calories}
           proteins={totals.proteins}
-          calorieGoal={DAILY_TARGETS.calories}
-          proteinGoal={DAILY_TARGETS.proteins}
+          calorieGoal={profile.calories}
+          proteinGoal={profile.proteins}
         />
 
         <section className="fade-up mb-6" style={{ animationDelay: "0.1s" }}>

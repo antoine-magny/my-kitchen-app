@@ -1,68 +1,51 @@
 "use client";
 
-import { useState } from "react";
 import { CheckIcon, PlusIcon } from "@/components/icons";
-import { DEFAULT_EQUIPMENT_IDS, KITCHEN_EQUIPMENT } from "@/lib/profile";
+import { KITCHEN_EQUIPMENT } from "@/lib/profile";
 
-export function EquipmentCard() {
-  const [selected, setSelected] = useState(() => new Set(DEFAULT_EQUIPMENT_IDS));
+type EquipmentCardProps = {
+  selected: Set<string>;
+  onToggle: (id: string) => void;
+};
 
-  const toggle = (id: string) => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
-  const plural = selected.size > 1 ? "s" : "";
-
+export function EquipmentCard({ selected, onToggle }: EquipmentCardProps) {
   return (
-    <div
-      className="rounded-3xl px-5 py-4"
-      style={{ background: "#FFFFFF", boxShadow: "0 4px 20px rgba(74,124,89,0.09)" }}
-    >
-      <div className="flex items-start gap-3">
-        <span className="text-lg leading-none" aria-hidden>
+    <div className="rounded-3xl border border-[#E2EBE3] bg-white p-5 shadow-sm">
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h3 className="font-bold text-[#1C2B1E]">Matériel possédé</h3>
+          <p className="text-xs text-[#7A8F7D]">Pour filtrer les recettes réalisables</p>
+        </div>
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#F0F4EF] text-lg">
           🍳
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold text-[#1C2B1E]">Équipements de cuisine</p>
-          <p className="mt-0.5 text-xs font-medium text-[#7A8F7D]">
-            Sert à filtrer les recettes générées par l&apos;IA
-          </p>
         </div>
       </div>
 
-      <div className="mt-3.5 flex flex-wrap gap-2">
-        {KITCHEN_EQUIPMENT.map((equipment) => {
-          const active = selected.has(equipment.id);
+      <div className="grid grid-cols-2 gap-3">
+        {KITCHEN_EQUIPMENT.map((eq) => {
+          const isActive = selected.has(eq.id);
           return (
             <button
-              key={equipment.id}
+              key={eq.id}
               type="button"
-              onClick={() => toggle(equipment.id)}
-              aria-pressed={active}
-              className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-bold transition-all active:scale-95 ${
-                active
-                  ? "border-[#4A7C59] bg-[#EBF2EC] text-[#2E5C3A]"
-                  : "border-[#E2EBE3] bg-[#FAFBF9] text-[#7A8F7D]"
+              onClick={() => onToggle(eq.id)}
+              className={`flex items-center gap-2 rounded-xl border p-2.5 text-left transition-colors ${
+                isActive
+                  ? "border-[#4A7C59] bg-[#EBF2EC]"
+                  : "border-[#E2EBE3] bg-[#FAFBF9] hover:bg-[#EBF2EC]/50"
               }`}
             >
-              <span aria-hidden>{equipment.emoji}</span>
-              {equipment.label}
-              <span className={active ? "text-[#4A7C59]" : "text-[#C4CFC5]"}>
-                {active ? <CheckIcon size={12} /> : <PlusIcon size={12} />}
-              </span>
+              <span className="text-lg">{eq.emoji}</span>
+              <span className="flex-1 text-xs font-medium text-[#1C2B1E]">{eq.label}</span>
+              {isActive ? (
+                <CheckIcon size={16} className="text-[#4A7C59]" />
+              ) : (
+                <PlusIcon size={16} className="text-[#7A8F7D]" />
+              )}
             </button>
           );
         })}
       </div>
-
-      <p className="mt-3.5 text-xs font-medium text-[#7A8F7D]">
-        {selected.size} équipement{plural} disponible{plural} sur {KITCHEN_EQUIPMENT.length}
-      </p>
     </div>
   );
 }

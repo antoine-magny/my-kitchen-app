@@ -4,78 +4,76 @@ import { useState } from "react";
 import { PlusIcon, XIcon } from "@/components/icons";
 import { PREFERENCE_STYLE, type PreferenceGroup } from "@/lib/profile";
 
-/** Bloc de tags éditables : ajout via un champ inline, retrait via la croix. */
-export function PreferenceCard({ group }: { group: PreferenceGroup }) {
-  const [tags, setTags] = useState(group.tags);
-  const [draft, setDraft] = useState<string | null>(null);
+type PreferenceCardProps = {
+  group: PreferenceGroup;
+  tags: string[];
+  onTagsChange: (tags: string[]) => void;
+};
+
+export function PreferenceCard({ group, tags, onTagsChange }: PreferenceCardProps) {
+  const [draft, setDraft] = useState("");
   const style = PREFERENCE_STYLE[group.kind];
 
-  const confirmDraft = () => {
-    const value = draft?.trim();
-    if (value && !tags.some((tag) => tag.toLowerCase() === value.toLowerCase())) {
-      setTags([...tags, value]);
+  const handleAdd = () => {
+    const value = draft.trim();
+    if (value && !tags.some((t) => t.toLowerCase() === value.toLowerCase())) {
+      onTagsChange([...tags, value]);
     }
-    setDraft(null);
+    setDraft("");
+  };
+
+  const handleRemove = (tagToRemove: string) => {
+    onTagsChange(tags.filter((t) => t !== tagToRemove));
   };
 
   return (
-    <div
-      className="rounded-3xl px-5 py-4"
-      style={{ background: "#FFFFFF", boxShadow: "0 4px 20px rgba(74,124,89,0.09)" }}
-    >
-      <div className="flex items-start gap-3">
-        <span className="text-lg leading-none" aria-hidden>
+    <div className="rounded-3xl border border-[#E2EBE3] bg-white p-5 shadow-sm">
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h3 className="font-bold text-[#1C2B1E]">{group.title}</h3>
+          <p className="text-xs text-[#7A8F7D]">{group.hint}</p>
+        </div>
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#F0F4EF] text-lg">
           {group.emoji}
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold text-[#1C2B1E]">{group.title}</p>
-          <p className="mt-0.5 text-xs font-medium text-[#7A8F7D]">{group.hint}</p>
         </div>
       </div>
 
-      <div className="mt-3.5 flex flex-wrap items-center gap-2">
+      <div className="mb-4 flex flex-wrap gap-2">
+        {tags.length === 0 && (
+          <span className="text-sm italic text-[#9CA3AF]">Aucun ingrédient ajouté</span>
+        )}
         {tags.map((tag) => (
           <span
             key={tag}
-            className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-bold"
-            style={{ background: style.bg, border: `1px solid ${style.border}`, color: style.text }}
+            className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium"
+            style={{ backgroundColor: style.bg, borderColor: style.border, color: style.text }}
           >
             {tag}
             <button
-              type="button"
-              onClick={() => setTags(tags.filter((t) => t !== tag))}
-              className="opacity-55 transition-opacity hover:opacity-100"
-              aria-label={`Retirer ${tag}`}
+              onClick={() => handleRemove(tag)}
+              className="rounded-full p-0.5 hover:bg-black/5"
             >
-              <XIcon size={12} strokeWidth={2.6} />
+              <XIcon size={12} />
             </button>
           </span>
         ))}
+      </div>
 
-        {draft === null ? (
-          <button
-            type="button"
-            onClick={() => setDraft("")}
-            className="flex items-center gap-1.5 rounded-xl border border-dashed border-[#C8E0CF] px-3 py-1.5 text-xs font-bold text-[#4A7C59] transition-colors hover:bg-[#F0F7F2]"
-          >
-            <PlusIcon size={12} />
-            Ajouter
-          </button>
-        ) : (
-          <input
-            type="text"
-            autoFocus
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onBlur={confirmDraft}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") confirmDraft();
-              if (e.key === "Escape") setDraft(null);
-            }}
-            placeholder="Nom de l'aliment…"
-            className="w-36 rounded-xl border border-[#C8E0CF] bg-[#FAFBF9] px-3 py-1.5 text-base font-semibold text-[#1C2B1E] outline-none"
-          />
-        )}
+      <div className="flex items-center gap-2">
+        <input
+          type="text"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+          placeholder="Ajouter..."
+          className="flex-1 rounded-2xl border border-[#E2EBE3] bg-[#FAFBF9] px-4 py-2.5 text-sm outline-none focus:border-[#4A7C59] focus:ring-1 focus:ring-[#4A7C59]"
+        />
+        <button
+          onClick={handleAdd}
+          className="flex h-[42px] w-[42px] items-center justify-center rounded-2xl bg-[#4A7C59] text-white hover:bg-[#3d6649]"
+        >
+          <PlusIcon size={20} />
+        </button>
       </div>
     </div>
   );
