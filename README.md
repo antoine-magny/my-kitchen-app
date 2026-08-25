@@ -110,7 +110,7 @@ lib/                    Logique métier, sans JSX
   ai/                   Client Gemini et prompts
   supabase/             Client admin + types générés du schéma
 types/
-  inventory.ts          RecipeIngredient / ShoppingItem / FridgeItem (Snapshot)
+  inventory.ts          PlannedMealRef / RecipeIngredient / ShoppingItem / FridgeItem
 scripts/                Utilitaires ponctuels lancés à la main
 .github/workflows/      CI GitHub Actions (lint + build)
 ```
@@ -231,6 +231,17 @@ ou la quantité **ne modifie jamais** la recette d'origine et **ne supprime
 jamais** l'`ingredientId` : le lien canonique survit au renommage
 (« Tomate » → « Tomates cerises bio »).
 
+La traçabilité planning → courses → frigo passe par `PlannedMealRef`
+(`recipeId?`, `recipeTitle`, `date` YYYY-MM-DD, `mealType`). Un ingrédient
+fusionné peut servir plusieurs repas (`plannedMeals[]`). Sur `ShoppingItem` :
+`dlcValidated` (clic « DLC OK ») et `targetDate` (date la plus proche parmi
+les repas). `toggleDlcValidation(id)` inverse la validation et fige
+`targetDate` comme DLC minimale (date du repas). L'UI (`PlannedMealPills`,
+`DlcValidationButton` dans `courses-chrome.tsx`) affiche une puce par repas
+et un bouton compact « DLC OK ? ». Sur `FridgeItem` : `dlcEstimated` si la
+DLC a été déduite de cette validation. Tous ces champs sont optionnels :
+les listes déjà stockées dans `my-kitchen-shopping-list-v2` restent lisibles.
+
 ### Unités & conversions (`lib/units.ts` & `lib/ingredients.ts`)
 
 Les unités sont regroupées en 3 familles (`UnitCategory`) :
@@ -268,16 +279,19 @@ qui adapte dynamiquement la section **Décompte** à l'ingrédient actif (propos
    `app/planning/page.tsx` et choisit les repas à exporter (créneau par créneau,
    jour entier, ou toute la semaine).
 2. `collectIngredientsFromSelectedMeals` (`lib/planning.ts`) produit la liste
-   plate d’ingrédients des repas cochés.
+   plate d’ingrédients des repas cochés, chacun tamponné avec `plannedMeals`
+   (titre de recette, date, créneau).
 3. `appendIngredientsToShoppingList` (`lib/shopping-list.ts`) fusionne dans la
    liste existante :
    - pour chaque ingrédient, normaliser le nom (`normalizeProductName`) ;
    - chercher un `ShoppingItem` **non coché** par `ingredientId` **ou** nom
      normalisé ;
    - si trouvé : tenter `combineQuantities` ; si compatible, mettre à jour
-     `amount`/`unit` ; sinon créer une nouvelle ligne ;
+     `amount`/`unit` et fusionner `plannedMeals` (sans écraser les références
+     déjà présentes), puis recalculer `targetDate` ; sinon créer une nouvelle
+     ligne ;
    - si non trouvé : créer un `ShoppingItem` (UUID, `ingredientId`, `customName`,
-     qty, unit).
+     qty, unit, `plannedMeals`).
 4. Persister dans `localStorage` (`my-kitchen-shopping-list-v2`).
 
 Le bandeau d’export utilise `countExportImpact` + `sessionStorage`

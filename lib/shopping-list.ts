@@ -19,6 +19,11 @@ import {
   type ShoppingCategoryId,
 } from "@/lib/shopping-categories";
 import {
+  calendarDateFromIso,
+  formatDayMonthNumericFr,
+  formatWeekdayDayMonthFr,
+} from "@/lib/date-paris";
+import {
   coerceUnitCode,
   combineQuantities,
   DEFAULT_UNIT,
@@ -27,19 +32,82 @@ import {
   toBaseQuantity,
   type UnitCode,
 } from "@/lib/units";
-import type { RecipeIngredient, ShoppingItem } from "@/types/inventory";
+import type { PlannedMealRef, RecipeIngredient, ShoppingItem } from "@/types/inventory";
 
 export type { ShoppingItem };
 
 const STORAGE_KEY = "my-kitchen-shopping-list-v2";
 /** Ancien format : `{ id, name, amount: string, checked, category }`. */
 const LEGACY_STORAGE_KEY = "my-kitchen-shopping-list";
+const ISO_CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 function createId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
   }
   return `shop-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function isMealType(value: unknown): value is PlannedMealRef["mealType"] {
+  return value === "breakfast" || value === "lunch" || value === "dinner";
+}
+
+function sanitizePlannedMealRef(raw: unknown): PlannedMealRef | null {
+  if (!raw || typeof raw !== "object") return null;
+  const entry = raw as Partial<PlannedMealRef>;
+  if (typeof entry.recipeTitle !== "string" || !entry.recipeTitle.trim()) return null;
+  if (typeof entry.date !== "string" || !ISO_CALENDAR_DATE.test(entry.date)) return null;
+  if (!isMealType(entry.mealType)) return null;
+
+  return {
+    ...(typeof entry.recipeId === "number" && Number.isFinite(entry.recipeId)
+      ? { recipeId: entry.recipeId }
+      : {}),
+    recipeTitle: entry.recipeTitle.trim(),
+    date: entry.date,
+    mealType: entry.mealType,
+  };
+}
+
+function sanitizePlannedMeals(raw: unknown): PlannedMealRef[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const meals = raw
+    .map(sanitizePlannedMealRef)
+    .filter((ref): ref is PlannedMealRef => ref != null);
+  return meals.length > 0 ? meals : undefined;
+}
+
+function plannedMealKey(ref: PlannedMealRef): string {
+  return `${ref.date}|${ref.mealType}|${ref.recipeId ?? ""}|${ref.recipeTitle}`;
+}
+
+/** Fusionne deux tableaux de repas sans doublon ni écrasement. */
+function mergePlannedMeals(
+  existing?: PlannedMealRef[],
+  incoming?: PlannedMealRef[],
+): PlannedMealRef[] | undefined {
+  if (!existing?.length && !incoming?.length) return undefined;
+  const seen = new Set<string>();
+  const merged: PlannedMealRef[] = [];
+  for (const ref of [...(existing ?? []), ...(incoming ?? [])]) {
+    const key = plannedMealKey(ref);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    merged.push(ref);
+  }
+  return merged.length > 0 ? merged : undefined;
+}
+
+function earliestTargetDate(meals?: PlannedMealRef[]): string | undefined {
+  if (!meals?.length) return undefined;
+  return meals.reduce((min, meal) => (meal.date < min ? meal.date : min), meals[0].date);
+}
+
+function assignPlannedMeals(item: ShoppingItem, incoming?: PlannedMealRef[]): void {
+  const merged = mergePlannedMeals(item.plannedMeals, incoming);
+  if (!merged) return;
+  item.plannedMeals = merged;
+  item.targetDate = earliestTargetDate(merged);
 }
 
 function toShoppingItem(input: {
@@ -52,6 +120,9 @@ function toShoppingItem(input: {
   icon?: string;
   isChecked?: boolean;
   createdAt?: string;
+  plannedMeals?: PlannedMealRef[];
+  dlcValidated?: boolean;
+  targetDate?: string;
 }): ShoppingItem {
   const customName = input.customName.trim();
   const identity = describeIngredient(customName);
@@ -71,6 +142,13 @@ function toShoppingItem(input: {
     finalUnit = converted.unit;
   }
 
+  const plannedMeals = sanitizePlannedMeals(input.plannedMeals);
+  const targetDate =
+    earliestTargetDate(plannedMeals) ??
+    (typeof input.targetDate === "string" && ISO_CALENDAR_DATE.test(input.targetDate)
+      ? input.targetDate
+      : undefined);
+
   return {
     id: input.id ?? createId(),
     ingredientId: input.ingredientId ?? identity.ingredientId,
@@ -81,6 +159,9 @@ function toShoppingItem(input: {
     ...(icon ? { icon } : {}),
     isChecked: input.isChecked ?? false,
     createdAt: input.createdAt ?? new Date().toISOString(),
+    ...(plannedMeals ? { plannedMeals } : {}),
+    ...(input.dlcValidated ? { dlcValidated: true } : {}),
+    ...(targetDate ? { targetDate } : {}),
   };
 }
 
@@ -104,6 +185,9 @@ function sanitizeItem(raw: unknown): ShoppingItem | null {
       icon: typeof entry.icon === "string" ? entry.icon : (typeof (entry as Record<string, unknown>).emoji === "string" ? ((entry as Record<string, unknown>).emoji as string) : undefined),
       isChecked: Boolean(entry.isChecked),
       createdAt: typeof entry.createdAt === "string" ? entry.createdAt : undefined,
+      plannedMeals: sanitizePlannedMeals(entry.plannedMeals),
+      dlcValidated: entry.dlcValidated === true,
+      targetDate: typeof entry.targetDate === "string" ? entry.targetDate : undefined,
     });
   }
 
@@ -184,6 +268,9 @@ function writeList(items: ShoppingItem[]) {
       icon: item.icon,
       isChecked: item.isChecked,
       createdAt: item.createdAt,
+      plannedMeals: item.plannedMeals,
+      dlcValidated: item.dlcValidated,
+      targetDate: item.targetDate,
     }),
   );
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitized));
@@ -202,6 +289,38 @@ export function toggleShoppingItem(id: string): ShoppingItem[] {
   const next = readList().map((item) =>
     item.id === id ? { ...item, isChecked: !item.isChecked } : item,
   );
+  writeList(next);
+  return next;
+}
+
+/** Libellé de puce planning : « Lasagnes · Jeu. 28 août ». */
+export function formatPlannedMealChip(meal: PlannedMealRef): string {
+  const date = calendarDateFromIso(meal.date);
+  const when = date ? formatWeekdayDayMonthFr(date) : meal.date;
+  return `${meal.recipeTitle} · ${when}`;
+}
+
+/** Seuil DLC compact : « 28/08 ». */
+export function formatDlcThresholdLabel(iso: string): string {
+  const date = calendarDateFromIso(iso);
+  return date ? formatDayMonthNumericFr(date) : iso;
+}
+
+/**
+ * Inverse la validation DLC. À l'activation, pose `dlcValidated: true` et
+ * fige `targetDate` sur la date de repas la plus proche (DLC minimale).
+ * Un second clic annule la validation.
+ */
+export function toggleDlcValidation(id: string): ShoppingItem[] {
+  const next = readList().map((item) => {
+    if (item.id !== id) return item;
+    if (item.dlcValidated) {
+      return { ...item, dlcValidated: false };
+    }
+    const targetDate = item.targetDate ?? earliestTargetDate(item.plannedMeals);
+    if (!targetDate) return item;
+    return { ...item, dlcValidated: true, targetDate };
+  });
   writeList(next);
   return next;
 }
@@ -278,6 +397,8 @@ function matchesShoppingItem(
  *
  * Deux unités incompatibles produisent deux lignes distinctes. Les quantités
  * « q.s. » sont absorbées dès qu'une quantité chiffrée existe.
+ * Les tableaux `plannedMeals` sont concaténés (dédupliqués) ; `targetDate`
+ * est recalculé comme la date la plus proche.
  */
 export function mergeIngredients(ingredients: RecipeIngredient[]): ShoppingItem[] {
   const items: ShoppingItem[] = [];
@@ -303,6 +424,7 @@ export function mergeIngredients(ingredients: RecipeIngredient[]): ShoppingItem[
       if (combined) {
         existing.amount = combined.amount;
         existing.unit = combined.unit;
+        assignPlannedMeals(existing, ing.plannedMeals);
         continue;
       }
     }
@@ -314,6 +436,7 @@ export function mergeIngredients(ingredients: RecipeIngredient[]): ShoppingItem[
         amount: ing.amount,
         unit: ing.unit,
         category: ing.category,
+        plannedMeals: ing.plannedMeals,
       }),
     );
   }
@@ -351,6 +474,7 @@ export function appendIngredientsToShoppingList(
       if (combined) {
         existing.amount = combined.amount;
         existing.unit = combined.unit;
+        assignPlannedMeals(existing, ing.plannedMeals);
         continue;
       }
       // Unités incompatibles → nouvelle ligne sans écraser l'existant.
@@ -363,6 +487,7 @@ export function appendIngredientsToShoppingList(
         amount: ing.amount,
         unit: ing.unit,
         category: ing.category,
+        plannedMeals: ing.plannedMeals,
       }),
     );
   }

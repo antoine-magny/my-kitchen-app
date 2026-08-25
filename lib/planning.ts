@@ -12,6 +12,7 @@ import {
   startOfWeek,
 } from "@/lib/date-paris";
 import { getRecipeById, ing, type RecipeIngredient, type Recipe } from "@/lib/recipes";
+import type { PlannedMealRef } from "@/types/inventory";
 
 const LUNCH_RECIPE = getRecipeById(6)!;
 
@@ -190,9 +191,41 @@ function resolveDayPlan(
   return undefined;
 }
 
+/** Titre affiché d'un créneau planifié, ou `null` s'il est vide. */
+export function mealSlotTitle(plan: DayPlan, mealType: MealSlot): string | null {
+  if (mealType === "breakfast") return plan.breakfast?.name ?? null;
+  const recipeId = mealType === "lunch" ? plan.lunchId : plan.dinnerId;
+  if (recipeId == null) return null;
+  return getRecipeById(recipeId)?.title ?? null;
+}
+
+function plannedMealRefFromSlot(
+  plan: DayPlan,
+  date: string,
+  mealType: MealSlot,
+): PlannedMealRef {
+  const recipeId =
+    mealType === "breakfast"
+      ? breakfastRecipeId(plan.breakfast)
+      : mealType === "lunch"
+        ? plan.lunchId
+        : plan.dinnerId;
+  const recipeTitle =
+    mealSlotTitle(plan, mealType) ??
+    (mealType === "breakfast" ? "Petit-déjeuner" : mealType === "lunch" ? "Déjeuner" : "Dîner");
+
+  return {
+    ...(recipeId != null ? { recipeId } : {}),
+    recipeTitle,
+    date,
+    mealType,
+  };
+}
+
 /**
  * Extrait la liste plate de `RecipeIngredient[]` pour une sélection précise
  * de repas (fusion / dédoublonnage délégués à la liste de courses).
+ * Chaque ingrédient porte `plannedMeals` (recette, date YYYY-MM-DD, créneau).
  */
 export function collectIngredientsFromSelectedMeals(
   selectedMeals: SelectedMealTarget[],
@@ -204,18 +237,15 @@ export function collectIngredientsFromSelectedMeals(
   for (const { date, mealType } of selectedMeals) {
     const plan = resolveDayPlan(date, weekPlans, plansByWeek);
     if (!plan) continue;
-    collected.push(...ingredientsFromMealSlot(plan, mealType));
+    const ingredients = ingredientsFromMealSlot(plan, mealType);
+    if (ingredients.length === 0) continue;
+    const mealRef = plannedMealRefFromSlot(plan, date, mealType);
+    for (const ingredient of ingredients) {
+      collected.push({ ...ingredient, plannedMeals: [mealRef] });
+    }
   }
 
   return collected;
-}
-
-/** Titre affiché d'un créneau planifié, ou `null` s'il est vide. */
-export function mealSlotTitle(plan: DayPlan, mealType: MealSlot): string | null {
-  if (mealType === "breakfast") return plan.breakfast?.name ?? null;
-  const recipeId = mealType === "lunch" ? plan.lunchId : plan.dinnerId;
-  if (recipeId == null) return null;
-  return getRecipeById(recipeId)?.title ?? null;
 }
 
 export function getStoredMealPlans(): Record<string, Record<string, DayPlan>> {
