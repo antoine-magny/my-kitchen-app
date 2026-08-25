@@ -1,6 +1,7 @@
 "use client";
 
 import { XIcon } from "@/components/icons";
+import { RecipeCostSymbol, RecipeDifficultyToques } from "@/components/recettes/recipe-symbols";
 import {
   MODAL_CLOSE_BTN_CLASS,
   MODAL_OVERLAY_CLASS,
@@ -18,6 +19,7 @@ import {
   type RecipeCost,
   type RecipeDifficulty,
 } from "@/lib/recipes";
+import type { ReactNode } from "react";
 
 export function RecipeFiltersPanel({
   timeFilter,
@@ -76,19 +78,13 @@ export function RecipeFiltersPanel({
               {TIME_FILTERS.map((item) => {
                 const active = timeFilter === item.id;
                 return (
-                  <button
+                  <FilterOptionChip
                     key={item.id}
-                    type="button"
+                    active={active}
                     onClick={() => onTimeFilter(active ? null : item.id)}
-                    className="rounded-full px-3.5 py-2 text-sm font-bold transition-all"
-                    style={{
-                      background: active ? "#1C2B1E" : "#FFFFFF",
-                      color: active ? "#FFFFFF" : "#4A7C59",
-                      border: active ? "1.5px solid #1C2B1E" : "1.5px solid #C8E0CF",
-                    }}
                   >
                     {item.label}
-                  </button>
+                  </FilterOptionChip>
                 );
               })}
             </div>
@@ -99,24 +95,16 @@ export function RecipeFiltersPanel({
               Difficulté
             </legend>
             <div className="flex flex-wrap gap-2">
-              {DIFFICULTIES.map((item) => {
-                const active = difficulties.includes(item);
-                return (
-                  <button
-                    key={item}
-                    type="button"
-                    onClick={() => onToggleDifficulty(item)}
-                    className="rounded-full px-3.5 py-2 text-sm font-bold transition-all"
-                    style={{
-                      background: active ? "#1C2B1E" : "#FFFFFF",
-                      color: active ? "#FFFFFF" : "#4A7C59",
-                      border: active ? "1.5px solid #1C2B1E" : "1.5px solid #C8E0CF",
-                    }}
-                  >
-                    {item}
-                  </button>
-                );
-              })}
+              {DIFFICULTIES.map((item) => (
+                <FilterOptionChip
+                  key={item}
+                  active={difficulties.includes(item)}
+                  onClick={() => onToggleDifficulty(item)}
+                >
+                  <RecipeDifficultyToques difficulty={item} size={14} decorative />
+                  {item}
+                </FilterOptionChip>
+              ))}
             </div>
           </fieldset>
 
@@ -125,24 +113,20 @@ export function RecipeFiltersPanel({
               Coût
             </legend>
             <div className="flex flex-wrap gap-2">
-              {RECIPE_COSTS.map((item) => {
-                const active = costs.includes(item);
-                return (
-                  <button
-                    key={item}
-                    type="button"
-                    onClick={() => onToggleCost(item)}
-                    className="rounded-full px-3.5 py-2 text-sm font-bold transition-all"
-                    style={{
-                      background: active ? "#1C2B1E" : "#FFFFFF",
-                      color: active ? "#FFFFFF" : "#4A7C59",
-                      border: active ? "1.5px solid #1C2B1E" : "1.5px solid #C8E0CF",
-                    }}
-                  >
-                    {RECIPE_COST_LABELS[item]}
-                  </button>
-                );
-              })}
+              {RECIPE_COSTS.map((item) => (
+                <FilterOptionChip
+                  key={item}
+                  active={costs.includes(item)}
+                  onClick={() => onToggleCost(item)}
+                >
+                  <RecipeCostSymbol
+                    cost={item}
+                    decorative
+                    className="text-sm font-bold tracking-wide"
+                  />
+                  {RECIPE_COST_LABELS[item]}
+                </FilterOptionChip>
+              ))}
             </div>
           </fieldset>
         </div>
@@ -165,5 +149,30 @@ export function RecipeFiltersPanel({
         </div>
       </div>
     </div>
+  );
+}
+
+function FilterOptionChip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-bold transition-all"
+      style={{
+        background: active ? "#1C2B1E" : "#FFFFFF",
+        color: active ? "#FFFFFF" : "#4A7C59",
+        border: active ? "1.5px solid #1C2B1E" : "1.5px solid #C8E0CF",
+      }}
+    >
+      {children}
+    </button>
   );
 }

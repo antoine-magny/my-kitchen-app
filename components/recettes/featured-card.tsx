@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ClockIcon, FlameIcon, HeartIcon, MuscleIcon } from "@/components/icons";
+import { RecipeCostSymbol, RecipeDifficultyToques } from "@/components/recettes/recipe-symbols";
 import type { Recipe } from "@/lib/recipes";
 
 export function FeaturedCard({
@@ -77,6 +78,12 @@ export function FeaturedCard({
             <div className="flex items-center gap-1.5 text-white/75">
               <MuscleIcon size={12} />
               <span className="text-xs font-semibold">{recipe.proteins}g protéines</span>
+            </div>
+            <div className="flex items-center text-white/75">
+              <RecipeDifficultyToques difficulty={recipe.difficulty} size={12} />
+            </div>
+            <div className="flex items-center text-white/75">
+              <RecipeCostSymbol cost={recipe.cost} />
             </div>
           </div>
           <Link

@@ -18,7 +18,11 @@ export {
   MEAL_TAGS,
   RECIPE_COSTS,
   RECIPE_COST_LABELS,
+  RECIPE_COST_SYMBOLS,
   RECIPE_TAG_LABELS,
+  RECIPE_TAG_COLORS,
+  RECIPE_TAG_CODES_HINT,
+  DIFFICULTY_TOQUE_COUNT,
   RECIPE_TAGS,
   coerceRecipeCost,
   coerceRecipeDifficulty,
@@ -28,6 +32,7 @@ export {
   ingFromText,
   isRecipeTag,
   tagToLabel,
+  recipeBadgeTags,
   recipeBadgeLabels,
   withDerivedTags,
   type Recipe,
@@ -35,6 +40,7 @@ export {
   type RecipeDifficulty,
   type RecipeStep,
   type RecipeTag,
+  type RecipeTagColor,
 } from "@/lib/recipe-model";
 export type { RecipeIngredient };
 
@@ -66,7 +72,7 @@ function sanitizeIngredient(raw: unknown): RecipeIngredient | null {
 
 function sanitizeRecipe(raw: unknown): Recipe | null {
   if (!raw || typeof raw !== "object") return null;
-  const recipe = raw as Recipe & { tag?: unknown };
+  const recipe = raw as Recipe & { tag?: unknown; tagLabel?: unknown };
   if (typeof recipe.id !== "number" || typeof recipe.title !== "string") return null;
   const ingredients = Array.isArray(recipe.ingredients)
     ? recipe.ingredients
@@ -75,8 +81,9 @@ function sanitizeRecipe(raw: unknown): Recipe | null {
     : [];
   const time = typeof recipe.time === "string" ? recipe.time : "30 min";
   const tags = withDerivedTags(coerceRecipeTags(recipe.tags, recipe.tag), time);
+  const { tag: _legacyTag, tagLabel: _tagLabel, ...rest } = recipe;
   return {
-    ...recipe,
+    ...rest,
     time,
     ingredients,
     tags,

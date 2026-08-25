@@ -1,20 +1,8 @@
 import Link from "next/link";
 import { ClockIcon, FlameIcon, HeartIcon, MuscleIcon } from "@/components/icons";
 import { MissingIngredientsBadges } from "@/components/missing-ingredients-badges";
-import { recipeBadgeLabels, type Recipe } from "@/lib/recipes";
-
-const TAG_COLORS: Record<string, { bg: string; text: string }> = {
-  Signature: { bg: "rgba(28,43,30,0.72)", text: "#E8F5EC" },
-  Entrée: { bg: "rgba(74,124,89,0.82)", text: "#FFF" },
-  Plat: { bg: "rgba(28,43,30,0.72)", text: "#E8F5EC" },
-  Dessert: { bg: "rgba(219,85,108,0.85)", text: "#FFF" },
-  Encas: { bg: "rgba(161,124,61,0.85)", text: "#FFF" },
-  Express: { bg: "rgba(249,115,22,0.88)", text: "#FFF" },
-  Végétarien: { bg: "rgba(74,124,89,0.82)", text: "#FFF" },
-  "Riche en protéines": { bg: "rgba(59,130,246,0.80)", text: "#FFF" },
-  Léger: { bg: "rgba(74,124,89,0.82)", text: "#FFF" },
-  Gastronomique: { bg: "rgba(161,124,61,0.85)", text: "#FFF" },
-};
+import { RecipeCostSymbol, RecipeDifficultyToques } from "@/components/recettes/recipe-symbols";
+import { RECIPE_TAG_COLORS, recipeBadgeTags, tagToLabel, type Recipe } from "@/lib/recipes";
 
 export function RecipeCard({
   recipe,
@@ -25,7 +13,7 @@ export function RecipeCard({
   onToggleFav: (id: number) => void;
   isFav: boolean;
 }) {
-  const badges = recipeBadgeLabels(recipe);
+  const badges = recipeBadgeTags(recipe);
 
   return (
     <div
@@ -53,15 +41,15 @@ export function RecipeCard({
           />
           {badges.length > 0 ? (
             <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
-              {badges.map((label) => {
-                const cfg = TAG_COLORS[label] ?? TAG_COLORS.Signature;
+              {badges.map((tag) => {
+                const cfg = RECIPE_TAG_COLORS[tag];
                 return (
                   <div
-                    key={label}
+                    key={tag}
                     className="rounded-lg px-2.5 py-1 text-xs font-bold backdrop-blur-[4px]"
                     style={{ background: cfg.bg, color: cfg.text }}
                   >
-                    {label}
+                    {tagToLabel(tag)}
                   </div>
                 );
               })}
@@ -104,6 +92,14 @@ export function RecipeCard({
           <div className="flex items-center gap-1.5 text-[#3B82F6]">
             <MuscleIcon size={12} />
             <span className="text-xs font-semibold text-[#7A8F7D]">{recipe.proteins}g</span>
+          </div>
+          <div className="h-3 w-px rounded-full bg-[#E2EBE3]" />
+          <div className="flex items-center text-[#4A7C59]">
+            <RecipeDifficultyToques difficulty={recipe.difficulty} size={12} />
+          </div>
+          <div className="h-3 w-px rounded-full bg-[#E2EBE3]" />
+          <div className="flex items-center text-[#7A8F7D]">
+            <RecipeCostSymbol cost={recipe.cost} />
           </div>
         </div>
 

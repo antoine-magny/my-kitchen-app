@@ -9,7 +9,6 @@ export const RECIPE_TAGS = [
   "entree",
   "plat",
   "dessert",
-  "encas",
   "express",
   "vegetarien",
   "riche_en_proteines",
@@ -17,7 +16,7 @@ export const RECIPE_TAGS = [
 
 export type RecipeTag = (typeof RECIPE_TAGS)[number];
 
-export const MEAL_TAGS = ["entree", "plat", "dessert", "encas"] as const satisfies readonly RecipeTag[];
+export const MEAL_TAGS = ["entree", "plat", "dessert"] as const satisfies readonly RecipeTag[];
 export const ATTRIBUTE_TAGS = [
   "express",
   "vegetarien",
@@ -28,11 +27,56 @@ export const RECIPE_TAG_LABELS: Record<RecipeTag, string> = {
   entree: "Entrée",
   plat: "Plat",
   dessert: "Dessert",
-  encas: "Encas",
   express: "Express",
   vegetarien: "Végétarien",
   riche_en_proteines: "Riche en protéines",
 };
+
+export type RecipeTagColor = {
+  bg: string;
+  text: string;
+  accent: string;
+  accentSoft: string;
+  accentShadow: string;
+};
+
+const MEAL_TAG_COLOR: RecipeTagColor = {
+  bg: "rgba(28,43,30,0.72)",
+  text: "#E8F5EC",
+  accent: "#1C2B1E",
+  accentSoft: "#C8E0CF",
+  accentShadow: "rgba(28,43,30,0.18)",
+};
+
+export const RECIPE_TAG_COLORS: Record<RecipeTag, RecipeTagColor> = {
+  entree: MEAL_TAG_COLOR,
+  plat: MEAL_TAG_COLOR,
+  dessert: MEAL_TAG_COLOR,
+  express: {
+    bg: "rgba(249,115,22,0.88)",
+    text: "#FFF",
+    accent: "#F97316",
+    accentSoft: "#FCD9B6",
+    accentShadow: "rgba(249,115,22,0.25)",
+  },
+  vegetarien: {
+    bg: "rgba(74,124,89,0.82)",
+    text: "#FFF",
+    accent: "#4A7C59",
+    accentSoft: "#C8E0CF",
+    accentShadow: "rgba(74,124,89,0.22)",
+  },
+  riche_en_proteines: {
+    bg: "rgba(59,130,246,0.80)",
+    text: "#FFF",
+    accent: "#3B82F6",
+    accentSoft: "#BFDBFE",
+    accentShadow: "rgba(59,130,246,0.25)",
+  },
+};
+
+/** Codes autorisés pour Gemini / le formulaire — identiques aux puces du catalogue. */
+export const RECIPE_TAG_CODES_HINT = RECIPE_TAGS.join(" | ");
 
 export const RECIPE_COSTS = ["economique", "moyen", "premium"] as const;
 export type RecipeCost = (typeof RECIPE_COSTS)[number];
@@ -43,8 +87,20 @@ export const RECIPE_COST_LABELS: Record<RecipeCost, string> = {
   premium: "Premium",
 };
 
+export const RECIPE_COST_SYMBOLS: Record<RecipeCost, "€" | "€€" | "€€€"> = {
+  economique: "€",
+  moyen: "€€",
+  premium: "€€€",
+};
+
 export const DIFFICULTIES = ["Facile", "Moyen", "Difficile"] as const;
 export type RecipeDifficulty = (typeof DIFFICULTIES)[number];
+
+export const DIFFICULTY_TOQUE_COUNT: Record<RecipeDifficulty, 1 | 2 | 3> = {
+  Facile: 1,
+  Moyen: 2,
+  Difficile: 3,
+};
 
 const TAG_SET = new Set<string>(RECIPE_TAGS);
 const COST_SET = new Set<string>(RECIPE_COSTS);
@@ -66,8 +122,8 @@ const LEGACY_TAG_MAP: Record<string, RecipeTag> = {
   entree: "entree",
   Plat: "plat",
   plat: "plat",
-  Encas: "encas",
-  encas: "encas",
+  Encas: "plat",
+  encas: "plat",
 };
 
 export function isRecipeTag(value: unknown): value is RecipeTag {
@@ -127,11 +183,14 @@ export function tagToLabel(tag: RecipeTag): string {
   return RECIPE_TAG_LABELS[tag];
 }
 
-export function recipeBadgeLabels(recipe: Pick<Recipe, "tags" | "tagLabel">, max = 2): string[] {
-  if (recipe.tagLabel?.trim()) return [recipe.tagLabel.trim()];
+export function recipeBadgeTags(recipe: Pick<Recipe, "tags">, max = 2): RecipeTag[] {
   const meal = recipe.tags.filter((tag) => (MEAL_TAGS as readonly string[]).includes(tag));
   const attrs = recipe.tags.filter((tag) => (ATTRIBUTE_TAGS as readonly string[]).includes(tag));
-  return [...meal, ...attrs].slice(0, max).map(tagToLabel);
+  return [...meal, ...attrs].slice(0, max);
+}
+
+export function recipeBadgeLabels(recipe: Pick<Recipe, "tags">, max = 2): string[] {
+  return recipeBadgeTags(recipe, max).map(tagToLabel);
 }
 
 /**
@@ -165,8 +224,6 @@ export interface Recipe {
   difficulty: RecipeDifficulty;
   tags: RecipeTag[];
   cost: RecipeCost;
-  /** Libellé de vitrine optionnel (ex. « Signature »), distinct des tags. */
-  tagLabel?: string;
   featured?: boolean;
   ingredients: RecipeIngredient[];
   steps: RecipeStep[];
