@@ -9,7 +9,6 @@ export const RECIPE_TAGS = [
   "entree",
   "plat",
   "dessert",
-  "encas",
   "express",
   "vegetarien",
   "riche_en_proteines",
@@ -17,7 +16,7 @@ export const RECIPE_TAGS = [
 
 export type RecipeTag = (typeof RECIPE_TAGS)[number];
 
-export const MEAL_TAGS = ["entree", "plat", "dessert", "encas"] as const satisfies readonly RecipeTag[];
+export const MEAL_TAGS = ["entree", "plat", "dessert"] as const satisfies readonly RecipeTag[];
 export const ATTRIBUTE_TAGS = [
   "express",
   "vegetarien",
@@ -28,11 +27,13 @@ export const RECIPE_TAG_LABELS: Record<RecipeTag, string> = {
   entree: "Entrée",
   plat: "Plat",
   dessert: "Dessert",
-  encas: "Encas",
   express: "Express",
   vegetarien: "Végétarien",
   riche_en_proteines: "Riche en protéines",
 };
+
+/** Codes autorisés pour Gemini / le formulaire — identiques aux puces du catalogue. */
+export const RECIPE_TAG_CODES_HINT = RECIPE_TAGS.join(" | ");
 
 export const RECIPE_COSTS = ["economique", "moyen", "premium"] as const;
 export type RecipeCost = (typeof RECIPE_COSTS)[number];
@@ -43,8 +44,20 @@ export const RECIPE_COST_LABELS: Record<RecipeCost, string> = {
   premium: "Premium",
 };
 
+export const RECIPE_COST_SYMBOLS: Record<RecipeCost, "€" | "€€" | "€€€"> = {
+  economique: "€",
+  moyen: "€€",
+  premium: "€€€",
+};
+
 export const DIFFICULTIES = ["Facile", "Moyen", "Difficile"] as const;
 export type RecipeDifficulty = (typeof DIFFICULTIES)[number];
+
+export const DIFFICULTY_TOQUE_COUNT: Record<RecipeDifficulty, 1 | 2 | 3> = {
+  Facile: 1,
+  Moyen: 2,
+  Difficile: 3,
+};
 
 const TAG_SET = new Set<string>(RECIPE_TAGS);
 const COST_SET = new Set<string>(RECIPE_COSTS);
@@ -66,8 +79,8 @@ const LEGACY_TAG_MAP: Record<string, RecipeTag> = {
   entree: "entree",
   Plat: "plat",
   plat: "plat",
-  Encas: "encas",
-  encas: "encas",
+  Encas: "plat",
+  encas: "plat",
 };
 
 export function isRecipeTag(value: unknown): value is RecipeTag {
@@ -127,11 +140,14 @@ export function tagToLabel(tag: RecipeTag): string {
   return RECIPE_TAG_LABELS[tag];
 }
 
-export function recipeBadgeLabels(recipe: Pick<Recipe, "tags" | "tagLabel">, max = 2): string[] {
-  if (recipe.tagLabel?.trim()) return [recipe.tagLabel.trim()];
+export function recipeBadgeTags(recipe: Pick<Recipe, "tags">, max = 2): RecipeTag[] {
   const meal = recipe.tags.filter((tag) => (MEAL_TAGS as readonly string[]).includes(tag));
   const attrs = recipe.tags.filter((tag) => (ATTRIBUTE_TAGS as readonly string[]).includes(tag));
-  return [...meal, ...attrs].slice(0, max).map(tagToLabel);
+  return [...meal, ...attrs].slice(0, max);
+}
+
+export function recipeBadgeLabels(recipe: Pick<Recipe, "tags">, max = 2): string[] {
+  return recipeBadgeTags(recipe, max).map(tagToLabel);
 }
 
 /**
@@ -165,8 +181,6 @@ export interface Recipe {
   difficulty: RecipeDifficulty;
   tags: RecipeTag[];
   cost: RecipeCost;
-  /** Libellé de vitrine optionnel (ex. « Signature »), distinct des tags. */
-  tagLabel?: string;
   featured?: boolean;
   ingredients: RecipeIngredient[];
   steps: RecipeStep[];

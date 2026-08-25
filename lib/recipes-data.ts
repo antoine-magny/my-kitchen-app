@@ -12,7 +12,6 @@ export const RECIPES: Recipe[] = [
     difficulty: "Difficile",
     tags: ["plat", "riche_en_proteines"],
     cost: "premium",
-    tagLabel: "Signature",
     featured: true,
     ingredients: [
       ing("Filet de bœuf", 400, "g"),
@@ -62,7 +61,6 @@ export const RECIPES: Recipe[] = [
     difficulty: "Moyen",
     tags: ["plat", "riche_en_proteines"],
     cost: "moyen",
-    tagLabel: "Léger",
     ingredients: [
       ing("Dos de cabillaud", 2, "piece"),
       ing("Fenouil", 1, "piece"),

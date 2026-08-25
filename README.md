@@ -358,10 +358,14 @@ Les recettes livrées avec l'app sont un tableau en dur (`RECIPES` dans
 `lib/recipes-data.ts`), fusionné à l'exécution avec les créations, modifications et
 suppressions stockées côté client (`lib/recipes.ts`).
 
-Chaque recette a **plusieurs tags** (`entree`, `plat`, `dessert`, `encas`,
+Chaque recette a **plusieurs tags** (`entree`, `plat`, `dessert`,
 `express` si ≤ 15 min, `vegetarien`, `riche_en_proteines`) et un **coût**
-(`economique` | `moyen` | `premium`). L'ancien champ unique `tag` (libellés
-français) est encore lu au chargement du `localStorage` et migré vers `tags[]`.
+(`economique` | `moyen` | `premium`). Les badges sur les photos reprennent
+exactement ces libellés (mêmes puces que le catalogue). L’IA et le formulaire
+ne peuvent choisir que dans cette liste : tout autre code ou libellé libre
+(« Repas rapide », « Anti-gaspillage », ancien `encas`…) est ignoré. L’ancien
+champ unique `tag` (libellés français) est encore lu au chargement du
+`localStorage` et migré vers `tags[]` (`encas` devient `plat`).
 Les favoris restent à part (`lib/favorites.ts`). La recherche du catalogue porte
 sur le titre **et** les noms d'ingrédients.
 

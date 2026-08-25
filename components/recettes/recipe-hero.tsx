@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { ChevronLeftIcon, ClockIcon, FlameIcon, UsersIcon } from "@/components/icons";
 import { RecipeActionsMenu } from "@/components/recettes/recipe-actions-menu";
-import { RECIPE_COST_LABELS, recipeBadgeLabels, type Recipe } from "@/lib/recipes";
+import { RecipeCostSymbol, RecipeDifficultyToques } from "@/components/recettes/recipe-symbols";
+import { recipeBadgeLabels, type Recipe } from "@/lib/recipes";
 
 export function RecipeHero({
   recipe,
@@ -71,12 +72,8 @@ export function RecipeHero({
           <span className="flex items-center gap-1.5 text-xs font-semibold">
             <UsersIcon size={14} /> {recipe.servings} pers.
           </span>
-          <span className="rounded-lg bg-white/15 px-2 py-0.5 text-xs font-bold backdrop-blur-sm">
-            {recipe.difficulty}
-          </span>
-          <span className="rounded-lg bg-white/15 px-2 py-0.5 text-xs font-bold backdrop-blur-sm">
-            {RECIPE_COST_LABELS[recipe.cost]}
-          </span>
+          <RecipeDifficultyToques difficulty={recipe.difficulty} />
+          <RecipeCostSymbol cost={recipe.cost} />
         </div>
       </div>
     </div>

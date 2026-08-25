@@ -11,6 +11,7 @@ import {
   coerceRecipeDifficulty,
   coerceRecipeTags,
   RECIPE_COSTS,
+  RECIPE_TAG_CODES_HINT,
   RECIPE_TAGS,
   withDerivedTags,
 } from "@/lib/recipe-model";
@@ -64,7 +65,7 @@ const PARSE_RESPONSE_SCHEMA = {
         enum: [...RECIPE_TAGS],
       },
       description:
-        "Un ou plusieurs tags : entree, plat, dessert, encas, express (si ≤15 min), vegetarien, riche_en_proteines.",
+        `Un ou plusieurs tags parmi ${RECIPE_TAG_CODES_HINT}. express si ≤15 min.`,
     },
     difficulty: {
       type: Type.STRING,
@@ -101,7 +102,7 @@ const SYSTEM_INSTRUCTION = [
   "Utilise l’unité « qs » avec amount 0 pour les quantités non chiffrables (sel, poivre, herbes à volonté).",
   "instructions : liste ordonnée d’étapes actionnables (une phrase claire par étape).",
   "calories_per_serving et protein_per_serving : estimations réalistes si absentes de la source.",
-  "tags : tableau d’un ou plusieurs codes parmi entree, plat, dessert, encas, express, vegetarien, riche_en_proteines. Inclus toujours au moins un type de plat (entree/plat/dessert/encas). express uniquement si le temps total estimé est ≤ 15 min.",
+  `tags : tableau d’un ou plusieurs codes parmi ${RECIPE_TAG_CODES_HINT} uniquement. Inclus toujours au moins un type de plat (entree/plat/dessert). Interdiction d’inventer un autre code ou un libellé libre. express uniquement si le temps total estimé est ≤ 15 min.`,
   "difficulty : Facile, Moyen ou Difficile.",
   "cost : economique (ingrédients basiques), moyen, ou premium (produits nobles, hors-saison, truffe, filet, etc.).",
 ].join(" ");

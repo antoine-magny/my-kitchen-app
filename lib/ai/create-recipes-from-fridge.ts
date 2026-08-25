@@ -18,6 +18,7 @@ import {
   ing,
   ingFromText,
   RECIPE_COSTS,
+  RECIPE_TAG_CODES_HINT,
   RECIPE_TAGS,
   withDerivedTags,
   type NewRecipeInput,
@@ -68,8 +69,7 @@ const RECIPE_RESPONSE_SCHEMA = {
               type: Type.STRING,
               enum: [...RECIPE_TAGS],
             },
-            description:
-              "entree | plat | dessert | encas | express | vegetarien | riche_en_proteines",
+            description: RECIPE_TAG_CODES_HINT,
           },
           cost: {
             type: Type.STRING,
@@ -184,7 +184,7 @@ export async function createRecipesFromFridge(
     "Réponds uniquement avec un JSON strict (pas de markdown).",
     `Retourne exactement ${mealCount} recette${mealCount > 1 ? "s" : ""} distincte${mealCount > 1 ? "s" : ""} dans le tableau recipes.`,
     "Chaque recette doit inclure title, time, calories, proteins, servings, difficulty,",
-    "tags (tableau : entree, plat, dessert, encas, express si ≤15 min, vegetarien, riche_en_proteines),",
+    `tags (tableau parmi ${RECIPE_TAG_CODES_HINT} uniquement — jamais de libellé inventé ; express si ≤15 min),`,
     "cost (economique | moyen | premium),",
     `ingredients[{name, amount (nombre), unit (${UNIT_CODES_HINT})}]. Utilise g/kg pour les solides au poids, ml/cl/l/c_soupe/c_cafe pour les liquides, l'unité naturelle (gousse, tranche, feuille...) ou « piece » par défaut pour les décomptes/inconnus.`,
     "Pour une quantité non chiffrable (sel, poivre, herbes à volonté) : unit « qs » et amount 0.",

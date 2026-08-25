@@ -165,7 +165,6 @@ export function useRecipeForm({
       difficulty,
       tags: selectedTags,
       cost,
-      tagLabel: recipe?.tagLabel,
       ingredients: cleanedIngredients,
       steps: cleanedSteps,
       missingIngredients: recipe?.missingIngredients,

@@ -1,6 +1,7 @@
-import { ChevronDownIcon } from "@/components/icons";
 import { RecipeTagPills } from "@/components/recipe-form/tag-pills";
+import { RecipeCostSymbol, RecipeDifficultyToques } from "@/components/recettes/recipe-symbols";
 import { inputClass, inputStyle, labelClass } from "@/components/recipe-form-styles";
+import { PopoverSelect } from "@/components/ui/popover-select";
 import {
   DIFFICULTIES,
   RECIPE_COST_LABELS,
@@ -44,42 +45,7 @@ type SingleTimeMeta = MetaBase & {
 
 export type RecipeMetaFieldsProps = SplitTimeMeta | SingleTimeMeta;
 
-function SelectField({
-  label,
-  value,
-  onChange,
-  options,
-}: {
-  label: string;
-  value: string;
-  onChange: (val: string) => void;
-  options: { value: string; label: string }[];
-}) {
-  return (
-    <div>
-      <label className={labelClass} style={{ letterSpacing: "0.04em" }}>
-        {label}
-      </label>
-      <div className="relative">
-        <select
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className={`${inputClass} appearance-none pr-10`}
-          style={inputStyle}
-        >
-          {options.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-        <span className="pointer-events-none absolute top-1/2 right-3.5 -translate-y-1/2 text-[#7A8F7D]">
-          <ChevronDownIcon size={14} />
-        </span>
-      </div>
-    </div>
-  );
-}
+const SELECT_TRIGGER_CLASS = `${inputClass} flex items-center justify-between pr-3.5`;
 
 function DifficultyCostFields({
   difficulty,
@@ -89,18 +55,46 @@ function DifficultyCostFields({
 }: Pick<MetaBase, "difficulty" | "setDifficulty" | "cost" | "setCost">) {
   return (
     <div className="grid grid-cols-2 gap-3">
-      <SelectField
-        label="DIFFICULTÉ"
-        value={difficulty}
-        onChange={(val) => setDifficulty(val as RecipeDifficulty)}
-        options={DIFFICULTIES.map((d) => ({ value: d, label: d }))}
-      />
-      <SelectField
-        label="COÛT"
-        value={cost}
-        onChange={(val) => setCost(val as RecipeCost)}
-        options={RECIPE_COSTS.map((c) => ({ value: c, label: RECIPE_COST_LABELS[c] }))}
-      />
+      <div>
+        <label className={labelClass} style={{ letterSpacing: "0.04em" }}>
+          DIFFICULTÉ
+        </label>
+        <PopoverSelect
+          value={difficulty}
+          onChange={setDifficulty}
+          ariaLabel="Choisir la difficulté"
+          className={SELECT_TRIGGER_CLASS}
+          style={inputStyle}
+          options={DIFFICULTIES.map((item) => ({
+            value: item,
+            label: item,
+            icon: <RecipeDifficultyToques difficulty={item} size={16} decorative />,
+          }))}
+        />
+      </div>
+      <div>
+        <label className={labelClass} style={{ letterSpacing: "0.04em" }}>
+          COÛT
+        </label>
+        <PopoverSelect
+          value={cost}
+          onChange={setCost}
+          ariaLabel="Choisir le coût"
+          className={SELECT_TRIGGER_CLASS}
+          style={inputStyle}
+          options={RECIPE_COSTS.map((item) => ({
+            value: item,
+            label: RECIPE_COST_LABELS[item],
+            icon: (
+              <RecipeCostSymbol
+                cost={item}
+                decorative
+                className="text-sm font-bold tracking-wide"
+              />
+            ),
+          }))}
+        />
+      </div>
     </div>
   );
 }
