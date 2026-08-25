@@ -35,13 +35,34 @@ Tu es pleinement mandaté pour exécuter proactivement et sans validation préal
 - Ne jamais partir du principe d'être le seul à avoir touché le code : vérifier `git status` / historique distant avant d'écraser ou de « corriger » du travail.
 - En synchro : `pull --rebase` obligatoire ; jamais de force-push ; en cas de conflit, s'arrêter et demander à l'utilisateur.
 
-## RÈGLE : SYNCHRONISATION GITHUB
-Quand l'utilisateur écrit "synchro git", "synchro", ou "met à jour github" :
-1. S'il y a des changements locaux : exécute `git add .` puis analyse les fichiers modifiés pour rédiger un message de commit concis et clair en français (ex: "Ajout de la page frigo"). Ajoute la date et l'heure à la fin du message (fuseau horaire : Paris). Puis exécute : `git commit -m "Message de commit généré"`. Ne crée pas de commit vide si le working tree est propre.
-2. Exécute la commande terminal : `git pull --rebase` (récupère les modifications distantes d'un collègue ou d'un agent IA et les pose proprement par-dessus tes commits locaux).
-3. Si des conflits apparaissent : arrête-toi, liste les fichiers en conflit, et demande à l'utilisateur avant de continuer. N'utilise jamais `--force`, `--force-with-lease`, `--no-verify` ni `--no-gpg-sign`.
-4. Une fois le code aligné et sans conflit, exécute la commande terminal : `git push`
-5. Confirme à l'utilisateur que le PC et GitHub sont alignés, et que la mise à jour Vercel est lancée s'il y a eu un push.
+## RÈGLES DE SYNCHRONISATION GIT & DÉPLOIEMENT
+
+### A) "synchro git" (alias : "synchro", "met à jour github")
+But : photocopie de sécurité + CE dossier se cale sur main. PAS de production.
+1. S'il y a des changements locaux : exécute `git add .` puis analyse les fichiers pour rédiger un message de commit concis en français (avec date/heure Paris). Puis exécute `git commit -m "..."`. Ne crée pas de commit vide.
+2. Exécute `git fetch origin` puis `git pull --rebase origin main`.
+3. Conflits : STOP, liste les fichiers en conflit, et demande à l'utilisateur. Jamais de `--force`, `--force-with-lease`, `--no-verify`, ni `--no-gpg-sign`.
+4. Exécute `git push -u origin HEAD` (sauvegarde TA branche sur GitHub).
+5. Confirme : le travail est sauvé sur GitHub sur CETTE branche, ce dossier est à jour vs main, PAS déployé en prod.
+6. Rappelle à l'utilisateur : pour la prod, il faut dire "envoie en prod".
+7. Rappelle à l'utilisateur : Cursor doit entendre "mets-toi à jour" dans SON dossier — tu ne touches JAMAIS au clone Cursor.
+
+### B) "envoie en prod" (alias : "envoie en production", "fusion vers main")
+Bouton rouge. Fusion de TA branche courante vers main → Vercel. Ne merger automatiquement QUE sur cette phrase. Si le working tree est sale : effectue d'abord un "synchro git" (A), puis cette action (B).
+1. Refuse si tu es déjà sur `main` ; demande à être sur une branche.
+2. Exécute `git fetch origin` puis `git pull --rebase origin main`. Conflits : STOP.
+3. Exécute `git push -u origin HEAD`.
+4. Fusion vers main : de préférence via `gh pr create` / `gh pr merge`. Sinon, `git checkout main`, `git pull --rebase origin main`, `git merge --no-ff <branche>`, `git push origin main`. Jamais de force-push.
+5. Reviens sur TA branche de travail (ne reste pas à coder sur `main`).
+6. Confirme : `main` est à jour, Vercel va déployer. Dis à l'utilisateur d'ouvrir Cursor et de taper "mets-toi à jour". Ne modifie jamais `C:\Users\Antoine\my-kitchen-app`.
+
+### C) "mets-toi à jour" (alias : "mets toi à jour")
+Uniquement pour CE dossier. Pas de merge main. Pas de prod.
+1. Si le working tree est sale : d'abord commit (comme l'étape 1 de A).
+2. Exécute `git fetch origin` puis `git pull --rebase origin main`. Conflits : STOP.
+3. Push de la branche si elle a divergé (`git push`). Jamais de force-push.
+4. Confirme : ce dossier a récupéré `main`. Pas de déploiement.
+5. À la fin, confirme les fichiers que tu as modifiés dans TON clone. Ne touche pas au dossier Cursor.
 
 ## RÈGLE : OPTIMISATION ET REFACTORING SUR DEMANDE
 Quand l'utilisateur écrit le mot-clé "optimisation", "optimise le code" ou "refactoring" :
