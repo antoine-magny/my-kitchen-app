@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronRightIcon } from "@/components/icons";
+import { HelpSupportModal } from "@/components/parametres/help-support-modal";
+import { NotificationsModal } from "@/components/parametres/notifications-modal";
 import { SETTINGS_ENTRIES } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/client";
 
@@ -15,6 +17,8 @@ type ThemeId = (typeof THEMES)[number]["id"];
 
 export function SettingsMenu() {
   const [theme, setTheme] = useState<ThemeId>("light");
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
@@ -23,6 +27,14 @@ export function SettingsMenu() {
     await supabase.auth.signOut();
     router.push("/login");
     router.refresh();
+  };
+
+  const handleEntryClick = (label: string) => {
+    if (label === "Notifications") {
+      setIsNotificationsOpen(true);
+    } else if (label === "Aide & support") {
+      setIsHelpOpen(true);
+    }
   };
 
   return (
@@ -34,7 +46,8 @@ export function SettingsMenu() {
         <div key={entry.label}>
           <button
             type="button"
-            className="flex w-full items-center gap-3.5 px-5 py-4 text-left transition-colors hover:bg-[#F7FAF7]"
+            onClick={() => handleEntryClick(entry.label)}
+            className="flex w-full items-center gap-3.5 px-5 py-4 text-left transition-colors hover:bg-[#F7FAF7] active:bg-[#EDF3EC] cursor-pointer"
           >
             <span
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F0F4EF] text-base"
@@ -54,6 +67,7 @@ export function SettingsMenu() {
         </div>
       ))}
 
+      {/* Thème */}
       <div className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:gap-3.5">
         <div className="flex min-w-0 items-center gap-3.5">
           <span
@@ -78,7 +92,7 @@ export function SettingsMenu() {
                 type="button"
                 onClick={() => setTheme(option.id)}
                 aria-pressed={active}
-                className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition-all ${
+                className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${
                   active ? "bg-white text-[#2E5C3A] shadow-sm" : "text-[#7A8F7D]"
                 }`}
               >
@@ -91,10 +105,11 @@ export function SettingsMenu() {
 
       <div className="h-px bg-[#F0F4EF]" />
 
+      {/* Déconnexion */}
       <button
         type="button"
         onClick={handleLogout}
-        className="flex w-full items-center gap-3.5 px-5 py-4 text-left transition-colors hover:bg-[#FEF2F2]"
+        className="flex w-full items-center gap-3.5 px-5 py-4 text-left transition-colors hover:bg-[#FEF2F2] cursor-pointer"
       >
         <span
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#FEF2F2] text-base"
@@ -104,6 +119,15 @@ export function SettingsMenu() {
         </span>
         <span className="flex-1 text-sm font-bold text-[#DC2626]">Déconnexion</span>
       </button>
+
+      {/* Modales Milestone 1 */}
+      {isNotificationsOpen && (
+        <NotificationsModal onClose={() => setIsNotificationsOpen(false)} />
+      )}
+      {isHelpOpen && (
+        <HelpSupportModal onClose={() => setIsHelpOpen(false)} />
+      )}
     </div>
   );
 }
+

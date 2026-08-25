@@ -440,3 +440,80 @@ export function SpinnerBrandIcon({ size = 28 }: { size?: number }) {
     </svg>
   );
 }
+
+export function BellIcon({ size = 18, strokeWidth = 2.2, className }: IconProps) {
+  return (
+    <StrokeIcon size={size} strokeWidth={strokeWidth} className={className}>
+      <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+      <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+    </StrokeIcon>
+  );
+}
+
+export function BellOffIcon({ size = 18, strokeWidth = 2.2, className }: IconProps) {
+  return (
+    <StrokeIcon size={size} strokeWidth={strokeWidth} className={className}>
+      <path d="M8.7 3A6 6 0 0 1 18 8a21.3 21.3 0 0 0 .6 5" />
+      <path d="M17 17H3s3-2 3-9a6 6 0 0 1 .4-2" />
+      <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+      <line x1="2" y1="2" x2="22" y2="22" />
+    </StrokeIcon>
+  );
+}
+
+export function HelpCircleIcon({ size = 18, strokeWidth = 2.2, className }: IconProps) {
+  return (
+    <StrokeIcon size={size} strokeWidth={strokeWidth} className={className}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </StrokeIcon>
+  );
+}
+
+export function MailIcon({ size = 18, strokeWidth = 2.2, className }: IconProps) {
+  return (
+    <StrokeIcon size={size} strokeWidth={strokeWidth} className={className}>
+      <rect width="20" height="16" x="2" y="4" rx="2" />
+      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+    </StrokeIcon>
+  );
+}
+
+export function ExternalLinkIcon({ size = 16, strokeWidth = 2.2, className }: IconProps) {
+  return (
+    <StrokeIcon size={size} strokeWidth={strokeWidth} className={className}>
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+      <polyline points="15 3 21 3 21 9" />
+      <line x1="10" y1="14" x2="21" y2="3" />
+    </StrokeIcon>
+  );
+}
+
+export function SmartphoneIcon({ size = 18, strokeWidth = 2.2, className }: IconProps) {
+  return (
+    <StrokeIcon size={size} strokeWidth={strokeWidth} className={className}>
+      <rect width="14" height="20" x="5" y="2" rx="2" ry="2" />
+      <path d="M12 18h.01" />
+    </StrokeIcon>
+  );
+}
+
+export function TrendingUpIcon({ size = 18, strokeWidth = 2.2, className }: IconProps) {
+  return (
+    <StrokeIcon size={size} strokeWidth={strokeWidth} className={className}>
+      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+      <polyline points="17 6 23 6 23 12" />
+    </StrokeIcon>
+  );
+}
+
+export function PieChartIcon({ size = 18, strokeWidth = 2.2, className }: IconProps) {
+  return (
+    <StrokeIcon size={size} strokeWidth={strokeWidth} className={className}>
+      <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
+      <path d="M22 12A10 10 0 0 0 12 2v10z" />
+    </StrokeIcon>
+  );
+}
+
