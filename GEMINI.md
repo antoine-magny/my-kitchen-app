@@ -63,16 +63,25 @@ N'applique JAMAIS toutes les modifications d'un coup. Procède obligatoirement a
 - **Étape 4 (Sauvegarde)** : Une fois le nettoyage terminé avec succès, propose-moi de faire un "synchro git".
 
 
-## RÈGLE DE COHABITATION avec cursor (LOCALHOST ET GIT) 
+## RÈGLES DE COHABITATION AVEC CURSOR (ANTIGRAVITY STRICT)
 
-Tu tournes actuellement sur la même machine locale qu'un autre agent IA nommé "Cursor". Pour que vous puissiez travailler en parallèle sans faire crasher Next.js ou écraser vos fichiers respectifs, tu dois appliquer ces règles absolues :
+Tu tournes en parallèle avec un agent Cursor, mais dans un **clone physique distinct** pour éviter de corrompre le cache Next.js et de bloquer Git. Tu dois impérativement respecter ces règles dans CE workspace :
 
-1. PORT LOCALHOST DÉDIÉ (3001) :
-   - Le port `3000` est formellement réservé à Cursor. Tu n'as pas le droit de l'utiliser.
-   - Lorsque tu lances le serveur Next.js pour tester tes développements, tu dois OBLIGATOIREMENT le forcer sur le port `3001`.
-   - Utilise la commande de lancement : `npm run dev -- -p 3001` (ou configure la variable d'environnement `PORT=3001`).
+1. **DOSSIER DE TRAVAIL STRICT :**
+   - Ton seul et unique environnement de travail est : `C:\Users\Antoine\my-kitchen-app-antigravity`.
+   - Tu n'as **JAMAIS** l'autorisation d'ouvrir, de lire, de modifier des fichiers ou de lancer des commandes dans le clone Cursor (`C:\Users\Antoine\my-kitchen-app`).
+   - Le fichier `.env.local` est déjà configuré ici et gitignoré. Ne le committe jamais et ne le copie pas manuellement depuis l'autre dossier.
 
-2. ISOLATION DU CODE ET DES BRANCHES :
-   - Interdiction formelle de modifier les mêmes fichiers que Cursor en même temps si vous êtes sur la même branche. Dans ce cas, travaille uniquement quand on te passe le relais (après une synchronisation Git).
-   - Si tu dois exécuter une tâche en totale autonomie et en parallèle de Cursor, tu dois IMPÉRATIVEMENT créer une nouvelle branche Git avant de commencer à coder (ex: `git checkout -b feature/antigravity-task`).
-   
+2. **PORT LOCALHOST DÉDIÉ (3001) :**
+   - Le port `3000` est formellement réservé à Cursor.
+   - Ton serveur de dev doit **TOUJOURS** être lancé sur le port 3001.
+   - Utilise EXCLUSIVEMENT la commande : `npm run dev -- -p 3001`.
+   - N'ajoute pas de script `dev:3001` dans `package.json` (le flag `-p` reste local à tes lancements de terminal).
+
+3. **GIT & BRANCHES (ISOLATION TOTALE) :**
+   - **Jamais de code sur `main`** : Ne code jamais directement sur la branche `main` et n'y code jamais à deux.
+   - **Une tâche = Une branche** : Avant toute modification, assure-toi d'être sur ta propre branche (ex: `git checkout -b feature/antigravity-...`).
+   - **Synchro avant de pusher** : Toujours exécuter `git pull --rebase origin main` avant un `git push`.
+   - **Interdictions strictes** : N'utilise JAMAIS `--force`, `--force-with-lease` ou `--no-verify`.
+   - **Process de merge** : La livraison se fait via Pull Request (PR) vers `main`. Après le merge d'une PR (la tienne ou celle de Cursor), resynchronise ton environnement local : `git fetch`, `git checkout main`, `git pull --rebase`, `git checkout <ta-branche>`, `git rebase origin/main`.
+   - **Conflits** : Si un conflit survient, arrête-toi immédiatement, liste les fichiers impactés et demande à l'utilisateur. Ne tente pas de résoudre seul des conflits probables avec Cursor.
