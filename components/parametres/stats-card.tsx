@@ -1,7 +1,13 @@
+"use client";
+
+import { useState } from "react";
 import { ChartIcon, ChevronRightIcon } from "@/components/icons";
+import { StatsModal } from "@/components/parametres/stats-modal";
 import { TOP_CONSUMED_FOODS, WEEKLY_HIGHLIGHTS } from "@/lib/profile";
 
 export function StatsCard() {
+  const [isStatsOpen, setIsStatsOpen] = useState(false);
+
   return (
     <div
       className="overflow-hidden rounded-3xl"
@@ -9,7 +15,8 @@ export function StatsCard() {
     >
       <button
         type="button"
-        className="flex w-full items-center gap-3.5 px-5 py-4 text-left transition-colors hover:bg-[#F7FAF7]"
+        onClick={() => setIsStatsOpen(true)}
+        className="flex w-full items-center gap-3.5 px-5 py-4 text-left transition-colors hover:bg-[#F7FAF7] active:bg-[#EDF3EC] cursor-pointer"
       >
         <span
           className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-white"
@@ -74,6 +81,8 @@ export function StatsCard() {
           ))}
         </div>
       </div>
+
+      {isStatsOpen && <StatsModal onClose={() => setIsStatsOpen(false)} />}
     </div>
   );
 }
