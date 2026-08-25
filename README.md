@@ -26,8 +26,23 @@ modification.
 > de doute sur une API du framework, consulter `node_modules/next/dist/docs/`
 > plutôt que de se fier à ses souvenirs.
 
-Commandes : `npm run dev` (serveur local), `npm run build`, `npm run lint`.
+Commandes : `npm run dev` (serveur local Cursor, port 3000), `npm run build`, `npm run lint`.
 Pour un contrôle de types complet : `npx tsc --noEmit`.
+
+---
+
+## Dual-dev local (Cursor + Antigravity)
+
+Deux clones du même dépôt : Cursor (`my-kitchen-app`, port 3000) et
+Antigravity (`my-kitchen-app-antigravity`, port 3001). Jamais coder à deux
+sur `main` ; travail parallèle OK si branches distinctes. Ne pas copier de
+fichiers à la main d'un clone vers l'autre (sauf `.env.local` une fois).
+
+Trois phrases à dire **dans l'éditeur concerné** (jamais toucher l'autre
+dossier) : **synchro git** = photocopie de la branche + calage sur `main`
+(pas de prod) ; **envoie en prod** = fusion de la branche courante vers
+`main` → Vercel, puis « mets-toi à jour » chez l'autre ; **mets-toi à jour**
+= ce dossier récupère `main`, sans merge ni déploiement.
 
 ---
 
