@@ -3,9 +3,14 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useEffect, useState } from "react";
+import {
+  ConsumeRecipeBanner,
+  ConsumeRecipeModal,
+} from "@/components/recettes/consume-recipe-modal";
 import { RecipeContent } from "@/components/recettes/recipe-content";
 import { RecipeHero } from "@/components/recettes/recipe-hero";
 import { RecipeFormModal } from "@/components/recipe-form-modal";
+import { removeRecipeFromTodayPlan } from "@/lib/consume-recipe";
 import { removeFromFavorites } from "@/lib/favorites";
 import {
   deleteRecipe,
@@ -27,6 +32,8 @@ export default function RecipeStepsPage({
   const recipeId = Number(id);
   const [recipe, setRecipe] = useState<Recipe | undefined>(() => getRecipeById(recipeId));
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showConsumeModal, setShowConsumeModal] = useState(false);
+  const [banner, setBanner] = useState<{ plannedToday: boolean } | null>(null);
   const [doneSteps, setDoneSteps] = useState<Set<number>>(new Set());
   const [currentStep, setCurrentStep] = useState(0);
   const [tab, setTab] = useState<"ingredients" | "steps">("steps");
@@ -34,6 +41,12 @@ export default function RecipeStepsPage({
   useEffect(() => {
     setRecipe(getRecipeById(recipeId));
   }, [recipeId]);
+
+  useEffect(() => {
+    if (!banner || banner.plannedToday) return;
+    const timer = window.setTimeout(() => setBanner(null), 4000);
+    return () => window.clearTimeout(timer);
+  }, [banner]);
 
   const handleUpdate = (input: NewRecipeInput) => {
     const updated = updateRecipe(recipeId, input);
@@ -80,12 +93,14 @@ export default function RecipeStepsPage({
   };
 
   const goNext = () => {
+    const isLastStep = currentStep >= recipe.steps.length - 1;
     setDoneSteps((prev) => {
       const next = new Set(prev);
       next.add(currentStep);
       return next;
     });
-    if (currentStep < recipe.steps.length - 1) setCurrentStep(currentStep + 1);
+    if (!isLastStep) setCurrentStep(currentStep + 1);
+    else setShowConsumeModal(true);
   };
 
   return (
@@ -97,6 +112,22 @@ export default function RecipeStepsPage({
           onDelete={handleDelete}
           onTagsChange={handleTagsChange}
         />
+        {banner ? (
+          <div className="px-5 pt-4">
+            <ConsumeRecipeBanner
+              plannedToday={banner.plannedToday}
+              onDismiss={() => setBanner(null)}
+              onRemoveFromPlan={
+                banner.plannedToday
+                  ? () => {
+                      removeRecipeFromTodayPlan(recipe.id);
+                      setBanner({ plannedToday: false });
+                    }
+                  : undefined
+              }
+            />
+          </div>
+        ) : null}
         <RecipeContent
           recipe={recipe}
           tab={tab}
@@ -105,6 +136,7 @@ export default function RecipeStepsPage({
           currentStep={currentStep}
           onToggleStep={toggleStep}
           onNext={goNext}
+          onCooked={() => setShowConsumeModal(true)}
         />
       </div>
 
@@ -113,6 +145,15 @@ export default function RecipeStepsPage({
           recipe={recipe}
           onSave={handleUpdate}
           onClose={() => setShowEditModal(false)}
+        />
+      )}
+      {showConsumeModal && (
+        <ConsumeRecipeModal
+          recipeId={recipe.id}
+          recipeTitle={recipe.title}
+          ingredients={recipe.ingredients}
+          onClose={() => setShowConsumeModal(false)}
+          onSuccess={(info) => setBanner(info)}
         />
       )}
     </div>

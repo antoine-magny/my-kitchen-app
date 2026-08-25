@@ -22,7 +22,9 @@ import {
   calendarDateFromIso,
   formatDayMonthNumericFr,
   formatWeekdayDayMonthFr,
+  isoDateFromCalendar,
 } from "@/lib/date-paris";
+import { isMealType } from "@/lib/meal-types";
 import {
   coerceUnitCode,
   combineQuantities,
@@ -39,7 +41,6 @@ export type { ShoppingItem };
 const STORAGE_KEY = "my-kitchen-shopping-list-v2";
 /** Ancien format : `{ id, name, amount: string, checked, category }`. */
 const LEGACY_STORAGE_KEY = "my-kitchen-shopping-list";
-const ISO_CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 function createId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -48,15 +49,37 @@ function createId(): string {
   return `shop-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-function isMealType(value: unknown): value is PlannedMealRef["mealType"] {
-  return value === "breakfast" || value === "lunch" || value === "dinner";
+/**
+ * ISO `YYYY-MM-DD`, ou clé planning `dayKey` non paddée (`2026-7-28`).
+ * Après l'export, `PlannedMealRef.date` est déjà de l'ISO.
+ */
+function coerceIsoCalendarDate(value: string): string | null {
+  const trimmed = value.trim();
+  const fromIso = calendarDateFromIso(trimmed);
+  if (fromIso) return isoDateFromCalendar(fromIso);
+
+  const parts = trimmed.split("-").map(Number);
+  if (parts.length !== 3 || parts.some((n) => !Number.isFinite(n))) return null;
+  const [year, monthIndex, day] = parts;
+  if (monthIndex < 0 || monthIndex > 11 || day < 1 || day > 31) return null;
+  const parsed = new Date(Date.UTC(year, monthIndex, day, 12, 0, 0));
+  if (
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() !== monthIndex ||
+    parsed.getUTCDate() !== day
+  ) {
+    return null;
+  }
+  return isoDateFromCalendar(parsed);
 }
 
 function sanitizePlannedMealRef(raw: unknown): PlannedMealRef | null {
   if (!raw || typeof raw !== "object") return null;
   const entry = raw as Partial<PlannedMealRef>;
   if (typeof entry.recipeTitle !== "string" || !entry.recipeTitle.trim()) return null;
-  if (typeof entry.date !== "string" || !ISO_CALENDAR_DATE.test(entry.date)) return null;
+  if (typeof entry.date !== "string") return null;
+  const date = coerceIsoCalendarDate(entry.date);
+  if (!date) return null;
   if (!isMealType(entry.mealType)) return null;
 
   return {
@@ -64,7 +87,7 @@ function sanitizePlannedMealRef(raw: unknown): PlannedMealRef | null {
       ? { recipeId: entry.recipeId }
       : {}),
     recipeTitle: entry.recipeTitle.trim(),
-    date: entry.date,
+    date,
     mealType: entry.mealType,
   };
 }
@@ -74,11 +97,14 @@ function sanitizePlannedMeals(raw: unknown): PlannedMealRef[] | undefined {
   const meals = raw
     .map(sanitizePlannedMealRef)
     .filter((ref): ref is PlannedMealRef => ref != null);
-  return meals.length > 0 ? meals : undefined;
+  return mergePlannedMeals(undefined, meals);
 }
 
+/** Identité stable : date + créneau + recipeId (sinon titre). */
 function plannedMealKey(ref: PlannedMealRef): string {
-  return `${ref.date}|${ref.mealType}|${ref.recipeId ?? ""}|${ref.recipeTitle}`;
+  const identity =
+    ref.recipeId != null ? `id:${ref.recipeId}` : `title:${ref.recipeTitle}`;
+  return `${ref.date}|${ref.mealType}|${identity}`;
 }
 
 /** Fusionne deux tableaux de repas sans doublon ni écrasement. */
@@ -106,8 +132,13 @@ function earliestTargetDate(meals?: PlannedMealRef[]): string | undefined {
 function assignPlannedMeals(item: ShoppingItem, incoming?: PlannedMealRef[]): void {
   const merged = mergePlannedMeals(item.plannedMeals, incoming);
   if (!merged) return;
+  const previousTarget = item.targetDate;
+  const nextTarget = earliestTargetDate(merged);
   item.plannedMeals = merged;
-  item.targetDate = earliestTargetDate(merged);
+  item.targetDate = nextTarget;
+  if (item.dlcValidated && previousTarget && nextTarget && nextTarget < previousTarget) {
+    item.dlcValidated = false;
+  }
 }
 
 function toShoppingItem(input: {
@@ -143,11 +174,9 @@ function toShoppingItem(input: {
   }
 
   const plannedMeals = sanitizePlannedMeals(input.plannedMeals);
-  const targetDate =
-    earliestTargetDate(plannedMeals) ??
-    (typeof input.targetDate === "string" && ISO_CALENDAR_DATE.test(input.targetDate)
-      ? input.targetDate
-      : undefined);
+  const coercedTarget =
+    typeof input.targetDate === "string" ? coerceIsoCalendarDate(input.targetDate) : null;
+  const targetDate = earliestTargetDate(plannedMeals) ?? coercedTarget ?? undefined;
 
   return {
     id: input.id ?? createId(),
@@ -216,19 +245,32 @@ function parseStoredList(raw: string | null): ShoppingItem[] {
   }
 }
 
-function persistNormalizedIcons(rawJson: string, items: ShoppingItem[]) {
+function persistNormalized(rawJson: string, items: ShoppingItem[]) {
   try {
     const parsed = JSON.parse(rawJson) as unknown;
     if (!Array.isArray(parsed)) return;
     const dirty = items.some((item, index) => {
-      const entry = parsed[index] as { icon?: unknown; emoji?: unknown } | undefined;
-      const previous =
+      const entry = parsed[index] as {
+        icon?: unknown;
+        emoji?: unknown;
+        plannedMeals?: unknown;
+        targetDate?: unknown;
+        dlcValidated?: unknown;
+      } | undefined;
+      const previousIcon =
         typeof entry?.icon === "string" && entry.icon
           ? entry.icon
           : typeof entry?.emoji === "string"
             ? entry.emoji
             : "";
-      return previous !== (item.icon ?? "");
+      if (previousIcon !== (item.icon ?? "")) return true;
+      if (JSON.stringify(item.plannedMeals ?? null) !== JSON.stringify(entry?.plannedMeals ?? null)) {
+        return true;
+      }
+      const rawTarget = typeof entry?.targetDate === "string" ? entry.targetDate : null;
+      if ((item.targetDate ?? null) !== rawTarget) return true;
+      if (Boolean(item.dlcValidated) !== Boolean(entry?.dlcValidated)) return true;
+      return false;
     });
     if (dirty) writeList(items);
   } catch {
@@ -242,7 +284,7 @@ function readList(): ShoppingItem[] {
   const current = window.localStorage.getItem(STORAGE_KEY);
   if (current != null) {
     const items = parseStoredList(current);
-    persistNormalizedIcons(current, items);
+    persistNormalized(current, items);
     return items;
   }
 

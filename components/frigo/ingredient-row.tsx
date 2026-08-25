@@ -9,7 +9,8 @@ import {
   type TabId,
 } from "@/components/frigo/shared";
 import { IngredientRowMenu } from "@/components/frigo/ingredient-row-menu";
-import { dlcStatus } from "@/lib/fridge";
+import { CalendarIcon } from "@/components/icons";
+import { dlcStatus, sortPlannedMeals, weekdayLongFrFromIso } from "@/lib/fridge";
 import type { UnitCode } from "@/lib/units";
 import { EmojiPickerPopover } from "@/components/ui/emoji-picker-popover";
 import { EditableItemFields } from "@/components/ui/editable-item-fields";
@@ -86,11 +87,34 @@ export function IngredientRow({
               <span className="text-xs font-medium" style={{ color: style.color }}>
                 {dlcLabel(item.expirationDate)}
               </span>
+              {item.dlcEstimated ? (
+                <span
+                  className="text-[10px] font-medium text-[#9CA3AF]"
+                  title="Date déduite du repas prévu en courses"
+                >
+                  estimée
+                </span>
+              ) : null}
             </>
           ) : (
             <span className="text-xs font-medium text-[#9CA3AF]">Pas de date d&apos;expiration</span>
           )}
         </button>
+        {item.plannedMeals && item.plannedMeals.length > 0 ? (
+          <ul className="mt-1.5 flex flex-wrap gap-1">
+            {sortPlannedMeals(item.plannedMeals).map((meal) => (
+              <li
+                key={`${meal.date}|${meal.mealType}|${meal.recipeId ?? ""}|${meal.recipeTitle}`}
+                className="inline-flex max-w-full items-center gap-1 rounded-full border border-[#D6D4E4] bg-[#F0F3F4] px-2 py-0.5 text-[11px] leading-tight font-medium text-[#4A5568]"
+              >
+                <CalendarIcon size={10} className="shrink-0 text-[#6B5B7A]" />
+                <span className="truncate">
+                  Prévu pour : {meal.recipeTitle} ({weekdayLongFrFromIso(meal.date)})
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </EditableItemFields>
 
       <IngredientRowMenu

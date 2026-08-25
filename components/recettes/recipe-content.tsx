@@ -15,6 +15,7 @@ export function RecipeContent({
   currentStep,
   onToggleStep,
   onNext,
+  onCooked,
 }: {
   recipe: Recipe;
   tab: Tab;
@@ -23,10 +24,13 @@ export function RecipeContent({
   currentStep: number;
   onToggleStep: (index: number) => void;
   onNext: () => void;
+  onCooked?: () => void;
 }) {
   const total = recipe.steps.length;
   const doneCount = doneSteps.size;
   const progress = total > 0 ? (doneCount / total) * 100 : 0;
+  const allDone = total > 0 && doneCount === total;
+  const showInlineCook = Boolean(onCooked) && !(tab === "steps" && allDone);
 
   return (
     <>
@@ -91,6 +95,20 @@ export function RecipeContent({
             onToggleStep={onToggleStep}
           />
         )}
+
+        {showInlineCook ? (
+          <button
+            type="button"
+            onClick={() => onCooked?.()}
+            className="mt-5 w-full rounded-2xl py-3.5 text-sm font-bold text-white transition-all active:scale-[0.99]"
+            style={{
+              background: "linear-gradient(135deg, #4A7C59, #5E9E72)",
+              boxShadow: "0 4px 18px rgba(74,124,89,0.28)",
+            }}
+          >
+            J&apos;ai cuisiné ce plat 🎉
+          </button>
+        ) : null}
       </div>
 
       {tab === "steps" && (
@@ -99,6 +117,7 @@ export function RecipeContent({
           doneSteps={doneSteps}
           currentStep={currentStep}
           onNext={onNext}
+          onCooked={onCooked}
         />
       )}
     </>

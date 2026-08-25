@@ -1,6 +1,7 @@
 "use client";
 
 import { CalendarIcon, CheckIcon, PlusIcon } from "@/components/icons";
+import { MEAL_TYPE_LABELS } from "@/lib/meal-types";
 import { formatDlcThresholdLabel, formatPlannedMealChip } from "@/lib/shopping-list";
 import type { PlannedMealRef } from "@/types/inventory";
 
@@ -135,6 +136,7 @@ export function PlannedMealPills({ meals }: { meals: PlannedMealRef[] }) {
       {sortPlannedMeals(meals).map((meal) => (
         <li
           key={`${meal.date}|${meal.mealType}|${meal.recipeId ?? ""}|${meal.recipeTitle}`}
+          title={`${MEAL_TYPE_LABELS[meal.mealType]} · ${formatPlannedMealChip(meal)}`}
           className="inline-flex max-w-full items-center gap-1 rounded-full border border-[#E2EBE3] bg-[#F6F8F3] px-2 py-0.5 text-[11px] leading-tight font-medium text-[#5C7360]"
         >
           <CalendarIcon size={10} className="shrink-0" />

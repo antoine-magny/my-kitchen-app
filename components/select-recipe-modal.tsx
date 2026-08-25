@@ -1,14 +1,22 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CheckIcon, ClockIcon, SearchIcon, XIcon } from "@/components/icons";
+import { AddRecipeModal } from "@/components/add-recipe-modal";
+import {
+  CameraIcon,
+  CheckIcon,
+  ClockIcon,
+  LinkIcon,
+  SearchIcon,
+  XIcon,
+} from "@/components/icons";
 import {
   MODAL_CLOSE_BTN_CLASS,
   MODAL_OVERLAY_CLASS,
   MODAL_PANEL_CLASS,
 } from "@/components/ui/modal-layout";
 import { useLockBodyScroll } from "@/lib/lock-body-scroll";
-import { getAllRecipes, type Recipe } from "@/lib/recipes";
+import { addCustomRecipe, getAllRecipes, type Recipe } from "@/lib/recipes";
 import { recipeMatchesQuery } from "@/lib/recipe-filters";
 
 const SLOT_LABELS = {
@@ -30,6 +38,7 @@ export function SelectRecipeModal({
 }) {
   const [query, setQuery] = useState("");
   const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [importStep, setImportStep] = useState<"photo" | "url" | null>(null);
 
   useLockBodyScroll();
 
@@ -42,6 +51,20 @@ export function SelectRecipeModal({
   }, [recipes, query]);
 
   const title = currentRecipeId != null ? "Remplacer la recette" : "Choisir une recette";
+
+  if (importStep) {
+    return (
+      <AddRecipeModal
+        key={importStep}
+        initialStep={importStep}
+        onAdd={(input) => {
+          const created = addCustomRecipe(input);
+          onSelect(created.id);
+        }}
+        onClose={() => setImportStep(null)}
+      />
+    );
+  }
 
   return (
     <div
@@ -76,6 +99,50 @@ export function SelectRecipeModal({
         </div>
 
         <div className="shrink-0 px-5 pt-4 pb-3">
+          <div className="mb-3 flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={() => setImportStep("photo")}
+              className="flex min-h-11 min-w-0 items-center gap-2.5 rounded-xl px-3 py-2 text-left transition-all hover:bg-[#EBF2EC] active:scale-[0.98]"
+              style={{
+                background: "#FAFBF9",
+                border: "1.5px solid #E2EBE3",
+              }}
+            >
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#EBF2EC] text-[#4A7C59]">
+                <CameraIcon size={16} />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-bold leading-tight text-[#1C2B1E]">
+                  Scanner une recette
+                </span>
+                <span className="mt-0.5 block text-xs font-medium leading-snug text-[#7A8F7D]">
+                  Photo ou galerie — l’IA préremplit le formulaire
+                </span>
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setImportStep("url")}
+              className="flex min-h-11 min-w-0 items-center gap-2.5 rounded-xl px-3 py-2 text-left transition-all hover:bg-[#EBF2EC] active:scale-[0.98]"
+              style={{
+                background: "#FAFBF9",
+                border: "1.5px solid #E2EBE3",
+              }}
+            >
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#EBF2EC] text-[#4A7C59]">
+                <LinkIcon size={16} />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-bold leading-tight text-[#1C2B1E]">
+                  Importer depuis un lien
+                </span>
+                <span className="mt-0.5 block text-xs font-medium leading-snug text-[#7A8F7D]">
+                  Marmiton, blogs… extraction automatique
+                </span>
+              </span>
+            </button>
+          </div>
           <div
             className="flex items-center gap-2.5 rounded-2xl px-3.5 py-2.5"
             style={{

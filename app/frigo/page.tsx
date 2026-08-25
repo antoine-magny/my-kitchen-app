@@ -114,6 +114,7 @@ export default function FrigoPage() {
         const next = { ...i };
         if (expirationDate) next.expirationDate = expirationDate;
         else delete next.expirationDate;
+        delete next.dlcEstimated;
         return next;
       }),
     );

@@ -102,6 +102,7 @@ lib/                    Logique métier, sans JSX
   auth-guest.ts         Connexion anonyme (invité), auto-login en `next dev`
   shopping-list.ts      Export Planning → Courses (fusion / déduplication)
   fridge.ts             Inventaire local + transfert Courses → Frigo
+  consume-recipe.ts     Matching recette ↔ frigo, déduction des quantités, libération des réservations
   ingredients.ts        Référentiel canonique (ingredientId)
   planning.ts           Construction de semaine + agrégation d'ingrédients
   recipe-model.ts       Types Recipe : tags multiples, coût, difficulté
@@ -313,6 +314,26 @@ par le bouton « Au frigo » sur `app/courses/page.tsx`.
    (`clearCheckedShoppingItems`).
 4. Persister le frigo (`my-kitchen-fridge-items-v2`).
 
+### Flux Recette → Frigo (consommation)
+
+Quand un plat est réalisé, `app/recettes/[id]/page.tsx` ouvre
+`ConsumeRecipeModal` (`components/recettes/consume-recipe-modal.tsx`).
+
+1. `matchRecipeIngredientsWithFridge` (`lib/consume-recipe.ts`) rapproche
+   chaque ingrédient de recette d'un ou plusieurs `FridgeItem` (`ingredientId`,
+   puis nom normalisé / fuzzy) et propose une quantité à déduire (unités
+   converties via `convertToUnit`).
+2. L'utilisateur peut décocher ou ajuster les lignes. Au confirm :
+   `consumeRecipeIngredients` réduit les quantités, supprime les entrées à 0,
+   et retire uniquement les `plannedMeals` de **cette** recette **aujourd'hui**
+   (les réservations d'autres recettes / d'autres jours restent).
+3. Persistance directe de `my-kitchen-fridge-items-v2` via
+   `persistFridgeInventory` (sans `setFridgeItems`, pour conserver
+   `plannedMeals`).
+4. Bannière « Frigo mis à jour ! » ; si le plat est au planning du jour,
+   proposition de le retirer (`removeRecipeFromTodayPlan`, helpers déjà
+   exportés de `lib/planning.ts`).
+
 ---
 
 ## Persistance : le modèle hybride
@@ -328,7 +349,7 @@ Clés `localStorage` utilisées :
 
 | Clé | Contenu | Module |
 | --- | --- | --- |
-| `my-kitchen-fridge-items-v2` | Inventaire frigo/congélateur/placards (snapshot) | `lib/fridge.ts` |
+| `my-kitchen-fridge-items-v2` | Inventaire frigo/congélateur/placards (snapshot) | `lib/fridge.ts`, `lib/consume-recipe.ts` |
 | `my-kitchen-shopping-list-v2` | Liste de courses (snapshot) | `lib/shopping-list.ts` |
 | `my-kitchen-meal-plans-v1` | Planning hebdomadaire des repas | `lib/planning.ts` |
 | `my-kitchen-profile-v1` | Préférences, objectifs, équipements et réponses au quiz culinaire | `lib/profile-store.ts` |

@@ -9,13 +9,19 @@
 
 import { describeIngredient, resolveStoredIngredientIcon } from "@/lib/ingredients";
 import { normalizeProductName } from "@/lib/shopping-categories";
+import { calendarDateFromIso } from "@/lib/date-paris";
 import {
   coerceUnitCode,
   combineQuantities,
   DEFAULT_UNIT,
   type UnitCode,
 } from "@/lib/units";
-import type { FridgeItem, FridgeStorageLocation, ShoppingItem } from "@/types/inventory";
+import type {
+  FridgeItem,
+  FridgeStorageLocation,
+  PlannedMealRef,
+  ShoppingItem,
+} from "@/types/inventory";
 import { clearCheckedShoppingItems, getShoppingList } from "@/lib/shopping-list";
 
 export type { FridgeItem, FridgeStorageLocation };
@@ -79,11 +85,137 @@ export const FRIDGE_TABS: TabDefinition[] = [
   { id: "pantry", label: "Placard", icon: "🥫" },
 ];
 
+const ISO_CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/;
+const MEAL_SLOT_ORDER = { breakfast: 0, lunch: 1, dinner: 2 } as const;
+
 export function createFridgeItemId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
   }
   return `fridge-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function isMealType(value: unknown): value is PlannedMealRef["mealType"] {
+  return value === "breakfast" || value === "lunch" || value === "dinner";
+}
+
+function sanitizePlannedMealRef(raw: unknown): PlannedMealRef | null {
+  if (!raw || typeof raw !== "object") return null;
+  const entry = raw as Partial<PlannedMealRef>;
+  if (typeof entry.recipeTitle !== "string" || !entry.recipeTitle.trim()) return null;
+  if (typeof entry.date !== "string" || !ISO_CALENDAR_DATE.test(entry.date)) return null;
+  if (!isMealType(entry.mealType)) return null;
+
+  return {
+    ...(typeof entry.recipeId === "number" && Number.isFinite(entry.recipeId)
+      ? { recipeId: entry.recipeId }
+      : {}),
+    recipeTitle: entry.recipeTitle.trim(),
+    date: entry.date,
+    mealType: entry.mealType,
+  };
+}
+
+function sanitizePlannedMeals(raw: unknown): PlannedMealRef[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const meals = raw
+    .map(sanitizePlannedMealRef)
+    .filter((ref): ref is PlannedMealRef => ref != null);
+  return meals.length > 0 ? meals : undefined;
+}
+
+/** Identité stable : date + créneau + recipeId (sinon titre). */
+function plannedMealKey(ref: PlannedMealRef): string {
+  const identity =
+    ref.recipeId != null ? `id:${ref.recipeId}` : `title:${ref.recipeTitle}`;
+  return `${ref.date}|${ref.mealType}|${identity}`;
+}
+
+function mergePlannedMeals(
+  existing?: PlannedMealRef[],
+  incoming?: PlannedMealRef[],
+): PlannedMealRef[] | undefined {
+  if (!existing?.length && !incoming?.length) return undefined;
+  const seen = new Set<string>();
+  const merged: PlannedMealRef[] = [];
+  for (const ref of [...(existing ?? []), ...(incoming ?? [])]) {
+    const key = plannedMealKey(ref);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    merged.push(ref);
+  }
+  return merged.length > 0 ? merged : undefined;
+}
+
+function earliestMealDate(meals?: PlannedMealRef[]): string | undefined {
+  if (!meals?.length) return undefined;
+  return meals.reduce((min, meal) => (meal.date < min ? meal.date : min), meals[0].date);
+}
+
+function shoppingExplicitExpiration(shop: ShoppingItem): string | undefined {
+  const raw = (shop as ShoppingItem & { expirationDate?: unknown }).expirationDate;
+  return typeof raw === "string" && ISO_CALENDAR_DATE.test(raw) ? raw : undefined;
+}
+
+function shoppingTargetDate(shop: ShoppingItem): string | undefined {
+  if (shop.targetDate && ISO_CALENDAR_DATE.test(shop.targetDate)) return shop.targetDate;
+  return earliestMealDate(shop.plannedMeals);
+}
+
+/**
+ * DLC à appliquer lors du transfert.
+ * Une date déjà saisie (courses ou frigo) n'est jamais écrasée par une estimation.
+ */
+function resolveTransferDlc(shop: ShoppingItem, existing?: FridgeItem): {
+  expirationDate?: string;
+  dlcEstimated?: boolean;
+} {
+  const explicitShop = shoppingExplicitExpiration(shop);
+  const existingIsEstimated = existing?.dlcEstimated === true;
+
+  if (existing?.expirationDate && !existingIsEstimated) {
+    return { expirationDate: existing.expirationDate };
+  }
+
+  if (explicitShop) {
+    return { expirationDate: explicitShop };
+  }
+
+  if (existing?.expirationDate) {
+    return {
+      expirationDate: existing.expirationDate,
+      ...(existingIsEstimated ? { dlcEstimated: true } : {}),
+    };
+  }
+
+  if (shop.dlcValidated) {
+    const target = shoppingTargetDate(shop);
+    if (target) return { expirationDate: target, dlcEstimated: true };
+  }
+
+  return {};
+}
+
+function applyTransferDlc(item: FridgeItem, dlc: ReturnType<typeof resolveTransferDlc>) {
+  if (dlc.expirationDate) item.expirationDate = dlc.expirationDate;
+  else delete item.expirationDate;
+  if (dlc.dlcEstimated) item.dlcEstimated = true;
+  else delete item.dlcEstimated;
+}
+
+export function sortPlannedMeals(meals: PlannedMealRef[]): PlannedMealRef[] {
+  return [...meals].sort((a, b) => {
+    const byDate = a.date.localeCompare(b.date);
+    if (byDate !== 0) return byDate;
+    return MEAL_SLOT_ORDER[a.mealType] - MEAL_SLOT_ORDER[b.mealType];
+  });
+}
+
+/** Jour de la semaine en français (ex. « lundi ») depuis YYYY-MM-DD. */
+export function weekdayLongFrFromIso(iso: string): string {
+  const date = calendarDateFromIso(iso);
+  if (!date) return iso;
+  return date.toLocaleDateString("fr-FR", { weekday: "long", timeZone: "UTC" });
 }
 
 function fmt(d: Date) {
@@ -107,10 +239,17 @@ export function createFridgeItem(input: {
   ingredientId?: string;
   id?: string;
   addedAt?: string;
+  plannedMeals?: PlannedMealRef[];
+  dlcEstimated?: boolean;
 }): FridgeItem {
   const customName = input.customName.trim();
   const identity = describeIngredient(customName);
   const icon = resolveStoredIngredientIcon(input.icon, identity.icon);
+  const plannedMeals = sanitizePlannedMeals(input.plannedMeals);
+  const expirationDate =
+    typeof input.expirationDate === "string" && ISO_CALENDAR_DATE.test(input.expirationDate)
+      ? input.expirationDate
+      : undefined;
 
   return {
     id: input.id ?? createFridgeItemId(),
@@ -121,7 +260,9 @@ export function createFridgeItem(input: {
     category: input.category,
     icon,
     addedAt: input.addedAt ?? new Date().toISOString(),
-    ...(input.expirationDate ? { expirationDate: input.expirationDate } : {}),
+    ...(expirationDate ? { expirationDate } : {}),
+    ...(plannedMeals ? { plannedMeals } : {}),
+    ...(input.dlcEstimated && expirationDate ? { dlcEstimated: true } : {}),
   };
 }
 
@@ -230,8 +371,10 @@ function sanitizeItem(raw: unknown): FridgeItem | null {
         : typeof (entry as Record<string, unknown>).emoji === "string" && (entry as Record<string, unknown>).emoji
         ? ((entry as Record<string, unknown>).emoji as string)
         : undefined,
-    expirationDate: rawExpiration && /^\d{4}-\d{2}-\d{2}$/.test(rawExpiration) ? rawExpiration : null,
+    expirationDate: rawExpiration && ISO_CALENDAR_DATE.test(rawExpiration) ? rawExpiration : null,
     addedAt: typeof entry.addedAt === "string" ? entry.addedAt : undefined,
+    plannedMeals: sanitizePlannedMeals(entry.plannedMeals),
+    dlcEstimated: entry.dlcEstimated === true,
   });
 }
 
@@ -311,6 +454,8 @@ export function setFridgeItems(items: FridgeItem[]) {
       icon: item.icon,
       expirationDate: item.expirationDate ?? null,
       addedAt: item.addedAt,
+      plannedMeals: item.plannedMeals,
+      dlcEstimated: item.dlcEstimated,
     }),
   );
   window.localStorage.setItem(FRIDGE_STORAGE_KEY, JSON.stringify(sanitized));
@@ -367,9 +512,18 @@ function matchesFridgeItem(
   return normalizeProductName(item.customName) === cleanName;
 }
 
+function applyShoppingMemory(item: FridgeItem, shop: ShoppingItem, existing?: FridgeItem) {
+  const meals = mergePlannedMeals(existing?.plannedMeals, shop.plannedMeals);
+  if (meals) item.plannedMeals = meals;
+  else delete item.plannedMeals;
+  applyTransferDlc(item, resolveTransferDlc(shop, existing));
+}
+
 /**
  * Transfert Courses → Frigo : fusionne les articles cochés dans l'inventaire,
  * puis les retire de la liste de courses. `ingredientId` est conservé.
+ * Transfère `plannedMeals` (dédupliqués) et, si `dlcValidated` sans DLC
+ * explicite, pose `targetDate` comme `expirationDate` estimée.
  *
  * @param location Emplacement par défaut pour les nouveaux articles.
  */
@@ -403,20 +557,22 @@ export function transferCheckedShoppingItemsToFridge(
       if (combined) {
         existing.amount = combined.amount;
         existing.unit = combined.unit;
+        applyShoppingMemory(existing, shop, existing);
         continue;
       }
     }
 
-    fridge.push(
-      createFridgeItem({
-        customName: shop.customName,
-        amount: shop.amount,
-        unit: shop.unit,
-        category: location,
-        icon: shop.icon,
-        ingredientId: shop.ingredientId,
-      }),
-    );
+    const created = createFridgeItem({
+      customName: shop.customName,
+      amount: shop.amount,
+      unit: shop.unit,
+      category: location,
+      icon: shop.icon,
+      ingredientId: shop.ingredientId,
+      plannedMeals: shop.plannedMeals,
+    });
+    applyShoppingMemory(created, shop);
+    fridge.push(created);
   }
 
   setFridgeItems(fridge);
