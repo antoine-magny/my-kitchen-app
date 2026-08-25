@@ -20,6 +20,7 @@ import {
   RECIPE_TAGS,
   addCustomRecipe,
   getAllRecipes,
+  updateRecipeTags,
   type NewRecipeInput,
   type Recipe,
   type RecipeCost,
@@ -59,6 +60,11 @@ export default function RecettesPage() {
     setRecipes(getAllRecipes());
   };
 
+  const handleTagsChange = (id: number, tags: RecipeTag[]) => {
+    updateRecipeTags(id, tags);
+    setRecipes(getAllRecipes());
+  };
+
   const catalogQuery = useMemo(
     () => ({
       selectedTags,
@@ -90,10 +96,9 @@ export default function RecettesPage() {
     setCosts([]);
   };
 
-  const toggleTag = (tag: RecipeTag) => {
-    setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
-    );
+  const selectTag = (tag: RecipeTag) => {
+    setFavoritesOnly(false);
+    setSelectedTags((prev) => (prev.length === 1 && prev[0] === tag ? [] : [tag]));
   };
 
   const toggleDifficulty = (value: RecipeDifficulty) => {
@@ -131,8 +136,11 @@ export default function RecettesPage() {
               setSelectedTags([]);
               setFavoritesOnly(false);
             }}
-            onToggleFavoris={() => setFavoritesOnly((prev) => !prev)}
-            onToggleTag={toggleTag}
+            onToggleFavoris={() => {
+              setSelectedTags([]);
+              setFavoritesOnly((prev) => !prev);
+            }}
+            onToggleTag={selectTag}
             onOpenFilters={() => setShowFilters(true)}
           />
           <p className="text-sm font-medium text-[#7A8F7D]">
@@ -146,6 +154,7 @@ export default function RecettesPage() {
           favorites={favorites}
           favoritesOnly={favoritesOnly}
           onToggleFav={toggleFav}
+          onTagsChange={handleTagsChange}
           onAdd={() => setShowAddModal(true)}
           onShowAll={() => setFavoritesOnly(false)}
         />

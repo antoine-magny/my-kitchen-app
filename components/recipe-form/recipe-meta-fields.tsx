@@ -4,6 +4,8 @@ import { inputClass, inputStyle, labelClass } from "@/components/recipe-form-sty
 import { PopoverSelect } from "@/components/ui/popover-select";
 import {
   DIFFICULTIES,
+  EXPRESS_MAX_MINUTES,
+  HIGH_PROTEIN_MIN_G,
   RECIPE_COST_LABELS,
   RECIPE_COSTS,
   type RecipeCost,
@@ -252,6 +254,10 @@ export function RecipeMetaFields(props: RecipeMetaFieldsProps) {
           CATÉGORIES
         </label>
         <RecipeTagPills selected={tags} onChange={setTags} />
+        <p className="mt-2 text-xs font-medium text-[#7A8F7D]">
+          Express : ≤ {EXPRESS_MAX_MINUTES} min. Riche en protéines : ≥ {HIGH_PROTEIN_MIN_G} g
+          par portion.
+        </p>
       </div>
     </>
   );

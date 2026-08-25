@@ -375,23 +375,26 @@ export function MoreIcon({ size = 16, className }: Omit<IconProps, "strokeWidth"
   );
 }
 
-/** Cœur des favoris — couleurs figées, `light` pour un fond sombre. */
+/** Cœur des favoris — couleurs figées, `light` pour un fond sombre, `color` pour forcer le ton. */
 export function HeartIcon({
   filled,
   light,
   size = 16,
+  color,
 }: {
   filled: boolean;
   light?: boolean;
   size?: number;
+  color?: string;
 }) {
+  const accent = color ?? "#E85D75";
   return (
     <svg
       width={size}
       height={size}
       viewBox="0 0 24 24"
-      fill={filled ? "#E85D75" : "none"}
-      stroke={filled ? "#E85D75" : light ? "white" : "#7A8F7D"}
+      fill={filled ? accent : "none"}
+      stroke={filled ? accent : light ? "white" : color ?? "#7A8F7D"}
       strokeWidth="2.2"
       strokeLinecap="round"
       strokeLinejoin="round"

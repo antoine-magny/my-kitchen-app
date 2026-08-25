@@ -4,19 +4,20 @@ import Link from "next/link";
 import { ChevronLeftIcon, ClockIcon, FlameIcon, UsersIcon } from "@/components/icons";
 import { RecipeActionsMenu } from "@/components/recettes/recipe-actions-menu";
 import { RecipeCostSymbol, RecipeDifficultyToques } from "@/components/recettes/recipe-symbols";
-import { RECIPE_TAG_COLORS, recipeBadgeTags, tagToLabel, type Recipe } from "@/lib/recipes";
+import { RecipeTagEditor } from "@/components/recettes/recipe-tag-editor";
+import type { Recipe, RecipeTag } from "@/lib/recipes";
 
 export function RecipeHero({
   recipe,
   onEdit,
   onDelete,
+  onTagsChange,
 }: {
   recipe: Recipe;
   onEdit: () => void;
   onDelete: () => void;
+  onTagsChange: (tags: RecipeTag[]) => void;
 }) {
-  const badges = recipeBadgeTags(recipe, 3);
-
   return (
     <div className="relative h-64 bg-[#D4EDD9] sm:h-72">
       {recipe.photo ? (
@@ -42,24 +43,15 @@ export function RecipeHero({
           <ChevronLeftIcon size={18} strokeWidth={2.4} />
         </Link>
 
-        {badges.length > 0 ? (
-          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 self-center">
-            {badges.map((tag) => {
-              const cfg = RECIPE_TAG_COLORS[tag];
-              return (
-                <span
-                  key={tag}
-                  className="max-w-full truncate rounded-lg px-2.5 py-1 text-xs font-bold tracking-wide backdrop-blur-[4px]"
-                  style={{ background: cfg.bg, color: cfg.text }}
-                >
-                  {tagToLabel(tag)}
-                </span>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="min-w-0 flex-1" />
-        )}
+        <RecipeTagEditor
+          tags={recipe.tags}
+          time={recipe.time}
+          proteins={recipe.proteins}
+          title={recipe.title}
+          maxBadges={3}
+          className="min-w-0 flex-1 self-center"
+          onSave={onTagsChange}
+        />
 
         <RecipeActionsMenu onEdit={onEdit} onDelete={onDelete} />
       </div>

@@ -20,6 +20,8 @@ import {
   RECIPE_COSTS,
   RECIPE_TAG_CODES_HINT,
   RECIPE_TAGS,
+  EXPRESS_MAX_MINUTES,
+  HIGH_PROTEIN_MIN_G,
   withDerivedTags,
   type NewRecipeInput,
 } from "@/lib/recipes";
@@ -184,7 +186,7 @@ export async function createRecipesFromFridge(
     "Réponds uniquement avec un JSON strict (pas de markdown).",
     `Retourne exactement ${mealCount} recette${mealCount > 1 ? "s" : ""} distincte${mealCount > 1 ? "s" : ""} dans le tableau recipes.`,
     "Chaque recette doit inclure title, time, calories, proteins, servings, difficulty,",
-    `tags (tableau parmi ${RECIPE_TAG_CODES_HINT} uniquement — jamais de libellé inventé ; express si ≤15 min),`,
+    `tags (tableau parmi ${RECIPE_TAG_CODES_HINT} uniquement — jamais de libellé inventé ; express si ≤${EXPRESS_MAX_MINUTES} min ; riche_en_proteines si ≥${HIGH_PROTEIN_MIN_G} g de protéines par portion),`,
     "cost (economique | moyen | premium),",
     `ingredients[{name, amount (nombre), unit (${UNIT_CODES_HINT})}]. Utilise g/kg pour les solides au poids, ml/cl/l/c_soupe/c_cafe pour les liquides, l'unité naturelle (gousse, tranche, feuille...) ou « piece » par défaut pour les décomptes/inconnus.`,
     "Pour une quantité non chiffrable (sel, poivre, herbes à volonté) : unit « qs » et amount 0.",
@@ -294,7 +296,8 @@ function coerceAiRecipe(entry: unknown): AiRecipeCreation | null {
 
   const difficulty = coerceRecipeDifficulty(raw.difficulty);
   const time = asNonEmptyString(raw.time) ?? "30 min";
-  const tags = withDerivedTags(coerceRecipeTags(raw.tags, raw.tag), time);
+  const proteins = asPositiveInt(raw.proteins, 20);
+  const tags = withDerivedTags(coerceRecipeTags(raw.tags, raw.tag), time, proteins);
   const cost = coerceRecipeCost(raw.cost);
 
   const matchedIngredients = asStringArray(raw.matchedIngredients);
@@ -313,7 +316,7 @@ function coerceAiRecipe(entry: unknown): AiRecipeCreation | null {
     photo: asHttpUrl(raw.photo) ?? DEFAULT_PHOTO,
     time,
     calories: asPositiveInt(raw.calories, 400),
-    proteins: asPositiveInt(raw.proteins, 20),
+    proteins,
     servings: asPositiveInt(raw.servings, 2),
     difficulty,
     tags,
