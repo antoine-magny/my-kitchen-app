@@ -74,14 +74,16 @@ export function RecipeStepBar({
   doneSteps,
   currentStep,
   onNext,
+  onCooked,
 }: {
   recipe: Recipe;
   doneSteps: Set<number>;
   currentStep: number;
   onNext: () => void;
+  onCooked?: () => void;
 }) {
   const total = recipe.steps.length;
-  const allDone = doneSteps.size === total;
+  const allDone = total > 0 && doneSteps.size === total;
 
   return (
     <div className="fixed right-0 bottom-[var(--nav-offset)] left-0 z-40 px-4 lg:left-[var(--sidebar-width)]">
@@ -108,6 +110,14 @@ export function RecipeStepBar({
             className="shrink-0 rounded-xl bg-[#4A7C59] px-4 py-2.5 text-sm font-bold text-white transition-all active:scale-95"
           >
             {currentStep === total - 1 ? "Terminer" : "Suivant"}
+          </button>
+        ) : onCooked ? (
+          <button
+            type="button"
+            onClick={onCooked}
+            className="shrink-0 rounded-xl bg-[#4A7C59] px-4 py-2.5 text-sm font-bold text-white transition-all active:scale-95"
+          >
+            J&apos;ai cuisiné ce plat 🎉
           </button>
         ) : (
           <Link

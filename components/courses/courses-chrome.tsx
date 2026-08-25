@@ -1,6 +1,19 @@
 "use client";
 
-import { PlusIcon } from "@/components/icons";
+import { CalendarIcon, CheckIcon, PlusIcon } from "@/components/icons";
+import { MEAL_TYPE_LABELS } from "@/lib/meal-types";
+import { formatDlcThresholdLabel, formatPlannedMealChip } from "@/lib/shopping-list";
+import type { PlannedMealRef } from "@/types/inventory";
+
+const MEAL_SLOT_ORDER = { breakfast: 0, lunch: 1, dinner: 2 } as const;
+
+function sortPlannedMeals(meals: PlannedMealRef[]): PlannedMealRef[] {
+  return [...meals].sort((a, b) => {
+    const byDate = a.date.localeCompare(b.date);
+    if (byDate !== 0) return byDate;
+    return MEAL_SLOT_ORDER[a.mealType] - MEAL_SLOT_ORDER[b.mealType];
+  });
+}
 
 export function CoursesHeader({ onAdd }: { onAdd: () => void }) {
   return (
@@ -112,5 +125,63 @@ export function CoursesActions({
         </button>
       </div>
     </div>
+  );
+}
+
+export function PlannedMealPills({ meals }: { meals: PlannedMealRef[] }) {
+  if (meals.length === 0) return null;
+
+  return (
+    <ul className="mt-1.5 flex flex-wrap gap-1">
+      {sortPlannedMeals(meals).map((meal) => (
+        <li
+          key={`${meal.date}|${meal.mealType}|${meal.recipeId ?? ""}|${meal.recipeTitle}`}
+          title={`${MEAL_TYPE_LABELS[meal.mealType]} · ${formatPlannedMealChip(meal)}`}
+          className="inline-flex max-w-full items-center gap-1 rounded-full border border-[#E2EBE3] bg-[#F6F8F3] px-2 py-0.5 text-[11px] leading-tight font-medium text-[#5C7360]"
+        >
+          <CalendarIcon size={10} className="shrink-0" />
+          <span className="truncate">{formatPlannedMealChip(meal)}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export function DlcValidationButton({
+  targetDate,
+  validated,
+  onToggle,
+}: {
+  targetDate: string;
+  validated: boolean;
+  onToggle: () => void;
+}) {
+  const threshold = formatDlcThresholdLabel(targetDate);
+
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-pressed={validated}
+      aria-label={
+        validated
+          ? `DLC validée jusqu'au ${threshold}, recliquer pour annuler`
+          : `Valider la DLC minimale ${threshold}`
+      }
+      className={`mt-1.5 inline-flex min-h-8 max-w-full items-center gap-1 rounded-full px-2.5 text-[11px] font-semibold transition-colors active:scale-[0.98] ${
+        validated
+          ? "bg-[#E8F5EC] text-[#2E5C3A]"
+          : "border border-[#E2EBE3] bg-white text-[#7A8F7D] hover:border-[#C8E0CF] hover:bg-[#F6F8F3]"
+      }`}
+    >
+      {validated ? (
+        <CheckIcon size={11} className="shrink-0" />
+      ) : (
+        <CalendarIcon size={11} className="shrink-0" />
+      )}
+      <span className="truncate">
+        {validated ? "DLC OK" : `DLC OK ? (≥ ${threshold})`}
+      </span>
+    </button>
   );
 }

@@ -10,6 +10,7 @@ export function isAnonymousUser(user: User | null | undefined): boolean {
   return user?.is_anonymous === true;
 }
 
+/** Posé dans `/auth/guest` et le bouton login **avant** `signInAnonymously`. */
 export const GUEST_ACTIVE_SESSION_KEY = "guest_session_active";
 
 export function isBrowserReload(): boolean {
@@ -36,7 +37,12 @@ export function shouldResetGuestSession(user: User | null | undefined): boolean 
 
 export const DEV_AUTO_GUEST_ATTEMPTED_COOKIE = "dev_auto_guest_attempted";
 
-/** Auto-connexion invité uniquement en `next dev`, si `DEV_AUTO_GUEST=1`. */
+/**
+ * Auto-connexion invité uniquement en `next dev`, si `DEV_AUTO_GUEST=1`
+ * (variable locale, à ne pas committer dans `.env.local`).
+ * Le middleware redirige alors vers `/auth/guest`, qui pose
+ * `guest_session_active` avant `signInAnonymously`.
+ */
 export function isDevAutoGuestEnabled(): boolean {
   if (process.env.NODE_ENV !== "development") return false;
   const flag = process.env.DEV_AUTO_GUEST?.trim().toLowerCase();

@@ -11,11 +11,13 @@ export type AddRecipeStep = "menu" | "photo" | "url" | "form";
 export function useAddRecipeForm({
   onAdd,
   onClose,
+  initialStep = "menu",
 }: {
   onAdd: (recipe: NewRecipeInput) => void;
   onClose: () => void;
+  initialStep?: AddRecipeStep;
 }) {
-  const [step, setStep] = useState<AddRecipeStep>("menu");
+  const [step, setStep] = useState<AddRecipeStep>(initialStep);
   const [loadingMessage, setLoadingMessage] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -207,10 +209,19 @@ export function useAddRecipeForm({
   };
 
   const closeDisabled = Boolean(loadingMessage) || saving;
+  const skippedMenu = initialStep !== "menu";
   const shellProps = {
     closeDisabled,
     onBack: () => {
       setError("");
+      if (step === "form") {
+        setStep(skippedMenu ? initialStep : "menu");
+        return;
+      }
+      if (skippedMenu) {
+        onClose();
+        return;
+      }
       setStep("menu");
     },
     onClose,

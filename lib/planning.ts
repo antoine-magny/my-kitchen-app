@@ -5,13 +5,16 @@
  */
 import {
   addDays,
+  calendarDateFromIso,
   dayKey,
+  isoDateFromCalendar,
   mondayBasedIndex,
   parisCalendarDate,
   sameDay,
   startOfWeek,
 } from "@/lib/date-paris";
 import { getRecipeById, ing, type RecipeIngredient, type Recipe } from "@/lib/recipes";
+import type { PlannedMealRef } from "@/types/inventory";
 
 const LUNCH_RECIPE = getRecipeById(6)!;
 
@@ -131,19 +134,39 @@ export function ingredientsFromMealSlot(
   return recipe ? [...recipe.ingredients] : [];
 }
 
+/**
+ * Clé interne du planning (`dayKey`) : `YYYY-M-D` avec mois **0-indexé**,
+ * non paddé. Distinct de l'ISO `YYYY-MM-DD` porté par `PlannedMealRef.date`.
+ */
 function parseDayKey(key: string): Date | null {
   const parts = key.split("-").map(Number);
   if (parts.length !== 3 || parts.some((n) => !Number.isFinite(n))) return null;
   const [year, month, day] = parts;
-  return new Date(Date.UTC(year, month, day, 12, 0, 0));
+  if (month < 0 || month > 11 || day < 1 || day > 31) return null;
+  const parsed = new Date(Date.UTC(year, month, day, 12, 0, 0));
+  if (
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() !== month ||
+    parsed.getUTCDate() !== day
+  ) {
+    return null;
+  }
+  return parsed;
 }
 
-function ingredientsFromDayPlan(plan: DayPlan): RecipeIngredient[] {
-  return [
-    ...ingredientsFromMealSlot(plan, "breakfast"),
-    ...ingredientsFromMealSlot(plan, "lunch"),
-    ...ingredientsFromMealSlot(plan, "dinner"),
-  ];
+/**
+ * Normalise une date planning vers ISO `YYYY-MM-DD`.
+ * Accepte la clé `dayKey` (mois 0-indexé) ou un ISO déjà canonique.
+ */
+export function toIsoDateFromPlanningKey(date: string): string | null {
+  const trimmed = date.trim();
+  const fromDayKey = parseDayKey(trimmed);
+  if (fromDayKey && dayKey(fromDayKey) === trimmed) {
+    return isoDateFromCalendar(fromDayKey);
+  }
+  const fromIso = calendarDateFromIso(trimmed);
+  if (fromIso) return isoDateFromCalendar(fromIso);
+  return null;
 }
 
 export function collectIngredientsFromDayOnward(
@@ -164,7 +187,14 @@ export function collectIngredientsFromDayOnward(
     for (const [key, plan] of Object.entries(plans)) {
       const day = parseDayKey(key);
       if (!day || day.getTime() < fromTs) continue;
-      collected.push(...ingredientsFromDayPlan(plan));
+      for (const mealType of ["breakfast", "lunch", "dinner"] as const) {
+        const ingredients = ingredientsFromMealSlot(plan, mealType);
+        if (ingredients.length === 0) continue;
+        const mealRef = plannedMealRefFromSlot(plan, key, mealType);
+        for (const ingredient of ingredients) {
+          collected.push({ ...ingredient, plannedMeals: [mealRef] });
+        }
+      }
     }
   }
 
@@ -173,7 +203,8 @@ export function collectIngredientsFromDayOnward(
 
 /** Cible d'export granulaire : un créneau d'un jour donné. */
 export interface SelectedMealTarget {
-  date: string; // "YYYY-MM-DD"
+  /** Clé `dayKey` du planning, ou ISO `YYYY-MM-DD`. Normalisée en ISO sur `PlannedMealRef`. */
+  date: string;
   mealType: MealSlot;
 }
 
@@ -182,32 +213,25 @@ function resolveDayPlan(
   weekPlans: Record<string, DayPlan>,
   plansByWeek?: Record<string, Record<string, DayPlan>>,
 ): DayPlan | undefined {
-  if (weekPlans[date]) return weekPlans[date];
+  const lookupKeys = [date];
+  const fromIso = calendarDateFromIso(date);
+  if (fromIso) lookupKeys.push(dayKey(fromIso));
+
+  function findIn(plans: Record<string, DayPlan>): DayPlan | undefined {
+    for (const key of lookupKeys) {
+      if (plans[key]) return plans[key];
+    }
+    return undefined;
+  }
+
+  const fromWeek = findIn(weekPlans);
+  if (fromWeek) return fromWeek;
   if (!plansByWeek) return undefined;
   for (const plans of Object.values(plansByWeek)) {
-    if (plans[date]) return plans[date];
+    const found = findIn(plans);
+    if (found) return found;
   }
   return undefined;
-}
-
-/**
- * Extrait la liste plate de `RecipeIngredient[]` pour une sélection précise
- * de repas (fusion / dédoublonnage délégués à la liste de courses).
- */
-export function collectIngredientsFromSelectedMeals(
-  selectedMeals: SelectedMealTarget[],
-  weekPlans: Record<string, DayPlan>,
-  plansByWeek?: Record<string, Record<string, DayPlan>>,
-): RecipeIngredient[] {
-  const collected: RecipeIngredient[] = [];
-
-  for (const { date, mealType } of selectedMeals) {
-    const plan = resolveDayPlan(date, weekPlans, plansByWeek);
-    if (!plan) continue;
-    collected.push(...ingredientsFromMealSlot(plan, mealType));
-  }
-
-  return collected;
 }
 
 /** Titre affiché d'un créneau planifié, ou `null` s'il est vide. */
@@ -218,15 +242,93 @@ export function mealSlotTitle(plan: DayPlan, mealType: MealSlot): string | null 
   return getRecipeById(recipeId)?.title ?? null;
 }
 
-export function getStoredMealPlans(): Record<string, Record<string, DayPlan>> {
-  if (typeof window === "undefined") return {};
-  const raw = window.localStorage.getItem(MEAL_PLANS_KEY);
+function plannedMealRefFromSlot(
+  plan: DayPlan,
+  date: string,
+  mealType: MealSlot,
+): PlannedMealRef {
+  const recipeId =
+    mealType === "breakfast"
+      ? breakfastRecipeId(plan.breakfast)
+      : mealType === "lunch"
+        ? plan.lunchId
+        : plan.dinnerId;
+  const recipeTitle =
+    mealSlotTitle(plan, mealType) ??
+    (mealType === "breakfast" ? "Petit-déjeuner" : mealType === "lunch" ? "Déjeuner" : "Dîner");
+
+  return {
+    ...(recipeId != null ? { recipeId } : {}),
+    recipeTitle,
+    date: toIsoDateFromPlanningKey(date) ?? date,
+    mealType,
+  };
+}
+
+/**
+ * Extrait la liste plate de `RecipeIngredient[]` pour une sélection précise
+ * de repas (fusion / dédoublonnage délégués à la liste de courses).
+ * Chaque ingrédient porte `plannedMeals` (recette, date YYYY-MM-DD, créneau).
+ */
+export function collectIngredientsFromSelectedMeals(
+  selectedMeals: SelectedMealTarget[],
+  weekPlans: Record<string, DayPlan>,
+  plansByWeek?: Record<string, Record<string, DayPlan>>,
+): RecipeIngredient[] {
+  const collected: RecipeIngredient[] = [];
+  const seenMeals = new Set<string>();
+
+  for (const { date, mealType } of selectedMeals) {
+    const selectionKey = `${date}|${mealType}`;
+    if (seenMeals.has(selectionKey)) continue;
+    seenMeals.add(selectionKey);
+
+    const plan = resolveDayPlan(date, weekPlans, plansByWeek);
+    if (!plan) continue;
+    const ingredients = ingredientsFromMealSlot(plan, mealType);
+    if (ingredients.length === 0) continue;
+    const mealRef = plannedMealRefFromSlot(plan, date, mealType);
+    for (const ingredient of ingredients) {
+      collected.push({ ...ingredient, plannedMeals: [mealRef] });
+    }
+  }
+
+  return collected;
+}
+
+function parseStoredMealPlans(raw: string | null): Record<string, Record<string, DayPlan>> {
   if (!raw) return {};
   try {
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+    return parsed as Record<string, Record<string, DayPlan>>;
   } catch {
     return {};
   }
+}
+
+/**
+ * Ajoute le seed de la semaine en cours s'il n'existe pas encore.
+ * Idempotent : une semaine déjà sauvée (même vide) n'est jamais réécrite.
+ */
+export function withCurrentWeekSeed(
+  plansByWeek: Record<string, Record<string, DayPlan>>,
+  today: Date = parisCalendarDate(),
+): Record<string, Record<string, DayPlan>> {
+  const weekStart = startOfWeek(today);
+  const weekId = dayKey(weekStart);
+  if (Object.prototype.hasOwnProperty.call(plansByWeek, weekId)) {
+    return plansByWeek;
+  }
+  return { ...plansByWeek, [weekId]: buildInitialPlans(weekStart) };
+}
+
+export function getStoredMealPlans(): Record<string, Record<string, DayPlan>> {
+  if (typeof window === "undefined") return {};
+  const stored = parseStoredMealPlans(window.localStorage.getItem(MEAL_PLANS_KEY));
+  const seeded = withCurrentWeekSeed(stored);
+  if (seeded !== stored) saveMealPlans(seeded);
+  return seeded;
 }
 
 export function saveMealPlans(plansByWeek: Record<string, Record<string, DayPlan>>): void {

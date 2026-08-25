@@ -12,12 +12,20 @@ import {
   resolveIcon,
   resolveStoredIngredientIcon,
 } from "@/lib/ingredients";
+import { matchesInventoryIdentity } from "@/lib/inventory-match";
 import {
   classifyProduct,
   isShoppingCategoryId,
   normalizeProductName,
   type ShoppingCategoryId,
 } from "@/lib/shopping-categories";
+import {
+  calendarDateFromIso,
+  formatDayMonthNumericFr,
+  formatWeekdayDayMonthFr,
+  isoDateFromCalendar,
+} from "@/lib/date-paris";
+import { isMealType } from "@/lib/meal-types";
 import {
   coerceUnitCode,
   combineQuantities,
@@ -27,7 +35,7 @@ import {
   toBaseQuantity,
   type UnitCode,
 } from "@/lib/units";
-import type { RecipeIngredient, ShoppingItem } from "@/types/inventory";
+import type { PlannedMealRef, RecipeIngredient, ShoppingItem } from "@/types/inventory";
 
 export type { ShoppingItem };
 
@@ -42,6 +50,98 @@ function createId(): string {
   return `shop-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+/**
+ * ISO `YYYY-MM-DD`, ou clé planning `dayKey` non paddée (`2026-7-28`).
+ * Après l'export, `PlannedMealRef.date` est déjà de l'ISO.
+ */
+function coerceIsoCalendarDate(value: string): string | null {
+  const trimmed = value.trim();
+  const fromIso = calendarDateFromIso(trimmed);
+  if (fromIso) return isoDateFromCalendar(fromIso);
+
+  const parts = trimmed.split("-").map(Number);
+  if (parts.length !== 3 || parts.some((n) => !Number.isFinite(n))) return null;
+  const [year, monthIndex, day] = parts;
+  if (monthIndex < 0 || monthIndex > 11 || day < 1 || day > 31) return null;
+  const parsed = new Date(Date.UTC(year, monthIndex, day, 12, 0, 0));
+  if (
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() !== monthIndex ||
+    parsed.getUTCDate() !== day
+  ) {
+    return null;
+  }
+  return isoDateFromCalendar(parsed);
+}
+
+function sanitizePlannedMealRef(raw: unknown): PlannedMealRef | null {
+  if (!raw || typeof raw !== "object") return null;
+  const entry = raw as Partial<PlannedMealRef>;
+  if (typeof entry.recipeTitle !== "string" || !entry.recipeTitle.trim()) return null;
+  if (typeof entry.date !== "string") return null;
+  const date = coerceIsoCalendarDate(entry.date);
+  if (!date) return null;
+  if (!isMealType(entry.mealType)) return null;
+
+  return {
+    ...(typeof entry.recipeId === "number" && Number.isFinite(entry.recipeId)
+      ? { recipeId: entry.recipeId }
+      : {}),
+    recipeTitle: entry.recipeTitle.trim(),
+    date,
+    mealType: entry.mealType,
+  };
+}
+
+function sanitizePlannedMeals(raw: unknown): PlannedMealRef[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const meals = raw
+    .map(sanitizePlannedMealRef)
+    .filter((ref): ref is PlannedMealRef => ref != null);
+  return mergePlannedMeals(undefined, meals);
+}
+
+/** Identité stable : date + créneau + recipeId (sinon titre). */
+function plannedMealKey(ref: PlannedMealRef): string {
+  const identity =
+    ref.recipeId != null ? `id:${ref.recipeId}` : `title:${ref.recipeTitle}`;
+  return `${ref.date}|${ref.mealType}|${identity}`;
+}
+
+/** Fusionne deux tableaux de repas sans doublon ni écrasement. */
+function mergePlannedMeals(
+  existing?: PlannedMealRef[],
+  incoming?: PlannedMealRef[],
+): PlannedMealRef[] | undefined {
+  if (!existing?.length && !incoming?.length) return undefined;
+  const seen = new Set<string>();
+  const merged: PlannedMealRef[] = [];
+  for (const ref of [...(existing ?? []), ...(incoming ?? [])]) {
+    const key = plannedMealKey(ref);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    merged.push(ref);
+  }
+  return merged.length > 0 ? merged : undefined;
+}
+
+function earliestTargetDate(meals?: PlannedMealRef[]): string | undefined {
+  if (!meals?.length) return undefined;
+  return meals.reduce((min, meal) => (meal.date < min ? meal.date : min), meals[0].date);
+}
+
+function assignPlannedMeals(item: ShoppingItem, incoming?: PlannedMealRef[]): void {
+  const merged = mergePlannedMeals(item.plannedMeals, incoming);
+  if (!merged) return;
+  const previousTarget = item.targetDate;
+  const nextTarget = earliestTargetDate(merged);
+  item.plannedMeals = merged;
+  item.targetDate = nextTarget;
+  if (item.dlcValidated && previousTarget && nextTarget && nextTarget < previousTarget) {
+    item.dlcValidated = false;
+  }
+}
+
 function toShoppingItem(input: {
   id?: string;
   ingredientId?: string;
@@ -52,6 +152,9 @@ function toShoppingItem(input: {
   icon?: string;
   isChecked?: boolean;
   createdAt?: string;
+  plannedMeals?: PlannedMealRef[];
+  dlcValidated?: boolean;
+  targetDate?: string;
 }): ShoppingItem {
   const customName = input.customName.trim();
   const identity = describeIngredient(customName);
@@ -71,6 +174,11 @@ function toShoppingItem(input: {
     finalUnit = converted.unit;
   }
 
+  const plannedMeals = sanitizePlannedMeals(input.plannedMeals);
+  const coercedTarget =
+    typeof input.targetDate === "string" ? coerceIsoCalendarDate(input.targetDate) : null;
+  const targetDate = earliestTargetDate(plannedMeals) ?? coercedTarget ?? undefined;
+
   return {
     id: input.id ?? createId(),
     ingredientId: input.ingredientId ?? identity.ingredientId,
@@ -81,6 +189,9 @@ function toShoppingItem(input: {
     ...(icon ? { icon } : {}),
     isChecked: input.isChecked ?? false,
     createdAt: input.createdAt ?? new Date().toISOString(),
+    ...(plannedMeals ? { plannedMeals } : {}),
+    ...(input.dlcValidated ? { dlcValidated: true } : {}),
+    ...(targetDate ? { targetDate } : {}),
   };
 }
 
@@ -104,6 +215,9 @@ function sanitizeItem(raw: unknown): ShoppingItem | null {
       icon: typeof entry.icon === "string" ? entry.icon : (typeof (entry as Record<string, unknown>).emoji === "string" ? ((entry as Record<string, unknown>).emoji as string) : undefined),
       isChecked: Boolean(entry.isChecked),
       createdAt: typeof entry.createdAt === "string" ? entry.createdAt : undefined,
+      plannedMeals: sanitizePlannedMeals(entry.plannedMeals),
+      dlcValidated: entry.dlcValidated === true,
+      targetDate: typeof entry.targetDate === "string" ? entry.targetDate : undefined,
     });
   }
 
@@ -132,19 +246,32 @@ function parseStoredList(raw: string | null): ShoppingItem[] {
   }
 }
 
-function persistNormalizedIcons(rawJson: string, items: ShoppingItem[]) {
+function persistNormalized(rawJson: string, items: ShoppingItem[]) {
   try {
     const parsed = JSON.parse(rawJson) as unknown;
     if (!Array.isArray(parsed)) return;
     const dirty = items.some((item, index) => {
-      const entry = parsed[index] as { icon?: unknown; emoji?: unknown } | undefined;
-      const previous =
+      const entry = parsed[index] as {
+        icon?: unknown;
+        emoji?: unknown;
+        plannedMeals?: unknown;
+        targetDate?: unknown;
+        dlcValidated?: unknown;
+      } | undefined;
+      const previousIcon =
         typeof entry?.icon === "string" && entry.icon
           ? entry.icon
           : typeof entry?.emoji === "string"
             ? entry.emoji
             : "";
-      return previous !== (item.icon ?? "");
+      if (previousIcon !== (item.icon ?? "")) return true;
+      if (JSON.stringify(item.plannedMeals ?? null) !== JSON.stringify(entry?.plannedMeals ?? null)) {
+        return true;
+      }
+      const rawTarget = typeof entry?.targetDate === "string" ? entry.targetDate : null;
+      if ((item.targetDate ?? null) !== rawTarget) return true;
+      if (Boolean(item.dlcValidated) !== Boolean(entry?.dlcValidated)) return true;
+      return false;
     });
     if (dirty) writeList(items);
   } catch {
@@ -158,7 +285,7 @@ function readList(): ShoppingItem[] {
   const current = window.localStorage.getItem(STORAGE_KEY);
   if (current != null) {
     const items = parseStoredList(current);
-    persistNormalizedIcons(current, items);
+    persistNormalized(current, items);
     return items;
   }
 
@@ -184,6 +311,9 @@ function writeList(items: ShoppingItem[]) {
       icon: item.icon,
       isChecked: item.isChecked,
       createdAt: item.createdAt,
+      plannedMeals: item.plannedMeals,
+      dlcValidated: item.dlcValidated,
+      targetDate: item.targetDate,
     }),
   );
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitized));
@@ -202,6 +332,38 @@ export function toggleShoppingItem(id: string): ShoppingItem[] {
   const next = readList().map((item) =>
     item.id === id ? { ...item, isChecked: !item.isChecked } : item,
   );
+  writeList(next);
+  return next;
+}
+
+/** Libellé de puce planning : « Lasagnes · Jeu. 28 août ». */
+export function formatPlannedMealChip(meal: PlannedMealRef): string {
+  const date = calendarDateFromIso(meal.date);
+  const when = date ? formatWeekdayDayMonthFr(date) : meal.date;
+  return `${meal.recipeTitle} · ${when}`;
+}
+
+/** Seuil DLC compact : « 28/08 ». */
+export function formatDlcThresholdLabel(iso: string): string {
+  const date = calendarDateFromIso(iso);
+  return date ? formatDayMonthNumericFr(date) : iso;
+}
+
+/**
+ * Inverse la validation DLC. À l'activation, pose `dlcValidated: true` et
+ * fige `targetDate` sur la date de repas la plus proche (DLC minimale).
+ * Un second clic annule la validation.
+ */
+export function toggleDlcValidation(id: string): ShoppingItem[] {
+  const next = readList().map((item) => {
+    if (item.id !== id) return item;
+    if (item.dlcValidated) {
+      return { ...item, dlcValidated: false };
+    }
+    const targetDate = item.targetDate ?? earliestTargetDate(item.plannedMeals);
+    if (!targetDate) return item;
+    return { ...item, dlcValidated: true, targetDate };
+  });
   writeList(next);
   return next;
 }
@@ -267,8 +429,10 @@ function matchesShoppingItem(
   ingredientId: string | undefined,
   cleanName: string,
 ): boolean {
-  if (ingredientId && item.ingredientId && item.ingredientId === ingredientId) return true;
-  return normalizeProductName(item.customName) === cleanName;
+  return matchesInventoryIdentity(
+    { ingredientId: item.ingredientId, name: item.customName },
+    { ingredientId, name: cleanName },
+  );
 }
 
 /**
@@ -278,6 +442,8 @@ function matchesShoppingItem(
  *
  * Deux unités incompatibles produisent deux lignes distinctes. Les quantités
  * « q.s. » sont absorbées dès qu'une quantité chiffrée existe.
+ * Les tableaux `plannedMeals` sont concaténés (dédupliqués) ; `targetDate`
+ * est recalculé comme la date la plus proche.
  */
 export function mergeIngredients(ingredients: RecipeIngredient[]): ShoppingItem[] {
   const items: ShoppingItem[] = [];
@@ -303,6 +469,7 @@ export function mergeIngredients(ingredients: RecipeIngredient[]): ShoppingItem[
       if (combined) {
         existing.amount = combined.amount;
         existing.unit = combined.unit;
+        assignPlannedMeals(existing, ing.plannedMeals);
         continue;
       }
     }
@@ -314,6 +481,7 @@ export function mergeIngredients(ingredients: RecipeIngredient[]): ShoppingItem[
         amount: ing.amount,
         unit: ing.unit,
         category: ing.category,
+        plannedMeals: ing.plannedMeals,
       }),
     );
   }
@@ -351,6 +519,7 @@ export function appendIngredientsToShoppingList(
       if (combined) {
         existing.amount = combined.amount;
         existing.unit = combined.unit;
+        assignPlannedMeals(existing, ing.plannedMeals);
         continue;
       }
       // Unités incompatibles → nouvelle ligne sans écraser l'existant.
@@ -363,6 +532,7 @@ export function appendIngredientsToShoppingList(
         amount: ing.amount,
         unit: ing.unit,
         category: ing.category,
+        plannedMeals: ing.plannedMeals,
       }),
     );
   }

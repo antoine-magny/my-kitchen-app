@@ -119,6 +119,18 @@ export function formatDayShortFr(date: Date): string {
   return raw.charAt(0).toUpperCase() + raw.slice(1);
 }
 
+/** Ex. « Jeu. 28 août » — puce planning / liste de courses. */
+export function formatWeekdayDayMonthFr(date: Date): string {
+  return `${formatDayShortFr(date)}. ${date.getUTCDate()} ${MONTHS_LONG_FR[date.getUTCMonth()]}`;
+}
+
+/** Ex. « 28/08 » — seuil DLC compact. */
+export function formatDayMonthNumericFr(date: Date): string {
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  return `${day}/${month}`;
+}
+
 /** En-têtes de grille, semaine lundi → dimanche. */
 export const WEEKDAY_LETTERS_FR = ["L", "M", "M", "J", "V", "S", "D"] as const;
 

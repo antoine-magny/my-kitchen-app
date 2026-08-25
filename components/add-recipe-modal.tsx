@@ -6,20 +6,26 @@ import { FormStep } from "@/components/add-recipe/form-step";
 import { MenuStep } from "@/components/add-recipe/menu-step";
 import { PhotoStep } from "@/components/add-recipe/photo-step";
 import { UrlStep } from "@/components/add-recipe/url-step";
-import { useAddRecipeForm } from "@/components/add-recipe/use-add-recipe-form";
+import {
+  useAddRecipeForm,
+  type AddRecipeStep,
+} from "@/components/add-recipe/use-add-recipe-form";
 import type { NewRecipeInput } from "@/lib/recipes";
 
 /**
  * Modal d’ajout : menu à 3 modes (manuel / photo / URL) → formulaire unique → Supabase.
+ * `initialStep` permet d’ouvrir directement photo ou URL (ex. depuis le planning).
  */
 export function AddRecipeModal({
   onAdd,
   onClose,
+  initialStep = "menu",
 }: {
   onAdd: (recipe: NewRecipeInput) => void;
   onClose: () => void;
+  initialStep?: AddRecipeStep;
 }) {
-  const form = useAddRecipeForm({ onAdd, onClose });
+  const form = useAddRecipeForm({ onAdd, onClose, initialStep });
 
   if (form.loadingMessage) {
     return (

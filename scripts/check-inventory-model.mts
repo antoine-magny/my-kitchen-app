@@ -4,10 +4,20 @@
  * Usage : npx tsx scripts/check-inventory-model.mts
  */
 import { describeIngredient, resolveIngredientId } from "@/lib/ingredients";
-import { collectIngredientsFromDayOnward } from "@/lib/planning";
+import { matchesInventoryIdentity } from "@/lib/inventory-match";
+import { matchRecipeIngredientsWithFridge } from "@/lib/consume-recipe";
+import { dayKey, startOfWeek } from "@/lib/date-paris";
+import {
+  collectIngredientsFromDayOnward,
+  collectIngredientsFromSelectedMeals,
+  toIsoDateFromPlanningKey,
+  withCurrentWeekSeed,
+} from "@/lib/planning";
 import { RECIPES } from "@/lib/recipes";
+import { ing } from "@/lib/recipe-model";
 import { mergeIngredients, addShoppingItem } from "@/lib/shopping-list";
 import { formatAmount, parseAmount } from "@/lib/units";
+import type { FridgeItem } from "@/types/inventory";
 
 let failures = 0;
 
@@ -123,10 +133,134 @@ check(
     new Set(exported.map((i) => `${i.ingredientId}|${i.unit}`)).size === exported.length,
   true,
 );
+check(
+  "export tamponne plannedMeals en ISO",
+  exported.every(
+    (i) =>
+      (i.plannedMeals?.length ?? 0) > 0 &&
+      i.plannedMeals!.every((m) => /^\d{4}-\d{2}-\d{2}$/.test(m.date)),
+  ),
+  true,
+);
 console.log(
   `      ${exported.length} articles : ${exported
     .map((i) => `${i.customName} ${formatAmount(i.amount, i.unit)}`)
     .join(", ")}`,
+);
+
+console.log("\n--- Traçabilité plannedMeals / dates ISO ---");
+check("dayKey août → ISO", toIsoDateFromPlanningKey("2026-7-28"), "2026-08-28");
+check("ISO déjà canonique", toIsoDateFromPlanningKey("2026-08-28"), "2026-08-28");
+check("dayKey janvier (mois 0)", toIsoDateFromPlanningKey("2026-0-5"), "2026-01-05");
+
+const selectedExported = collectIngredientsFromSelectedMeals(
+  [
+    { date: "2026-7-10", mealType: "lunch" },
+    { date: "2026-7-10", mealType: "lunch" },
+    { date: "2026-7-10", mealType: "dinner" },
+  ],
+  plans,
+);
+check(
+  "ingrédients exportés portent plannedMeals",
+  selectedExported.length > 0 && selectedExported.every((i) => i.plannedMeals?.length === 1),
+  true,
+);
+check(
+  "date ISO (pas dayKey) sur l'ingrédient",
+  selectedExported[0]?.plannedMeals?.[0]?.date,
+  "2026-08-10",
+);
+check(
+  "créneau conservé",
+  selectedExported[0]?.plannedMeals?.[0]?.mealType,
+  "lunch",
+);
+
+const withMeals = [
+  {
+    ingredientId: "ing_tomate",
+    name: "Tomate",
+    amount: 100,
+    unit: "g" as const,
+    category: "fruits_legumes" as const,
+    plannedMeals: [
+      { recipeTitle: "Midi", date: "2026-08-12", mealType: "lunch" as const },
+    ],
+  },
+  {
+    ingredientId: "ing_tomate",
+    name: "Tomate",
+    amount: 50,
+    unit: "g" as const,
+    category: "fruits_legumes" as const,
+    plannedMeals: [
+      { recipeTitle: "Soir", date: "2026-08-10", mealType: "dinner" as const },
+      { recipeTitle: "Soir", date: "2026-08-10", mealType: "dinner" as const },
+    ],
+  },
+];
+const fused = mergeIngredients(withMeals);
+check("fusion additionne les quantités", fused[0]?.amount, 150);
+check("fusion déduplique plannedMeals", fused[0]?.plannedMeals?.length, 2);
+check("targetDate = date la plus proche", fused[0]?.targetDate, "2026-08-10");
+
+console.log("\n--- Matching identité (courses / frigo / conso) ---");
+check(
+  "même ingredientId",
+  matchesInventoryIdentity(
+    { ingredientId: "ing_tomate", name: "Tomate" },
+    { ingredientId: "ing_tomate", name: "Tomates cerises" },
+  ),
+  true,
+);
+check(
+  "poulet fermier ≠ hauts de cuisse (token poulet)",
+  matchesInventoryIdentity(
+    { name: "Poulet fermier" },
+    { name: "Hauts de cuisse de poulet" },
+  ),
+  false,
+);
+
+const cuisse = ing("Hauts de cuisse de poulet", 4, "piece");
+const fridgePoulet: FridgeItem = {
+  id: "f-poulet",
+  customName: "Poulet fermier",
+  amount: 500,
+  unit: "g",
+  category: "fridge",
+  addedAt: "2026-08-26T00:00:00.000Z",
+  ingredientId: "ing_filet_poulet",
+};
+const matchPoulet = matchRecipeIngredientsWithFridge([cuisse], [fridgePoulet]);
+check("conso : poulet fermier (g) ne matche pas hauts de cuisse", matchPoulet.unmatched.length, 1);
+check("conso : aucune déduction silencieuse", matchPoulet.deductions.length, 0);
+
+const fridgeCuisse: FridgeItem = {
+  id: "f-cuisse",
+  customName: "Hauts de cuisse de poulet",
+  amount: 4,
+  unit: "piece",
+  category: "fridge",
+  addedAt: "2026-08-26T00:00:00.000Z",
+  ingredientId: cuisse.ingredientId,
+};
+const matchOk = matchRecipeIngredientsWithFridge([cuisse], [fridgeCuisse]);
+check("conso : même id + unité compatible", matchOk.deductions[0]?.amountToDeduct, 4);
+
+const todaySeed = new Date(Date.UTC(2026, 7, 26, 12));
+const weekId = dayKey(startOfWeek(todaySeed));
+const dayId = dayKey(todaySeed);
+const seededWeek = withCurrentWeekSeed({}, todaySeed);
+check("seed ajoute la semaine absente", Object.prototype.hasOwnProperty.call(seededWeek, weekId), true);
+const alreadySaved = {
+  [weekId]: { [dayId]: { breakfast: null, lunchId: null, dinnerId: null } },
+};
+check(
+  "seed n'écrase pas une semaine déjà sauvée",
+  withCurrentWeekSeed(alreadySaved, todaySeed)[weekId]?.[dayId]?.lunchId,
+  null,
 );
 
 console.log(failures === 0 ? "\nTous les contrôles passent." : `\n${failures} contrôle(s) en échec.`);

@@ -19,6 +19,7 @@ import {
   getShoppingList,
   peekExportBanner,
   removeShoppingItem,
+  toggleDlcValidation,
   toggleShoppingItem,
   updateShoppingItem,
   addShoppingItem,
@@ -45,6 +46,10 @@ export default function CoursesPage() {
 
   function handleToggle(id: string) {
     setItems(toggleShoppingItem(id));
+  }
+
+  function handleToggleDlc(id: string) {
+    setItems(toggleDlcValidation(id));
   }
 
   function handleAddItem(item: Parameters<typeof addShoppingItem>[0]) {
@@ -114,6 +119,7 @@ export default function CoursesPage() {
                       onToggle={handleToggle}
                       onRemove={handleRemove}
                       onUpdate={handleUpdate}
+                      onToggleDlc={handleToggleDlc}
                     />
                   ))}
                 </GroupedItemSection>

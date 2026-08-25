@@ -19,6 +19,18 @@ import type { UnitCode } from "@/lib/units";
 export type FridgeStorageLocation = "fridge" | "freezer" | "pantry";
 
 /**
+ * Repas du planning auquel un ingrédient est rattaché.
+ * Permet de tracer un aliment de l'export jusqu'au frigo.
+ */
+export type PlannedMealRef = {
+  recipeId?: number;
+  recipeTitle: string;
+  /** ISO date YYYY-MM-DD. */
+  date: string;
+  mealType: "breakfast" | "lunch" | "dinner";
+};
+
+/**
  * Ingrédient tel qu'il est écrit dans une recette. Immuable :
  * jamais édité depuis les courses ou le frigo.
  */
@@ -34,6 +46,11 @@ export interface RecipeIngredient {
   /** Rayon magasin, utilisé au moment de l'export vers les courses. */
   category: ShoppingCategoryId;
   icon?: string;
+  /**
+   * Repas sources — tamponné uniquement à l'export planning → courses.
+   * Absent des recettes du catalogue (rétrocompatible).
+   */
+  plannedMeals?: PlannedMealRef[];
 }
 
 /** Article de la liste de courses — copie éphémère et librement éditable. */
@@ -52,6 +69,12 @@ export interface ShoppingItem {
   isChecked: boolean;
   /** ISO 8601. */
   createdAt: string;
+  /** Repas du planning servis par cet article (fusionnés si même aliment). */
+  plannedMeals?: PlannedMealRef[];
+  /** L'utilisateur a confirmé la DLC proposée (« DLC OK »). */
+  dlcValidated?: boolean;
+  /** Date YYYY-MM-DD la plus proche parmi `plannedMeals`. */
+  targetDate?: string;
 }
 
 /** Article du frigo / congélateur / placards — inventaire réel et éditable. */
@@ -71,6 +94,10 @@ export interface FridgeItem {
   addedAt: string;
   /** ISO date YYYY-MM-DD. Absente si l'article n'a pas de DLC. */
   expirationDate?: string;
+  /** Repas du planning auxquels cet aliment est destiné. */
+  plannedMeals?: PlannedMealRef[];
+  /** DLC déduite de la validation en courses (`dlcValidated`). */
+  dlcEstimated?: boolean;
 }
 
 /** Quantité structurée, indépendante de l'état dans lequel se trouve l'aliment. */

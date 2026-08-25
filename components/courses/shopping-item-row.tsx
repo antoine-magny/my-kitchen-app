@@ -1,5 +1,6 @@
 "use client";
 
+import { DlcValidationButton, PlannedMealPills } from "@/components/courses/courses-chrome";
 import { CheckIcon, TrashIcon } from "@/components/icons";
 import { EmojiPickerPopover } from "@/components/ui/emoji-picker-popover";
 import { EditableItemFields } from "@/components/ui/editable-item-fields";
@@ -11,12 +12,14 @@ export function ShoppingItemRow({
   onToggle,
   onRemove,
   onUpdate,
+  onToggleDlc,
 }: {
   item: ShoppingItem;
   isLast: boolean;
   onToggle: (id: string) => void;
   onRemove: (id: string) => void;
   onUpdate: (id: string, patch: ShoppingItemPatch) => void;
+  onToggleDlc: (id: string) => void;
 }) {
   return (
     <div
@@ -58,7 +61,18 @@ export function ShoppingItemRow({
         onCommitName={(customName) => onUpdate(item.id, { customName })}
         onCommitAmount={(amount) => onUpdate(item.id, { amount })}
         onChangeUnit={(unit) => onUpdate(item.id, { unit })}
-      />
+      >
+        {item.plannedMeals && item.plannedMeals.length > 0 ? (
+          <PlannedMealPills meals={item.plannedMeals} />
+        ) : null}
+        {!item.isChecked && item.targetDate ? (
+          <DlcValidationButton
+            targetDate={item.targetDate}
+            validated={item.dlcValidated === true}
+            onToggle={() => onToggleDlc(item.id)}
+          />
+        ) : null}
+      </EditableItemFields>
 
       <button
         type="button"

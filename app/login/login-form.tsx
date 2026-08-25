@@ -99,10 +99,12 @@ export function LoginForm({ oauthError, oauthEmail }: LoginFormProps) {
     setLoading("guest");
     setError(null);
     try {
-      const { error: guestError } = await signInAsGuest(supabase);
-      if (guestError) throw guestError;
-      
       window.sessionStorage.setItem(GUEST_ACTIVE_SESSION_KEY, "1");
+      const { error: guestError } = await signInAsGuest(supabase);
+      if (guestError) {
+        window.sessionStorage.removeItem(GUEST_ACTIVE_SESSION_KEY);
+        throw guestError;
+      }
       window.location.assign("/");
     } catch (err: unknown) {
       setError(

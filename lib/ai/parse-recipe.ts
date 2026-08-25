@@ -163,7 +163,9 @@ export async function parseRecipeFromUrl(url: string): Promise<ParsedRecipe> {
   const html = await fetchPageHtml(parsedUrl.toString());
   const textContent = htmlToPlainText(html).slice(0, 80_000);
   if (textContent.trim().length < 80) {
-    throw new ParseRecipeError("Impossible d’extraire du contenu exploitable depuis cette page.");
+    throw new ParseRecipeError(
+      "La page a bien été téléchargée, mais son contenu n’est pas exploitable (protection du site ou page trop pauvre). Essayez d’importer une photo de la recette.",
+    );
   }
 
   const ai = createGeminiClient();
@@ -211,33 +213,127 @@ function splitDataUrl(raw: string): { mimeType: string; data: string } {
   return { mimeType: "image/jpeg", data: trimmed.replace(/\s/g, "") };
 }
 
+const BROWSER_USER_AGENT =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.7339.128 Safari/537.36";
+
+const FETCH_TIMEOUT_MS = 12_000;
+const FETCH_RETRY_LIMIT = 2;
+const FETCH_RETRY_DELAY_MS = 400;
+const RETRYABLE_HTTP = new Set([429, 502, 503, 504]);
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function collectErrorText(error: unknown): string {
+  const parts: string[] = [];
+  let current: unknown = error;
+  for (let depth = 0; depth < 4 && current; depth += 1) {
+    if (current instanceof Error) {
+      parts.push(current.name, current.message);
+      const code = (current as Error & { code?: string }).code;
+      if (code) parts.push(code);
+      current = current.cause;
+      continue;
+    }
+    parts.push(String(current));
+    break;
+  }
+  return parts.join(" ").toLowerCase();
+}
+
+function isRetryableNetworkError(error: unknown): boolean {
+  const message = collectErrorText(error);
+  if (message.includes("unable_to_verify") || message.includes("certificate")) {
+    return false;
+  }
+  if (!(error instanceof Error)) return true;
+  return (
+    error.name === "TimeoutError" ||
+    error.name === "AbortError" ||
+    message.includes("fetch failed") ||
+    message.includes("network") ||
+    message.includes("econnreset") ||
+    message.includes("etimedout") ||
+    message.includes("timeout")
+  );
+}
+
+function networkFailureMessage(error: unknown): string {
+  const message = collectErrorText(error);
+  if (message.includes("unable_to_verify") || message.includes("certificate")) {
+    return "Impossible de télécharger la page (certificat HTTPS / antivirus local). Importez la recette depuis une photo.";
+  }
+  if (
+    message.includes("timeout") ||
+    message.includes("aborted") ||
+    message.includes("timeouterror")
+  ) {
+    return "Le site met trop de temps à répondre. Réessayez, ou importez la recette depuis une photo.";
+  }
+  return "Impossible de télécharger la page (réseau ou site inaccessible). Vérifiez le lien, ou importez depuis une photo.";
+}
+
+function httpFailureMessage(status: number): string {
+  if (status === 401 || status === 403 || status === 451) {
+    return `Le site a bloqué le téléchargement (HTTP ${status}). Importez la recette depuis une photo.`;
+  }
+  if (RETRYABLE_HTTP.has(status)) {
+    return `Le site est temporairement indisponible (HTTP ${status}). Réessayez, ou importez depuis une photo.`;
+  }
+  return `La page a répondu HTTP ${status}. Essayez un autre lien, ou importez depuis une photo.`;
+}
+
 async function fetchPageHtml(url: string): Promise<string> {
-  let response: Response;
-  try {
-    response = await fetch(url, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (compatible; MyKitchenApp/1.0; +https://localhost) AppleWebKit/537.36",
-        Accept: "text/html,application/xhtml+xml",
-      },
-      redirect: "follow",
-      signal: AbortSignal.timeout(15_000),
-    });
-  } catch (error) {
-    const detail = error instanceof Error ? error.message.slice(0, 160) : "réseau";
-    throw new ParseRecipeError(`Échec du téléchargement de la page : ${detail}`);
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt <= FETCH_RETRY_LIMIT; attempt++) {
+    if (attempt > 0) await delay(FETCH_RETRY_DELAY_MS * attempt);
+
+    try {
+      const response = await fetch(url, {
+        headers: {
+          "User-Agent": BROWSER_USER_AGENT,
+          Accept:
+            "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+          "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7",
+        },
+        redirect: "follow",
+        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+      });
+
+      if (RETRYABLE_HTTP.has(response.status)) {
+        lastError = new ParseRecipeError(httpFailureMessage(response.status));
+        continue;
+      }
+
+      if (!response.ok) {
+        throw new ParseRecipeError(httpFailureMessage(response.status));
+      }
+
+      const contentType = response.headers.get("content-type") ?? "";
+      if (
+        contentType &&
+        !contentType.includes("text/html") &&
+        !contentType.includes("application/xhtml")
+      ) {
+        throw new ParseRecipeError(
+          "L’URL ne pointe pas vers une page HTML. Importez plutôt une photo de la recette.",
+        );
+      }
+
+      return response.text();
+    } catch (error) {
+      if (error instanceof ParseRecipeError) throw error;
+      lastError = error;
+      if (!isRetryableNetworkError(error) || attempt === FETCH_RETRY_LIMIT) {
+        throw new ParseRecipeError(networkFailureMessage(error));
+      }
+    }
   }
 
-  if (!response.ok) {
-    throw new ParseRecipeError(`La page a répondu HTTP ${response.status}.`);
-  }
-
-  const contentType = response.headers.get("content-type") ?? "";
-  if (!contentType.includes("text/html") && !contentType.includes("application/xhtml")) {
-    throw new ParseRecipeError("L’URL ne pointe pas vers une page HTML.");
-  }
-
-  return response.text();
+  if (lastError instanceof ParseRecipeError) throw lastError;
+  throw new ParseRecipeError(networkFailureMessage(lastError));
 }
 
 function htmlToPlainText(html: string): string {
