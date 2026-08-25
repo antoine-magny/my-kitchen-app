@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { resolveUserFirstName } from "@/lib/user-name";
 
 export const metadata: Metadata = {
-  title: "Profil & Paramètres",
+  title: "Profil et Paramètres",
   description: "Vos préférences alimentaires, vos objectifs et les réglages de l'application.",
 };
 
