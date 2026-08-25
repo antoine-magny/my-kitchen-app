@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { AuthCard } from "@/components/auth-card";
 import {
+  getEmailWebmailUrl,
   RESET_EMAIL_SENT_MESSAGE,
   passwordResetCallbackUrl,
 } from "@/lib/auth-password";
@@ -39,17 +40,27 @@ export function ForgotPasswordForm({ initialEmail = "" }: ForgotPasswordFormProp
     }
   };
 
+  const mailService = getEmailWebmailUrl(email);
+
   return (
     <AuthCard
       title="My Kitchen App"
       subtitle="Entrez votre e-mail pour recevoir un lien de réinitialisation"
     >
       {sent ? (
-        <div className="space-y-6">
-          <p className="text-sm text-gray-700">{RESET_EMAIL_SENT_MESSAGE}</p>
+        <div className="space-y-4">
+          <p className="text-center text-sm text-gray-700">{RESET_EMAIL_SENT_MESSAGE}</p>
+          <a
+            href={mailService.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#2E5B3E] hover:bg-[#23452f] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2E5B3E] text-center"
+          >
+            {mailService.label}
+          </a>
           <Link
             href="/login"
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#2E5B3E] hover:bg-[#23452f] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2E5B3E]"
+            className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2E5B3E] text-center"
           >
             Retour à la connexion
           </Link>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AuthCard } from "@/components/auth-card";
 import {
@@ -10,7 +11,7 @@ import {
 import { LoginEmailForm } from "@/components/login/login-email-form";
 import { LoginGoogleButton } from "@/components/login/login-google-button";
 import { LoginGuestButton } from "@/components/login/login-guest-button";
-import { EXISTING_ACCOUNT_MESSAGE, isExistingAccountSignUp } from "@/lib/auth-signup";
+import { isExistingAccountSignUp } from "@/lib/auth-signup";
 import {
   GOOGLE_AUTH_ERROR_MESSAGE,
   googleAuthErrorMessage,
@@ -18,8 +19,10 @@ import {
   signInWithGoogle,
 } from "@/lib/auth-google";
 import {
+  GUEST_ACTIVE_SESSION_KEY,
   guestAuthErrorMessage,
   guestQueryErrorMessage,
+  isAnonymousUser,
   signInAsGuest,
 } from "@/lib/auth-guest";
 import { passwordRecoveryErrorMessage, REQUEST_RESET_PATH } from "@/lib/auth-password";
@@ -38,7 +41,7 @@ export function LoginForm({ oauthError, oauthEmail }: LoginFormProps) {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState<"email" | "google" | "guest" | null>(null);
-  const [error, setError] = useState<string | null>(
+  const [error, setError] = useState<React.ReactNode>(
     loginOAuthErrorMessage(oauthError, oauthEmail) ??
       passwordRecoveryErrorMessage(oauthError) ??
       guestQueryErrorMessage(oauthError),
@@ -49,6 +52,43 @@ export function LoginForm({ oauthError, oauthEmail }: LoginFormProps) {
   const isSignup = mode === "signup";
   const busy = loading !== null;
 
+  useEffect(() => {
+    let isMounted = true;
+    const checkUser = async () => {
+      const {
+        data: { user: currentUser },
+      } = await supabase.auth.getUser();
+      if (!isMounted) return;
+      if (currentUser && isAnonymousUser(currentUser)) {
+        window.sessionStorage.removeItem(GUEST_ACTIVE_SESSION_KEY);
+        void supabase.auth.signOut();
+        return;
+      }
+      if (currentUser && !isAnonymousUser(currentUser)) {
+        window.location.assign("/");
+      }
+    };
+    void checkUser();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (
+        session?.user &&
+        !isAnonymousUser(session.user) &&
+        (event === "SIGNED_IN" || event === "INITIAL_SESSION") &&
+        isMounted
+      ) {
+        window.location.assign("/");
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
+
   const handleGuestAuth = async () => {
     setLoading("guest");
     setError(null);
@@ -56,11 +96,8 @@ export function LoginForm({ oauthError, oauthEmail }: LoginFormProps) {
       const { error: guestError } = await signInAsGuest(supabase);
       if (guestError) throw guestError;
       
-      // Délai pour laisser `@supabase/ssr` écrire le cookie (surtout dans Jetski/Webviews)
-      setTimeout(() => {
-        router.push("/");
-        router.refresh();
-      }, 300);
+      window.sessionStorage.setItem(GUEST_ACTIVE_SESSION_KEY, "1");
+      window.location.assign("/");
     } catch (err: unknown) {
       setError(
         err instanceof Error ? guestAuthErrorMessage(err) : guestAuthErrorMessage(null),
@@ -109,7 +146,17 @@ export function LoginForm({ oauthError, oauthEmail }: LoginFormProps) {
           if (providers && providers.includes("google") && !providers.includes("email")) {
             setError(`Vous avez déjà un compte sur cette adresse mail : ${email}. Veuillez vous connecter avec google.`);
           } else {
-            setError(EXISTING_ACCOUNT_MESSAGE);
+            setError(
+              <span>
+                Vous avez déjà un compte. Vous avez oublié votre mot de passe ?{" "}
+                <Link
+                  href={`${REQUEST_RESET_PATH}?email=${encodeURIComponent(email)}`}
+                  className="underline font-semibold hover:text-red-700"
+                >
+                  Cliquez-ici !
+                </Link>
+              </span>
+            );
           }
           return;
         }

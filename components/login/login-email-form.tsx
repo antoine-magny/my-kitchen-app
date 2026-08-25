@@ -28,7 +28,7 @@ export function LoginEmailForm({
   email: string;
   password: string;
   showPassword: boolean;
-  error: string | null;
+  error: React.ReactNode;
   onFirstNameChange: (value: string) => void;
   onEmailChange: (value: string) => void;
   onPasswordChange: (value: string) => void;

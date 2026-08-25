@@ -5,7 +5,7 @@ import { ExpiringSection } from "@/components/home/expiring-section";
 import { FridgeSuggestions } from "@/components/home/fridge-suggestions";
 import { HomeHeader } from "@/components/home/home-header";
 import { TodayMealCard } from "@/components/home/today-meal-card";
-import { isAnonymousUser } from "@/lib/auth-guest";
+import { GUEST_ACTIVE_SESSION_KEY, isAnonymousUser, shouldResetGuestSession } from "@/lib/auth-guest";
 import { parisCalendarDate } from "@/lib/date-paris";
 import {
   getExpiringFridgeItems,
@@ -42,6 +42,16 @@ export function HomePage({ todayLabel }: { todayLabel: string }) {
 
     const supabase = createClient();
     void supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) {
+        window.location.assign("/login");
+        return;
+      }
+      if (isAnonymousUser(user) && shouldResetGuestSession(user)) {
+        window.sessionStorage.removeItem(GUEST_ACTIVE_SESSION_KEY);
+        await supabase.auth.signOut();
+        window.location.assign("/login");
+        return;
+      }
       setFirstName(await resolveUserFirstName(supabase, user));
       setIsGuest(isAnonymousUser(user));
     });

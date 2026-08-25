@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
+import { GUEST_ACTIVE_SESSION_KEY, isAnonymousUser, shouldResetGuestSession } from "@/lib/auth-guest";
 import { createClient } from "@/lib/supabase/client";
 import { initialFromName, resolveUserFirstName } from "@/lib/user-name";
 import { isAuthPath, isNavActive, NAV_ITEMS } from "@/components/nav-config";
@@ -11,6 +12,43 @@ import { SideNav } from "@/components/side-nav";
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isAuthPage = isAuthPath(pathname);
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    void supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (user && isAnonymousUser(user) && shouldResetGuestSession(user)) {
+        window.sessionStorage.removeItem(GUEST_ACTIVE_SESSION_KEY);
+        await supabase.auth.signOut();
+        window.location.assign("/login");
+        return;
+      }
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const user = session?.user;
+      const currentPath = window.location.pathname;
+
+      if (user && isAnonymousUser(user) && shouldResetGuestSession(user)) {
+        window.sessionStorage.removeItem(GUEST_ACTIVE_SESSION_KEY);
+        await supabase.auth.signOut();
+        window.location.assign("/login");
+        return;
+      }
+
+      if (!user && !isAuthPath(currentPath)) {
+        window.location.assign("/login");
+      } else if (user && !isAnonymousUser(user) && currentPath.startsWith("/login")) {
+        window.location.assign("/");
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   return (
     <>

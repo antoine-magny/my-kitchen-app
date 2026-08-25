@@ -4,6 +4,7 @@ import {
   DEV_AUTO_GUEST_ATTEMPTED_COOKIE,
   GUEST_SIGN_IN_PATH,
   getUserPreferSession,
+  isAnonymousUser,
   isDevAutoGuestEnabled,
 } from '@/lib/auth-guest'
 import { Database } from './database.types'
@@ -47,9 +48,11 @@ export async function updateSession(request: NextRequest) {
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           )
-          Object.entries(headers).forEach(([key, value]) =>
-            supabaseResponse.headers.set(key, value)
-          )
+          if (headers) {
+            Object.entries(headers).forEach(([key, value]) =>
+              supabaseResponse.headers.set(key, value)
+            )
+          }
         },
       },
     }
@@ -64,11 +67,11 @@ export async function updateSession(request: NextRequest) {
   const isAuthCallback = pathname.startsWith('/auth/')
   const isPasswordUpdate = pathname.startsWith('/nouveau-mot-de-passe')
 
-  if (!user && !isLoginRoute && !isAuthCallback) {
+  if (!user && !isLoginRoute && !isAuthCallback && !isPasswordUpdate) {
     const url = request.nextUrl.clone()
     const alreadyTriedAutoGuest =
       request.cookies.get(DEV_AUTO_GUEST_ATTEMPTED_COOKIE)?.value === '1'
-    if (isDevAutoGuestEnabled() && !isPasswordUpdate && !alreadyTriedAutoGuest) {
+    if (isDevAutoGuestEnabled() && !alreadyTriedAutoGuest) {
       const next = `${pathname}${request.nextUrl.search}`
       url.pathname = GUEST_SIGN_IN_PATH
       url.search = `?next=${encodeURIComponent(next)}`
@@ -84,7 +87,7 @@ export async function updateSession(request: NextRequest) {
     return redirectPreservingSession(url, supabaseResponse)
   }
 
-  if (user && isLoginRoute) {
+  if (user && !isAnonymousUser(user) && isLoginRoute) {
     const url = request.nextUrl.clone()
     url.pathname = '/'
     return redirectPreservingSession(url, supabaseResponse)
