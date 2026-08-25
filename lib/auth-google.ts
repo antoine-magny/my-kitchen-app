@@ -41,6 +41,7 @@ export function isGoogleLinkedToExistingEmailAccount(
 
 export function loginOAuthErrorMessage(error: string | undefined, email?: string): string | null {
   if (error === "google") return GOOGLE_AUTH_ERROR_MESSAGE;
+  if (error === "apple") return "La connexion Apple a échoué. Réessayez.";
   if (error === GOOGLE_EXISTING_ACCOUNT_ERROR) {
     if (email) {
       return `Vous avez déjà un compte sur cette adresse mail : ${email}. Si vous avez perdu votre mot de passe, veuillez consulter la page "Mot de passe oublié".`;

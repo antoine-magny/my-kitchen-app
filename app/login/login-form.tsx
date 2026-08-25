@@ -10,6 +10,7 @@ import {
 } from "@/components/login/auth-fields";
 import { LoginEmailForm } from "@/components/login/login-email-form";
 import { LoginGoogleButton } from "@/components/login/login-google-button";
+import { LoginAppleButton } from "@/components/login/login-apple-button";
 import { LoginGuestButton } from "@/components/login/login-guest-button";
 import { isExistingAccountSignUp } from "@/lib/auth-signup";
 import {
@@ -18,6 +19,11 @@ import {
   loginOAuthErrorMessage,
   signInWithGoogle,
 } from "@/lib/auth-google";
+import {
+  APPLE_AUTH_ERROR_MESSAGE,
+  appleAuthErrorMessage,
+  signInWithApple,
+} from "@/lib/auth-apple";
 import {
   GUEST_ACTIVE_SESSION_KEY,
   guestAuthErrorMessage,
@@ -40,7 +46,7 @@ export function LoginForm({ oauthError, oauthEmail }: LoginFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState<"email" | "google" | "guest" | null>(null);
+  const [loading, setLoading] = useState<"email" | "google" | "apple" | "guest" | null>(null);
   const [error, setError] = useState<React.ReactNode>(
     loginOAuthErrorMessage(oauthError, oauthEmail) ??
       passwordRecoveryErrorMessage(oauthError) ??
@@ -117,6 +123,22 @@ export function LoginForm({ oauthError, oauthEmail }: LoginFormProps) {
         err instanceof Error
           ? googleAuthErrorMessage(err)
           : GOOGLE_AUTH_ERROR_MESSAGE,
+      );
+      setLoading(null);
+    }
+  };
+
+  const handleAppleAuth = async () => {
+    setLoading("apple");
+    setError(null);
+    try {
+      const { error: appleError } = await signInWithApple(supabase, window.location.origin);
+      if (appleError) throw appleError;
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error
+          ? appleAuthErrorMessage(err)
+          : APPLE_AUTH_ERROR_MESSAGE,
       );
       setLoading(null);
     }
@@ -209,11 +231,23 @@ export function LoginForm({ oauthError, oauthEmail }: LoginFormProps) {
         }}
       />
 
-      <LoginGoogleButton
-        loading={loading === "google"}
-        disabled={busy}
-        onClick={() => void handleGoogleAuth()}
-      />
+      <div className="flex flex-col gap-3">
+        <LoginGoogleButton
+          loading={loading === "google"}
+          disabled={busy}
+          onClick={() => void handleGoogleAuth()}
+        />
+
+        {/* 
+          TODO: Bouton Apple masqué temporairement en attendant la configuration
+          côté Apple Developer et Supabase. À réactiver quand prêt.
+        <LoginAppleButton
+          loading={loading === "apple"}
+          disabled={busy}
+          onClick={() => void handleAppleAuth()}
+        /> 
+        */}
+      </div>
 
       <AuthDivider />
 

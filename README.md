@@ -54,7 +54,7 @@ dossier) : **synchro git** = photocopie de la branche + calage sur `main`
 app/                    Routes App Router (une page par écran)
   layout.tsx            Shell global : polices Nunito/Lora + AppShell (BottomNav / SideNav)
   page.tsx              Accueil : date du jour (SSR) + repas / frigo (client)
-  login/                Connexion / inscription (email, Google, invité)
+  login/                Connexion / inscription (email, Google, Apple, invité)
   login/mot-de-passe-oublie/  Demande de réinitialisation du mot de passe
   nouveau-mot-de-passe/ Choix du nouveau mot de passe (après le lien e-mail)
   auth/callback/        Échange PKCE (OAuth Google + réinitialisation mot de passe)
@@ -147,7 +147,7 @@ Quelques exemples de cette découpe, utiles comme modèles :
 - Les écrans d'auth (`login-form`, mot de passe oublié, nouveau mot de passe,
   invité) partagent `components/auth-card.tsx` ; la logique vit dans
   `lib/auth-google.ts`, `lib/auth-signup.ts`, `lib/auth-password.ts` et
-  `lib/auth-guest.ts`. Les boutons du formulaire de login sont dans
+  `lib/auth-guest.ts` et `lib/auth-apple.ts`. Les boutons du formulaire de login sont dans
   `components/login/`.
 
 ### Modales
@@ -384,7 +384,7 @@ et `--nav-offset` redevient un petit padding bas.
 
 Onglets Connexion / Inscription, puis dans l'ordre :
 
-1. **Google** — un seul bouton pour inscription et connexion (`signInWithGoogle`).
+1. **Google et Apple** — des boutons pour l'inscription et la connexion (`signInWithGoogle`, `signInWithApple`).
 2. **Email / mot de passe** — à l'inscription, le prénom va dans les métadonnées
    Auth (`full_name`). Affichage / masquage du mot de passe (`EyeIcon` /
    `EyeOffIcon`). Lien « Mot de passe oublié ? » (préremplit l'e-mail s'il est
@@ -400,8 +400,8 @@ Les messages d'erreur sont personnalisés (`lib/auth-google.ts`,
 #### Modes d'authentification
 
 - **Email / mot de passe** : `signUp` / `signInWithPassword`.
-- **Google** : `signInWithOAuth({ provider: "google" })` → `/auth/callback`
-  (`exchangeCodeForSession`, cookies). `prompt=select_account`.
+- **Google / Apple** : `signInWithOAuth({ provider: "google" | "apple" })` → `/auth/callback`
+  (`exchangeCodeForSession`, cookies). `prompt=select_account` pour Google.
 - **Invité** : utilisateur temporaire `is_anonymous`, même RLS (`auth.uid()`),
   pas d'e-mail. Prénom affiché « Invité », libellé profil « Compte invité ».
   Session perdue à la déconnexion, au nettoyage du navigateur, ou sur un autre
@@ -437,6 +437,7 @@ pour Google, « Invité » pour l'anonyme) dans `profiles.full_name`.
 3. [URL Configuration](https://supabase.com/dashboard/project/flzelbbjtzyuorpeaofe/auth/url-configuration) → Redirect URLs :
    `http://localhost:3000/auth/callback` et `https://my-kitchen-app-liard.vercel.app/auth/callback`.
 4. [Fournisseurs Auth](https://supabase.com/dashboard/project/flzelbbjtzyuorpeaofe/auth/providers) → activer **Anonymous Sign-Ins** (requis pour le bouton invité).
+5. [Fournisseur Apple](https://supabase.com/dashboard/project/flzelbbjtzyuorpeaofe/auth/providers?provider=Apple) : nécessitera l'identifiant de service (Service ID) et la clé secrète depuis Apple Developer.
 
 **Sécurité (RLS)** : chaque utilisateur ne lit / écrit / supprime que ses
 propres lignes (`user_id` = `auth.uid()`). Côté serveur, le client
