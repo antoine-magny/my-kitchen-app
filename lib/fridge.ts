@@ -462,11 +462,6 @@ export function setFridgeItems(items: FridgeItem[]) {
   window.localStorage.setItem(FRIDGE_STORAGE_KEY, JSON.stringify(sanitized));
 }
 
-/** Sanitizer unique : conserve `plannedMeals` et `dlcEstimated`. */
-export function sanitizeFridgeItem(raw: unknown): FridgeItem | null {
-  return sanitizeItem(raw);
-}
-
 export function toFridgeSnapshotItem(
   item: FridgeItem,
   now: Date = new Date(),
