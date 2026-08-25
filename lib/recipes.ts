@@ -20,6 +20,7 @@ export {
   RECIPE_COST_LABELS,
   RECIPE_COST_SYMBOLS,
   RECIPE_TAG_LABELS,
+  RECIPE_TAG_COLORS,
   RECIPE_TAG_CODES_HINT,
   DIFFICULTY_TOQUE_COUNT,
   RECIPE_TAGS,
@@ -39,6 +40,7 @@ export {
   type RecipeDifficulty,
   type RecipeStep,
   type RecipeTag,
+  type RecipeTagColor,
 } from "@/lib/recipe-model";
 export type { RecipeIngredient };
 

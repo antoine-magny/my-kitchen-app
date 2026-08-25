@@ -2,16 +2,7 @@ import Link from "next/link";
 import { ClockIcon, FlameIcon, HeartIcon, MuscleIcon } from "@/components/icons";
 import { MissingIngredientsBadges } from "@/components/missing-ingredients-badges";
 import { RecipeCostSymbol, RecipeDifficultyToques } from "@/components/recettes/recipe-symbols";
-import { recipeBadgeTags, tagToLabel, type Recipe, type RecipeTag } from "@/lib/recipes";
-
-const TAG_COLORS: Record<RecipeTag, { bg: string; text: string }> = {
-  entree: { bg: "rgba(74,124,89,0.82)", text: "#FFF" },
-  plat: { bg: "rgba(28,43,30,0.72)", text: "#E8F5EC" },
-  dessert: { bg: "rgba(219,85,108,0.85)", text: "#FFF" },
-  express: { bg: "rgba(249,115,22,0.88)", text: "#FFF" },
-  vegetarien: { bg: "rgba(74,124,89,0.82)", text: "#FFF" },
-  riche_en_proteines: { bg: "rgba(59,130,246,0.80)", text: "#FFF" },
-};
+import { RECIPE_TAG_COLORS, recipeBadgeTags, tagToLabel, type Recipe } from "@/lib/recipes";
 
 export function RecipeCard({
   recipe,
@@ -51,7 +42,7 @@ export function RecipeCard({
           {badges.length > 0 ? (
             <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
               {badges.map((tag) => {
-                const cfg = TAG_COLORS[tag];
+                const cfg = RECIPE_TAG_COLORS[tag];
                 return (
                   <div
                     key={tag}

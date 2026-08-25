@@ -32,6 +32,49 @@ export const RECIPE_TAG_LABELS: Record<RecipeTag, string> = {
   riche_en_proteines: "Riche en protéines",
 };
 
+export type RecipeTagColor = {
+  bg: string;
+  text: string;
+  accent: string;
+  accentSoft: string;
+  accentShadow: string;
+};
+
+const MEAL_TAG_COLOR: RecipeTagColor = {
+  bg: "rgba(28,43,30,0.72)",
+  text: "#E8F5EC",
+  accent: "#1C2B1E",
+  accentSoft: "#C8E0CF",
+  accentShadow: "rgba(28,43,30,0.18)",
+};
+
+export const RECIPE_TAG_COLORS: Record<RecipeTag, RecipeTagColor> = {
+  entree: MEAL_TAG_COLOR,
+  plat: MEAL_TAG_COLOR,
+  dessert: MEAL_TAG_COLOR,
+  express: {
+    bg: "rgba(249,115,22,0.88)",
+    text: "#FFF",
+    accent: "#F97316",
+    accentSoft: "#FCD9B6",
+    accentShadow: "rgba(249,115,22,0.25)",
+  },
+  vegetarien: {
+    bg: "rgba(74,124,89,0.82)",
+    text: "#FFF",
+    accent: "#4A7C59",
+    accentSoft: "#C8E0CF",
+    accentShadow: "rgba(74,124,89,0.22)",
+  },
+  riche_en_proteines: {
+    bg: "rgba(59,130,246,0.80)",
+    text: "#FFF",
+    accent: "#3B82F6",
+    accentSoft: "#BFDBFE",
+    accentShadow: "rgba(59,130,246,0.25)",
+  },
+};
+
 /** Codes autorisés pour Gemini / le formulaire — identiques aux puces du catalogue. */
 export const RECIPE_TAG_CODES_HINT = RECIPE_TAGS.join(" | ");
 

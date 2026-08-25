@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ChevronLeftIcon, ClockIcon, FlameIcon, UsersIcon } from "@/components/icons";
 import { RecipeActionsMenu } from "@/components/recettes/recipe-actions-menu";
 import { RecipeCostSymbol, RecipeDifficultyToques } from "@/components/recettes/recipe-symbols";
-import { recipeBadgeLabels, type Recipe } from "@/lib/recipes";
+import { RECIPE_TAG_COLORS, recipeBadgeTags, tagToLabel, type Recipe } from "@/lib/recipes";
 
 export function RecipeHero({
   recipe,
@@ -15,7 +15,7 @@ export function RecipeHero({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const badges = recipeBadgeLabels(recipe, 3);
+  const badges = recipeBadgeTags(recipe, 3);
 
   return (
     <div className="relative h-64 bg-[#D4EDD9] sm:h-72">
@@ -44,14 +44,18 @@ export function RecipeHero({
 
         {badges.length > 0 ? (
           <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5 self-center">
-            {badges.map((label) => (
-              <span
-                key={label}
-                className="max-w-full truncate rounded-xl bg-[#4A7C59] px-3 py-1.5 text-xs font-extrabold tracking-wide text-white"
-              >
-                {label}
-              </span>
-            ))}
+            {badges.map((tag) => {
+              const cfg = RECIPE_TAG_COLORS[tag];
+              return (
+                <span
+                  key={tag}
+                  className="max-w-full truncate rounded-lg px-2.5 py-1 text-xs font-bold tracking-wide backdrop-blur-[4px]"
+                  style={{ background: cfg.bg, color: cfg.text }}
+                >
+                  {tagToLabel(tag)}
+                </span>
+              );
+            })}
           </div>
         ) : (
           <div className="min-w-0 flex-1" />
