@@ -11,14 +11,9 @@ import {
   parisCalendarDate,
   startOfWeek,
 } from "@/lib/date-paris";
-import { findFuzzyMatch } from "@/lib/fuzzy-search";
-import {
-  FRIDGE_STORAGE_KEY,
-  getFridgeItems,
-  isFridgeStorageLocation,
-} from "@/lib/fridge";
-import { getIngredientEquivalence, resolveIngredientId } from "@/lib/ingredients";
-import { isMealType } from "@/lib/meal-types";
+import { getFridgeItems, setFridgeItems } from "@/lib/fridge";
+import { getIngredientEquivalence } from "@/lib/ingredients";
+import { matchesInventoryIdentity } from "@/lib/inventory-match";
 import {
   breakfastRecipeId,
   EMPTY_DAY_PLAN,
@@ -27,18 +22,8 @@ import {
   saveMealPlans,
   type MealSlot,
 } from "@/lib/planning";
-import { normalizeProductName } from "@/lib/shopping-categories";
-import {
-  coerceUnitCode,
-  DEFAULT_UNIT,
-  UNITS,
-  UNQUANTIFIED_UNIT,
-  type UnitCode,
-} from "@/lib/units";
+import { UNITS, UNQUANTIFIED_UNIT, type UnitCode } from "@/lib/units";
 import type { FridgeItem, PlannedMealRef, RecipeIngredient } from "@/types/inventory";
-
-const ISO_CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/;
-const NAME_STOPWORDS = new Set(["des", "les", "une", "aux", "avec", "pour", "dans"]);
 
 export type FridgeDeduction = {
   id: string;
@@ -73,55 +58,6 @@ function roundAmount(value: number): number {
   if (!Number.isFinite(value)) return 0;
   const rounded = Math.round(value * 1000) / 1000;
   return rounded < 0.001 ? 0 : rounded;
-}
-
-function significantTokens(name: string): string[] {
-  return normalizeProductName(name)
-    .split(" ")
-    .filter((token) => token.length >= 3 && !NAME_STOPWORDS.has(token));
-}
-
-function hasWord(haystack: string, word: string): boolean {
-  const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return new RegExp(`(?:^|\\s)${escaped}(?:\\s|$)`).test(haystack);
-}
-
-/** Matching de noms : égalité, mot entier, inclusion (mots ≥ 4 lettres), tokens, fuzzy. */
-function namesMatch(recipeName: string, fridgeName: string): boolean {
-  const recipeNorm = normalizeProductName(recipeName);
-  const fridgeNorm = normalizeProductName(fridgeName);
-  if (!recipeNorm || !fridgeNorm) return false;
-  if (recipeNorm === fridgeNorm) return true;
-
-  const shorter = recipeNorm.length <= fridgeNorm.length ? recipeNorm : fridgeNorm;
-  const longer = recipeNorm.length <= fridgeNorm.length ? fridgeNorm : recipeNorm;
-  if (shorter.length >= 3 && hasWord(longer, shorter)) return true;
-  if (shorter.length >= 4 && longer.includes(shorter)) return true;
-
-  const recipeTokens = new Set(significantTokens(recipeName));
-  if (recipeTokens.size > 0) {
-    const hit = significantTokens(fridgeName).some(
-      (token) => token.length >= 3 && recipeTokens.has(token),
-    );
-    if (hit) return true;
-  }
-
-  return findFuzzyMatch(recipeNorm, [{ text: fridgeNorm, item: true }]) != null;
-}
-
-export function fridgeItemMatchesIngredient(
-  item: FridgeItem,
-  ingredient: RecipeIngredient,
-): boolean {
-  if (item.amount <= 0) return false;
-  if (ingredient.ingredientId && item.ingredientId === ingredient.ingredientId) return true;
-  if (ingredient.ingredientId && resolveIngredientId(item.customName) === ingredient.ingredientId) {
-    return true;
-  }
-  if (item.ingredientId && resolveIngredientId(ingredient.name) === item.ingredientId) {
-    return true;
-  }
-  return namesMatch(ingredient.name, item.customName);
 }
 
 /**
@@ -163,6 +99,30 @@ export function convertToUnit(
   return null;
 }
 
+function identityForConversion(item: FridgeItem, ingredient: RecipeIngredient): string {
+  return ingredient.ingredientId || item.ingredientId || ingredient.name || item.customName;
+}
+
+/**
+ * Même règle que courses / transfert frigo (`ingredientId` puis nom exact),
+ * et les unités doivent être convertibles (g vs pièce sans équivalence = non).
+ */
+export function fridgeItemMatchesIngredient(
+  item: FridgeItem,
+  ingredient: RecipeIngredient,
+): boolean {
+  if (item.amount <= 0) return false;
+  if (
+    !matchesInventoryIdentity(
+      { ingredientId: item.ingredientId, name: item.customName },
+      { ingredientId: ingredient.ingredientId, name: ingredient.name },
+    )
+  ) {
+    return false;
+  }
+  return convertToUnit(1, item.unit, ingredient.unit, identityForConversion(item, ingredient)) != null;
+}
+
 function expirationSortKey(item: FridgeItem): number {
   if (!item.expirationDate) return Number.POSITIVE_INFINITY;
   const ts = Date.parse(item.expirationDate);
@@ -200,7 +160,6 @@ export function matchRecipeIngredientsWithFridge(
       ingredient.unit === UNQUANTIFIED_UNIT || ingredient.amount <= 0 ? 0 : ingredient.amount;
     if (neededStart <= 0) continue;
 
-    const identity = ingredient.ingredientId || ingredient.name;
     const candidates = fridgeItems
       .filter((item) => fridgeItemMatchesIngredient(item, ingredient))
       .filter((item) => (remaining.get(item.id) ?? 0) > 0)
@@ -214,6 +173,7 @@ export function matchRecipeIngredientsWithFridge(
       const stock = remaining.get(item.id) ?? 0;
       if (stock <= 0) continue;
 
+      const identity = identityForConversion(item, ingredient);
       const stockInRecipeUnit = convertToUnit(stock, item.unit, ingredient.unit, identity);
       if (stockInRecipeUnit == null || stockInRecipeUnit <= 0) continue;
 
@@ -259,28 +219,6 @@ export function matchRecipeIngredientsWithFridge(
   });
 
   return { deductions, unmatched };
-}
-
-function parsePlannedMealRef(raw: unknown): PlannedMealRef | null {
-  if (!raw || typeof raw !== "object") return null;
-  const entry = raw as Partial<PlannedMealRef>;
-  if (typeof entry.recipeTitle !== "string" || !entry.recipeTitle.trim()) return null;
-  if (typeof entry.date !== "string" || !ISO_CALENDAR_DATE.test(entry.date)) return null;
-  if (!isMealType(entry.mealType)) return null;
-  return {
-    ...(typeof entry.recipeId === "number" && Number.isFinite(entry.recipeId)
-      ? { recipeId: entry.recipeId }
-      : {}),
-    recipeTitle: entry.recipeTitle.trim(),
-    date: entry.date,
-    mealType: entry.mealType,
-  };
-}
-
-function parsePlannedMeals(raw: unknown): PlannedMealRef[] | undefined {
-  if (!Array.isArray(raw)) return undefined;
-  const meals = raw.map(parsePlannedMealRef).filter((ref): ref is PlannedMealRef => ref != null);
-  return meals.length > 0 ? meals : undefined;
 }
 
 function reservationMatchesRecipe(
@@ -360,70 +298,12 @@ export function consumeRecipeIngredients(
   return next;
 }
 
-function parseFridgeItem(raw: unknown): FridgeItem | null {
-  if (!raw || typeof raw !== "object") return null;
-  const entry = raw as Partial<FridgeItem> & { name?: unknown; quantity?: unknown };
-  if (typeof entry.id !== "string" || !entry.id) return null;
-
-  const customName =
-    typeof entry.customName === "string" && entry.customName.trim()
-      ? entry.customName.trim()
-      : typeof entry.name === "string"
-        ? entry.name.trim()
-        : "";
-  if (!customName) return null;
-
-  const amount =
-    typeof entry.amount === "number"
-      ? entry.amount
-      : typeof entry.quantity === "number"
-        ? entry.quantity
-        : 0;
-
-  const item: FridgeItem = {
-    id: entry.id,
-    customName,
-    amount: Number.isFinite(amount) ? Math.max(0, amount) : 0,
-    unit: typeof entry.unit === "string" ? coerceUnitCode(entry.unit) ?? DEFAULT_UNIT : DEFAULT_UNIT,
-    category:
-      typeof entry.category === "string" && isFridgeStorageLocation(entry.category)
-        ? entry.category
-        : "fridge",
-    addedAt: typeof entry.addedAt === "string" ? entry.addedAt : new Date().toISOString(),
-  };
-  if (typeof entry.ingredientId === "string" && entry.ingredientId) {
-    item.ingredientId = entry.ingredientId;
-  }
-  if (typeof entry.icon === "string" && entry.icon) item.icon = entry.icon;
-  if (typeof entry.expirationDate === "string" && ISO_CALENDAR_DATE.test(entry.expirationDate)) {
-    item.expirationDate = entry.expirationDate;
-  }
-  if (entry.dlcEstimated === true) item.dlcEstimated = true;
-  const plannedMeals = parsePlannedMeals(entry.plannedMeals);
-  if (plannedMeals) item.plannedMeals = plannedMeals;
-  return item;
-}
-
-/**
- * Lecture de l'inventaire en conservant `plannedMeals` / `dlcEstimated`.
- * Ne passe pas par `setFridgeItems` (sanitize actuelle sans ces champs).
- */
 export function loadFridgeInventory(): FridgeItem[] {
-  if (typeof window === "undefined") return [];
-  const raw = window.localStorage.getItem(FRIDGE_STORAGE_KEY);
-  if (raw == null) return getFridgeItems();
-  try {
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return [];
-    return parsed.map(parseFridgeItem).filter((item): item is FridgeItem => item != null);
-  } catch {
-    return [];
-  }
+  return getFridgeItems();
 }
 
 export function persistFridgeInventory(items: FridgeItem[]): void {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(FRIDGE_STORAGE_KEY, JSON.stringify(items));
+  setFridgeItems(items);
 }
 
 export function findTodaySlotsForRecipe(

@@ -4,14 +4,20 @@
  * Usage : npx tsx scripts/check-inventory-model.mts
  */
 import { describeIngredient, resolveIngredientId } from "@/lib/ingredients";
+import { matchesInventoryIdentity } from "@/lib/inventory-match";
+import { matchRecipeIngredientsWithFridge } from "@/lib/consume-recipe";
+import { dayKey, startOfWeek } from "@/lib/date-paris";
 import {
   collectIngredientsFromDayOnward,
   collectIngredientsFromSelectedMeals,
   toIsoDateFromPlanningKey,
+  withCurrentWeekSeed,
 } from "@/lib/planning";
 import { RECIPES } from "@/lib/recipes";
+import { ing } from "@/lib/recipe-model";
 import { mergeIngredients, addShoppingItem } from "@/lib/shopping-list";
 import { formatAmount, parseAmount } from "@/lib/units";
+import type { FridgeItem } from "@/types/inventory";
 
 let failures = 0;
 
@@ -198,6 +204,64 @@ const fused = mergeIngredients(withMeals);
 check("fusion additionne les quantités", fused[0]?.amount, 150);
 check("fusion déduplique plannedMeals", fused[0]?.plannedMeals?.length, 2);
 check("targetDate = date la plus proche", fused[0]?.targetDate, "2026-08-10");
+
+console.log("\n--- Matching identité (courses / frigo / conso) ---");
+check(
+  "même ingredientId",
+  matchesInventoryIdentity(
+    { ingredientId: "ing_tomate", name: "Tomate" },
+    { ingredientId: "ing_tomate", name: "Tomates cerises" },
+  ),
+  true,
+);
+check(
+  "poulet fermier ≠ hauts de cuisse (token poulet)",
+  matchesInventoryIdentity(
+    { name: "Poulet fermier" },
+    { name: "Hauts de cuisse de poulet" },
+  ),
+  false,
+);
+
+const cuisse = ing("Hauts de cuisse de poulet", 4, "piece");
+const fridgePoulet: FridgeItem = {
+  id: "f-poulet",
+  customName: "Poulet fermier",
+  amount: 500,
+  unit: "g",
+  category: "fridge",
+  addedAt: "2026-08-26T00:00:00.000Z",
+  ingredientId: "ing_filet_poulet",
+};
+const matchPoulet = matchRecipeIngredientsWithFridge([cuisse], [fridgePoulet]);
+check("conso : poulet fermier (g) ne matche pas hauts de cuisse", matchPoulet.unmatched.length, 1);
+check("conso : aucune déduction silencieuse", matchPoulet.deductions.length, 0);
+
+const fridgeCuisse: FridgeItem = {
+  id: "f-cuisse",
+  customName: "Hauts de cuisse de poulet",
+  amount: 4,
+  unit: "piece",
+  category: "fridge",
+  addedAt: "2026-08-26T00:00:00.000Z",
+  ingredientId: cuisse.ingredientId,
+};
+const matchOk = matchRecipeIngredientsWithFridge([cuisse], [fridgeCuisse]);
+check("conso : même id + unité compatible", matchOk.deductions[0]?.amountToDeduct, 4);
+
+const todaySeed = new Date(Date.UTC(2026, 7, 26, 12));
+const weekId = dayKey(startOfWeek(todaySeed));
+const dayId = dayKey(todaySeed);
+const seededWeek = withCurrentWeekSeed({}, todaySeed);
+check("seed ajoute la semaine absente", Object.prototype.hasOwnProperty.call(seededWeek, weekId), true);
+const alreadySaved = {
+  [weekId]: { [dayId]: { breakfast: null, lunchId: null, dinnerId: null } },
+};
+check(
+  "seed n'écrase pas une semaine déjà sauvée",
+  withCurrentWeekSeed(alreadySaved, todaySeed)[weekId]?.[dayId]?.lunchId,
+  null,
+);
 
 console.log(failures === 0 ? "\nTous les contrôles passent." : `\n${failures} contrôle(s) en échec.`);
 process.exit(failures === 0 ? 0 : 1);

@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { AuthCard } from "@/components/auth-card";
 import { safeAuthNextPath } from "@/lib/auth-google";
 import {
+  GUEST_ACTIVE_SESSION_KEY,
   GUEST_AUTH_ERROR,
   guestAuthErrorMessage,
   signInAsGuest,
@@ -20,6 +21,8 @@ export function GuestSignIn() {
     if (started.current) return;
     started.current = true;
 
+    window.sessionStorage.setItem(GUEST_ACTIVE_SESSION_KEY, "1");
+
     const supabase = createClient();
     const next = safeAuthNextPath(searchParams.get("next"));
 
@@ -31,6 +34,7 @@ export function GuestSignIn() {
       if (!user) {
         const { error: guestError } = await signInAsGuest(supabase);
         if (guestError) {
+          window.sessionStorage.removeItem(GUEST_ACTIVE_SESSION_KEY);
           setError(guestAuthErrorMessage(guestError));
           window.location.replace(`/login?error=${GUEST_AUTH_ERROR}`);
           return;

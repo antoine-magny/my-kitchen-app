@@ -46,7 +46,9 @@ export async function POST(request: Request) {
         ? error.message.slice(0, 240)
         : "erreur inconnue";
     return Response.json(
-      { error: `Échec de l’analyse IA : ${detail}` },
+      {
+        error: `La page a été récupérée, mais l’analyse IA a échoué : ${detail}. Réessayez, ou importez depuis une photo.`,
+      },
       { status: 502 },
     );
   }

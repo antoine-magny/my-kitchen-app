@@ -12,6 +12,7 @@ import {
   resolveIcon,
   resolveStoredIngredientIcon,
 } from "@/lib/ingredients";
+import { matchesInventoryIdentity } from "@/lib/inventory-match";
 import {
   classifyProduct,
   isShoppingCategoryId,
@@ -428,8 +429,10 @@ function matchesShoppingItem(
   ingredientId: string | undefined,
   cleanName: string,
 ): boolean {
-  if (ingredientId && item.ingredientId && item.ingredientId === ingredientId) return true;
-  return normalizeProductName(item.customName) === cleanName;
+  return matchesInventoryIdentity(
+    { ingredientId: item.ingredientId, name: item.customName },
+    { ingredientId, name: cleanName },
+  );
 }
 
 /**

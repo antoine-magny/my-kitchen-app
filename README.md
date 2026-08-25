@@ -103,6 +103,7 @@ lib/                    Logique métier, sans JSX
   shopping-list.ts      Export Planning → Courses (fusion / déduplication)
   fridge.ts             Inventaire local + transfert Courses → Frigo
   consume-recipe.ts     Matching recette ↔ frigo, déduction des quantités, libération des réservations
+  inventory-match.ts    Identité partagée courses / frigo / consommation (`ingredientId` ou nom exact)
   ingredients.ts        Référentiel canonique (ingredientId)
   planning.ts           Construction de semaine + agrégation d'ingrédients
   recipe-model.ts       Types Recipe : tags multiples, coût, difficulté
@@ -126,8 +127,10 @@ Quelques exemples de cette découpe, utiles comme modèles :
 
 - `app/planning/page.tsx` hydrate / persiste le localStorage (`getStoredMealPlans` /
   `saveMealPlans`) puis délègue l'UI à `components/planning/planning-board.tsx`.
-  La construction d'une semaine et l'agrégation d'ingrédients vivent dans
-  `lib/planning.ts`.
+  `getStoredMealPlans` persiste une fois le seed de la semaine en cours (poulet /
+  yaourt) s'il n'existe pas encore — une semaine déjà sauvée n'est jamais
+  réécrite. La construction d'une semaine et l'agrégation d'ingrédients vivent
+  dans `lib/planning.ts`.
 - `app/frigo/page.tsx` hydrate / persiste le localStorage puis délègue liste et
   modales à `components/frigo/`.
 - Les deux modales de recette restent séparées : `recipe-form-modal.tsx`
@@ -320,16 +323,16 @@ Quand un plat est réalisé, `app/recettes/[id]/page.tsx` ouvre
 `ConsumeRecipeModal` (`components/recettes/consume-recipe-modal.tsx`).
 
 1. `matchRecipeIngredientsWithFridge` (`lib/consume-recipe.ts`) rapproche
-   chaque ingrédient de recette d'un ou plusieurs `FridgeItem` (`ingredientId`,
-   puis nom normalisé / fuzzy) et propose une quantité à déduire (unités
-   converties via `convertToUnit`).
+   chaque ingrédient de recette d'un ou plusieurs `FridgeItem` via le helper
+   partagé `matchesInventoryIdentity` (`ingredientId`, sinon nom normalisé
+   exact — pas de fuzzy ni de token isolé). Les unités incompatibles
+   (ex. g vs pièce sans équivalence catalogue) ne matchent pas.
 2. L'utilisateur peut décocher ou ajuster les lignes. Au confirm :
    `consumeRecipeIngredients` réduit les quantités, supprime les entrées à 0,
    et retire uniquement les `plannedMeals` de **cette** recette **aujourd'hui**
    (les réservations d'autres recettes / d'autres jours restent).
-3. Persistance directe de `my-kitchen-fridge-items-v2` via
-   `persistFridgeInventory` (sans `setFridgeItems`, pour conserver
-   `plannedMeals`).
+3. Persistance via `setFridgeItems` (`persistFridgeInventory`) : le sanitizer
+   unique conserve `plannedMeals` et `dlcEstimated`.
 4. Bannière « Frigo mis à jour ! » ; si le plat est au planning du jour,
    proposition de le retirer (`removeRecipeFromTodayPlan`, helpers déjà
    exportés de `lib/planning.ts`).
@@ -449,15 +452,19 @@ Les messages d'erreur sont personnalisés (`lib/auth-google.ts`,
   pas d'e-mail. Prénom affiché « Invité », libellé profil « Compte invité ».
   Session perdue à la déconnexion, au nettoyage du navigateur, ou sur un autre
   appareil. Connexion côté **navigateur** (`/auth/guest` + bouton login).
-  Le middleware valide la session via Auth ; si Supabase est injoignable
-  depuis Node (certificat local / antivirus), il lit le JWT cookie.
+  `/auth/guest` pose `guest_session_active` dans `sessionStorage` **avant**
+  `signInAnonymously`, pour que le filet « session invité » (home / AppShell)
+  ne déconnecte pas les agents ou un refresh immédiat. Le middleware valide
+  la session via Auth ; si Supabase est injoignable depuis Node (certificat
+  local / antivirus), il lit le JWT cookie.
   La modale « Modifier mon profil » convertit le compte via `updateUser`
   (e-mail + mot de passe) et synchronise `profiles.full_name`.
 - **Auto-login local** : désactivé par défaut (même flux qu'en production :
-  page `/login`). En `next dev`, `DEV_AUTO_GUEST=1` redirige une visite hors
-  `/login`, `/auth/*` et `/nouveau-mot-de-passe` sans session vers
-  `/auth/guest` (un seul essai, puis `/login` pour éviter une boucle). Jamais
-  actif en production.
+  page `/login`). En `next dev`, `DEV_AUTO_GUEST=1` dans `.env.local` (ne pas
+  committer ce fichier) redirige une visite hors `/login`, `/auth/*` et
+  `/nouveau-mot-de-passe` sans session vers `/auth/guest` (un seul essai, puis
+  `/login` pour éviter une boucle). Destiné aux agents / E2E. Jamais actif
+  en production.
 - **Mot de passe oublié** : `/login/mot-de-passe-oublie` →
   `resetPasswordForEmail` (ne révèle pas si l'adresse existe). Le lien e-mail
   revient sur `/auth/callback?next=/nouveau-mot-de-passe`, puis
@@ -583,7 +590,7 @@ production.
 | `SUPABASE_SECRET_KEY` | oui | Clé secrète serveur. Contourne la RLS (keep-alive + détection des fournisseurs Auth) |
 | `GEMINI_API_KEY` | pour l'IA | Clé Google Gemini. Sans elle, les routes de génération et d'import renvoient une erreur explicite, le reste de l'app fonctionne |
 | `GEMINI_MODEL` | non | Force un modèle précis. Par défaut `gemini-3.6-flash` (`GEMINI_FLASH_MODEL`) |
-| `DEV_AUTO_GUEST` | non | Uniquement en local. `1` / `true` active l'auto-connexion invité (`next dev` la laisse désactivée par défaut) |
+| `DEV_AUTO_GUEST` | non | Uniquement en local. `1` / `true` active l'auto-connexion invité (`next dev` la laisse désactivée par défaut). À poser dans `.env.local` pour les agents ; ne jamais committer ce fichier |
 
 La CI GitHub Actions n'a pas les secrets Vercel. Le workflow injecte des valeurs
 factices pour `NEXT_PUBLIC_SUPABASE_URL` et `NEXT_PUBLIC_SUPABASE_ANON_KEY` afin

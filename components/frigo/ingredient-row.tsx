@@ -105,11 +105,18 @@ export function IngredientRow({
             {sortPlannedMeals(item.plannedMeals).map((meal) => (
               <li
                 key={`${meal.date}|${meal.mealType}|${meal.recipeId ?? ""}|${meal.recipeTitle}`}
-                className="inline-flex max-w-full items-center gap-1 rounded-full border border-[#D6D4E4] bg-[#F0F3F4] px-2 py-0.5 text-[11px] leading-tight font-medium text-[#4A5568]"
+                className="inline-flex max-w-full items-start gap-1 rounded-2xl border border-[#D6D4E4] bg-[#F0F3F4] px-2 py-1 text-[11px] leading-tight font-medium text-[#4A5568] sm:items-center sm:rounded-full sm:py-0.5"
               >
-                <CalendarIcon size={10} className="shrink-0 text-[#6B5B7A]" />
-                <span className="truncate">
-                  Prévu pour : {meal.recipeTitle} ({weekdayLongFrFromIso(meal.date)})
+                <CalendarIcon size={10} className="mt-0.5 shrink-0 text-[#6B5B7A] sm:mt-0" />
+                <span className="min-w-0">
+                  <span className="block truncate sm:inline">
+                    Prévu pour : {meal.recipeTitle}
+                  </span>
+                  <span className="mt-0.5 block capitalize text-[#6B5B7A] sm:mt-0 sm:inline sm:text-inherit sm:normal-case">
+                    <span className="hidden sm:inline"> (</span>
+                    {weekdayLongFrFromIso(meal.date)}
+                    <span className="hidden sm:inline">)</span>
+                  </span>
                 </span>
               </li>
             ))}

@@ -296,15 +296,39 @@ export function collectIngredientsFromSelectedMeals(
   return collected;
 }
 
-export function getStoredMealPlans(): Record<string, Record<string, DayPlan>> {
-  if (typeof window === "undefined") return {};
-  const raw = window.localStorage.getItem(MEAL_PLANS_KEY);
+function parseStoredMealPlans(raw: string | null): Record<string, Record<string, DayPlan>> {
   if (!raw) return {};
   try {
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+    return parsed as Record<string, Record<string, DayPlan>>;
   } catch {
     return {};
   }
+}
+
+/**
+ * Ajoute le seed de la semaine en cours s'il n'existe pas encore.
+ * Idempotent : une semaine déjà sauvée (même vide) n'est jamais réécrite.
+ */
+export function withCurrentWeekSeed(
+  plansByWeek: Record<string, Record<string, DayPlan>>,
+  today: Date = parisCalendarDate(),
+): Record<string, Record<string, DayPlan>> {
+  const weekStart = startOfWeek(today);
+  const weekId = dayKey(weekStart);
+  if (Object.prototype.hasOwnProperty.call(plansByWeek, weekId)) {
+    return plansByWeek;
+  }
+  return { ...plansByWeek, [weekId]: buildInitialPlans(weekStart) };
+}
+
+export function getStoredMealPlans(): Record<string, Record<string, DayPlan>> {
+  if (typeof window === "undefined") return {};
+  const stored = parseStoredMealPlans(window.localStorage.getItem(MEAL_PLANS_KEY));
+  const seeded = withCurrentWeekSeed(stored);
+  if (seeded !== stored) saveMealPlans(seeded);
+  return seeded;
 }
 
 export function saveMealPlans(plansByWeek: Record<string, Record<string, DayPlan>>): void {

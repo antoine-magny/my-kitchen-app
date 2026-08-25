@@ -8,6 +8,7 @@
  */
 
 import { describeIngredient, resolveStoredIngredientIcon } from "@/lib/ingredients";
+import { matchesInventoryIdentity } from "@/lib/inventory-match";
 import { normalizeProductName } from "@/lib/shopping-categories";
 import { calendarDateFromIso } from "@/lib/date-paris";
 import {
@@ -461,6 +462,11 @@ export function setFridgeItems(items: FridgeItem[]) {
   window.localStorage.setItem(FRIDGE_STORAGE_KEY, JSON.stringify(sanitized));
 }
 
+/** Sanitizer unique : conserve `plannedMeals` et `dlcEstimated`. */
+export function sanitizeFridgeItem(raw: unknown): FridgeItem | null {
+  return sanitizeItem(raw);
+}
+
 export function toFridgeSnapshotItem(
   item: FridgeItem,
   now: Date = new Date(),
@@ -508,8 +514,10 @@ function matchesFridgeItem(
   ingredientId: string | undefined,
   cleanName: string,
 ): boolean {
-  if (ingredientId && item.ingredientId && item.ingredientId === ingredientId) return true;
-  return normalizeProductName(item.customName) === cleanName;
+  return matchesInventoryIdentity(
+    { ingredientId: item.ingredientId, name: item.customName },
+    { ingredientId, name: cleanName },
+  );
 }
 
 function applyShoppingMemory(item: FridgeItem, shop: ShoppingItem, existing?: FridgeItem) {
