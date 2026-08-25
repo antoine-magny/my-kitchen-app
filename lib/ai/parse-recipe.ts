@@ -10,6 +10,8 @@ import {
   coerceRecipeCost,
   coerceRecipeDifficulty,
   coerceRecipeTags,
+  EXPRESS_MAX_MINUTES,
+  HIGH_PROTEIN_MIN_G,
   RECIPE_COSTS,
   RECIPE_TAG_CODES_HINT,
   RECIPE_TAGS,
@@ -65,7 +67,7 @@ const PARSE_RESPONSE_SCHEMA = {
         enum: [...RECIPE_TAGS],
       },
       description:
-        `Un ou plusieurs tags parmi ${RECIPE_TAG_CODES_HINT}. express si ≤15 min.`,
+        `Un ou plusieurs tags parmi ${RECIPE_TAG_CODES_HINT}. express si ≤${EXPRESS_MAX_MINUTES} min. riche_en_proteines si ≥${HIGH_PROTEIN_MIN_G} g de protéines par portion.`,
     },
     difficulty: {
       type: Type.STRING,
@@ -102,7 +104,7 @@ const SYSTEM_INSTRUCTION = [
   "Utilise l’unité « qs » avec amount 0 pour les quantités non chiffrables (sel, poivre, herbes à volonté).",
   "instructions : liste ordonnée d’étapes actionnables (une phrase claire par étape).",
   "calories_per_serving et protein_per_serving : estimations réalistes si absentes de la source.",
-  `tags : tableau d’un ou plusieurs codes parmi ${RECIPE_TAG_CODES_HINT} uniquement. Inclus toujours au moins un type de plat (entree/plat/dessert). Interdiction d’inventer un autre code ou un libellé libre. express uniquement si le temps total estimé est ≤ 15 min.`,
+  `tags : tableau d’un ou plusieurs codes parmi ${RECIPE_TAG_CODES_HINT} uniquement. Inclus toujours au moins un type de plat (entree/plat/dessert). Interdiction d’inventer un autre code ou un libellé libre. express uniquement si le temps total estimé est ≤ ${EXPRESS_MAX_MINUTES} min. riche_en_proteines uniquement si protein_per_serving ≥ ${HIGH_PROTEIN_MIN_G} g.`,
   "difficulty : Facile, Moyen ou Difficile.",
   "cost : economique (ingrédients basiques), moyen, ou premium (produits nobles, hors-saison, truffe, filet, etc.).",
 ].join(" ");
@@ -305,6 +307,7 @@ function coerceParsedRecipe(raw: string | undefined): ParsedRecipe {
   const timeHint = [asNonEmptyString(row.prep_time), asNonEmptyString(row.cook_time)]
     .filter(Boolean)
     .join(" ");
+  const proteinPerServing = Math.round(asPositiveNumber(row.protein_per_serving, 20));
 
   return {
     title,
@@ -312,10 +315,10 @@ function coerceParsedRecipe(raw: string | undefined): ParsedRecipe {
     cook_time: asNonEmptyString(row.cook_time) ?? "20 min",
     servings: Math.max(1, Math.round(asPositiveNumber(row.servings, 4))),
     calories_per_serving: Math.round(asPositiveNumber(row.calories_per_serving, 400)),
-    protein_per_serving: Math.round(asPositiveNumber(row.protein_per_serving, 20)),
+    protein_per_serving: proteinPerServing,
     ingredients,
     instructions,
-    tags: withDerivedTags(coerceRecipeTags(row.tags, row.tag), timeHint),
+    tags: withDerivedTags(coerceRecipeTags(row.tags, row.tag), timeHint, proteinPerServing),
     difficulty: coerceRecipeDifficulty(row.difficulty),
     cost: coerceRecipeCost(row.cost),
   };

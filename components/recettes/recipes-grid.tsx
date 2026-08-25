@@ -2,13 +2,14 @@
 
 import { PlusIcon } from "@/components/icons";
 import { RecipeCard } from "@/components/recettes/recipe-card";
-import type { Recipe } from "@/lib/recipes";
+import type { Recipe, RecipeTag } from "@/lib/recipes";
 
 export function RecipesGrid({
   recipes,
   favorites,
   favoritesOnly,
   onToggleFav,
+  onTagsChange,
   onAdd,
   onShowAll,
 }: {
@@ -16,6 +17,7 @@ export function RecipesGrid({
   favorites: Set<number>;
   favoritesOnly: boolean;
   onToggleFav: (id: number) => void;
+  onTagsChange: (id: number, tags: RecipeTag[]) => void;
   onAdd: () => void;
   onShowAll: () => void;
 }) {
@@ -27,6 +29,7 @@ export function RecipesGrid({
             key={r.id}
             recipe={r}
             onToggleFav={onToggleFav}
+            onTagsChange={(tags) => onTagsChange(r.id, tags)}
             isFav={favorites.has(r.id)}
           />
         ))}

@@ -11,8 +11,10 @@ import {
   deleteRecipe,
   getRecipeById,
   updateRecipe,
+  updateRecipeTags,
   type NewRecipeInput,
   type Recipe,
+  type RecipeTag,
 } from "@/lib/recipes";
 
 export default function RecipeStepsPage({
@@ -38,6 +40,11 @@ export default function RecipeStepsPage({
     setRecipe(updated);
     setDoneSteps(new Set());
     setCurrentStep(0);
+  };
+
+  const handleTagsChange = (tags: RecipeTag[]) => {
+    const updated = updateRecipeTags(recipeId, tags);
+    if (updated) setRecipe(updated);
   };
 
   const handleDelete = () => {
@@ -88,6 +95,7 @@ export default function RecipeStepsPage({
           recipe={recipe}
           onEdit={() => setShowEditModal(true)}
           onDelete={handleDelete}
+          onTagsChange={handleTagsChange}
         />
         <RecipeContent
           recipe={recipe}

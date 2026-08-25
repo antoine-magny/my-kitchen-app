@@ -33,6 +33,7 @@ export function parsedToFormState(recipe: ParsedRecipe): {
     tags: withDerivedTags(
       coerceRecipeTags(recipe.tags),
       `${prepTime} ${cookTime}`,
+      recipe.protein_per_serving || 0,
     ),
     difficulty: coerceRecipeDifficulty(recipe.difficulty),
     cost: coerceRecipeCost(recipe.cost),

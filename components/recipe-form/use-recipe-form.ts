@@ -154,7 +154,11 @@ export function useRecipeForm({
       return;
     }
 
-    const selectedTags = withDerivedTags(tags, time.trim() || "30 min");
+    const selectedTags = withDerivedTags(
+      tags,
+      time.trim() || "30 min",
+      Number(proteins) || 0,
+    );
     onSave({
       title: title.trim(),
       photo: photo.trim(),

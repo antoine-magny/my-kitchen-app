@@ -23,6 +23,15 @@ export const ATTRIBUTE_TAGS = [
   "riche_en_proteines",
 ] as const satisfies readonly RecipeTag[];
 
+/** Tags recalculés à partir du temps / des protéines — pas un choix décorrélé. */
+export const DERIVED_TAGS = ["express", "riche_en_proteines"] as const satisfies readonly RecipeTag[];
+
+/** Express : durée totale inférieure ou égale à ce seuil. */
+export const EXPRESS_MAX_MINUTES = 15;
+
+/** Riche en protéines : grammes de protéines par portion, seuil inclus. */
+export const HIGH_PROTEIN_MIN_G = 25;
+
 export const RECIPE_TAG_LABELS: Record<RecipeTag, string> = {
   entree: "Entrée",
   plat: "Plat",
@@ -171,12 +180,21 @@ export function coerceRecipeDifficulty(value: unknown): RecipeDifficulty {
   return isRecipeDifficulty(value) ? value : "Facile";
 }
 
-/** `express` est dérivé du temps (≤ 15 min), pas un choix décorrélé. */
-export function withDerivedTags(tags: RecipeTag[], time: string): RecipeTag[] {
-  const withoutExpress = tags.filter((tag) => tag !== "express");
+/** `express` et `riche_en_proteines` sont dérivés du temps et des protéines. */
+export function withDerivedTags(
+  tags: RecipeTag[],
+  time: string,
+  proteins: number,
+): RecipeTag[] {
+  const next: RecipeTag[] = tags.filter(
+    (tag) => tag !== "express" && tag !== "riche_en_proteines",
+  );
   const minutes = parseMinutes(time);
-  if (minutes != null && minutes <= 15) return [...withoutExpress, "express"];
-  return withoutExpress;
+  if (minutes != null && minutes <= EXPRESS_MAX_MINUTES) next.push("express");
+  if (Number.isFinite(proteins) && proteins >= HIGH_PROTEIN_MIN_G) {
+    next.push("riche_en_proteines");
+  }
+  return next;
 }
 
 export function tagToLabel(tag: RecipeTag): string {

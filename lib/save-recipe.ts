@@ -210,7 +210,11 @@ export function toNewRecipeInput(
     detail,
   }));
 
-  const tags = withDerivedTags(coerceRecipeTags(payload.tags), time);
+  const tags = withDerivedTags(
+    coerceRecipeTags(payload.tags),
+    time,
+    Math.max(0, Math.round(payload.protein_per_serving) || 0),
+  );
 
   return {
     title: payload.title.trim(),
