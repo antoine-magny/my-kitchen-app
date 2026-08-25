@@ -1,9 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { DEFAULT_INGREDIENT_ICON, UNIQUE_EMOJI_INGREDIENTS } from "@/lib/ingredients";
+import {
+  clampPopoverLeft,
+  POPOVER_BOTTOM_NAV,
+  POPOVER_GAP,
+  popoverMaxHeight,
+  popoverOpensAbove,
+} from "@/lib/popover-position";
 import { IngredientIcon } from "@/components/ingredient-icon";
+import { usePopoverDismiss } from "@/components/ui/use-popover-dismiss";
 
 interface EmojiPickerPopoverProps {
   currentIcon?: string;
@@ -36,8 +44,6 @@ export function EmojiPickerPopover({
     if (!buttonRef.current) return;
     const rect = buttonRef.current.getBoundingClientRect();
     const POPOVER_MAX_HEIGHT = 256;
-    const GAP = 6;
-    const BOTTOM_NAV_HEIGHT = 80;
     const width = Math.min(282, window.innerWidth - 16);
     const sheet = window.innerWidth < 400;
 
@@ -53,65 +59,31 @@ export function EmojiPickerPopover({
       return;
     }
 
-    let top = rect.bottom + GAP + window.scrollY;
-    let left = Math.max(8, rect.left + window.scrollX);
+    const left = clampPopoverLeft(rect.left + window.scrollX, width, window.innerWidth);
+    const spaceBelow = window.innerHeight - rect.bottom - POPOVER_GAP - POPOVER_BOTTOM_NAV;
+    const spaceAbove = rect.top - POPOVER_GAP;
+
+    let top = rect.bottom + POPOVER_GAP + window.scrollY;
     let maxHeight = POPOVER_MAX_HEIGHT;
 
-    if (left + width > window.innerWidth - 8) {
-      left = Math.max(8, window.innerWidth - width - 8);
-    }
-
-    const spaceBelow = window.innerHeight - rect.bottom - GAP - BOTTOM_NAV_HEIGHT;
-    const spaceAbove = rect.top - GAP;
-
-    if (spaceBelow < POPOVER_MAX_HEIGHT && spaceAbove > spaceBelow) {
+    if (popoverOpensAbove(spaceBelow, spaceAbove, POPOVER_MAX_HEIGHT)) {
       maxHeight = Math.min(POPOVER_MAX_HEIGHT, spaceAbove - 8);
-      top = rect.top - maxHeight - GAP + window.scrollY;
+      top = rect.top - maxHeight - POPOVER_GAP + window.scrollY;
     } else {
-      maxHeight = Math.min(POPOVER_MAX_HEIGHT, Math.max(120, spaceBelow - 8));
+      maxHeight = popoverMaxHeight(spaceBelow, POPOVER_MAX_HEIGHT);
     }
 
     setPopoverPos({ top, left, maxHeight, width, sheet: false });
     setIsOpen(true);
   }
 
-  // Ferme au clic extérieur
-  useEffect(() => {
-    if (!isOpen) return;
-
-    function handleClickOutside(event: MouseEvent) {
-      const target = event.target as Node;
-      if (
-        buttonRef.current?.contains(target) ||
-        popoverRef.current?.contains(target)
-      ) return;
-      setIsOpen(false);
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen]);
-
-  // Ferme au scroll EXTÉRIEUR ou resize pour éviter un popover désynchronisé.
-  // Le scroll INTERNE au popover (grille d'emojis) ne doit PAS fermer le popover.
-  useEffect(() => {
-    if (!isOpen) return;
-
-    function handleScroll(event: Event) {
-      // Si le scroll vient de l'intérieur du popover, on le laisse passer
-      if (popoverRef.current?.contains(event.target as Node)) return;
-      setIsOpen(false);
-    }
-
-    const handleResize = () => setIsOpen(false);
-
-    window.addEventListener("scroll", handleScroll, true);
-    window.addEventListener("resize", handleResize);
-    return () => {
-      window.removeEventListener("scroll", handleScroll, true);
-      window.removeEventListener("resize", handleResize);
-    };
-  }, [isOpen]);
+  usePopoverDismiss({
+    isOpen,
+    onClose: () => setIsOpen(false),
+    triggerRef: buttonRef,
+    popoverRef,
+    closeOnEscape: false,
+  });
 
   const sizeClasses =
     size === "lg"

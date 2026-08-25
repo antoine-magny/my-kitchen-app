@@ -7,7 +7,7 @@ import { EditProfileActions } from "@/components/parametres/edit-profile-actions
 import { EditProfileFields } from "@/components/parametres/edit-profile-fields";
 import { EditProfileHeader } from "@/components/parametres/edit-profile-header";
 import { EditProfilePasswordFields } from "@/components/parametres/edit-profile-password-fields";
-import { formatAuthError } from "@/components/parametres/format-auth-error";
+import { formatAuthError } from "@/lib/format-auth-error";
 import { createClient } from "@/lib/supabase/client";
 import {
   AccountProfileError,

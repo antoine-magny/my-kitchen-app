@@ -1,4 +1,11 @@
 import { getIngredientEquivalence } from "@/lib/ingredients";
+import {
+  LEGACY_UNIT_MAP,
+  PLURALIZED_UNITS,
+  UNIT_ALIASES,
+  UNIT_SHORT_LABELS,
+  UNQUANTIFIED_MARKERS,
+} from "@/lib/unit-aliases";
 
 /**
  * Unités regroupées par familles (Masse, Volume, Décompte).
@@ -53,14 +60,6 @@ export const DEFAULT_UNIT: UnitCode = "piece";
 /** Marqueur « quantité suffisante » : le montant numérique n'a pas de sens. */
 export const UNQUANTIFIED_UNIT: UnitCode = "qs";
 
-/** Alias legacy → code canonique (localStorage / IA / anciennes recettes). */
-const LEGACY_UNIT_MAP: Record<string, UnitCode> = {
-  unite: "piece",
-  unites: "piece",
-  cas: "c_soupe",
-  cac: "c_cafe",
-};
-
 export function isUnitCode(value: string): value is UnitCode {
   return value in UNITS;
 }
@@ -73,27 +72,7 @@ export function coerceUnitCode(value: string): UnitCode | null {
 }
 
 export function unitLabel(code: UnitCode): string {
-  const short: Partial<Record<UnitCode, string>> = {
-    g: "g",
-    kg: "kg",
-    ml: "ml",
-    cl: "cl",
-    l: "L",
-    c_cafe: "c.à.c",
-    c_soupe: "c.à.s",
-    verre: "verre",
-    piece: "Pièce",
-    gousse: "gousse",
-    tranche: "tranche",
-    sachet: "sachet",
-    pincee: "pincée",
-    brin: "brin",
-    poignee: "poignée",
-    botte: "botte",
-    feuille: "feuille",
-    qs: "Quantité suffisante",
-  };
-  return short[code] ?? UNITS[code]?.label ?? code;
+  return UNIT_SHORT_LABELS[code] ?? UNITS[code]?.label ?? code;
 }
 
 export function getUnitCategory(code: string): UnitCategory | null {
@@ -227,19 +206,6 @@ export function areUnitsCompatible(a: UnitCode, b: UnitCode, ingredientNameOrId?
   return combineQuantities(1, a, 1, b, ingredientNameOrId) != null;
 }
 
-/** Unités dénombrables qui prennent un « s » au pluriel à l'affichage. */
-const PLURALIZED_UNITS: Partial<Record<UnitCode, string>> = {
-  piece: "pièce",
-  gousse: "gousse",
-  tranche: "tranche",
-  sachet: "sachet",
-  pincee: "pincée",
-  brin: "brin",
-  poignee: "poignée",
-  botte: "botte",
-  feuille: "feuille",
-};
-
 function formatNumber(value: number): string {
   if (!Number.isFinite(value)) return String(value);
   const rounded = Math.round(value * 100) / 100;
@@ -269,82 +235,8 @@ export function formatAmount(amount: number, unit: UnitCode): string {
   const plural = PLURALIZED_UNITS[code];
   if (plural) return `${formatNumber(amount)} ${plural}${amount > 1 ? "s" : ""}`;
 
-  const shortLabels: Partial<Record<UnitCode, string>> = {
-    g: "g",
-    kg: "kg",
-    ml: "ml",
-    cl: "cl",
-    l: "L",
-    c_cafe: "c.à.c",
-    c_soupe: "c.à.s",
-    verre: "verre",
-  };
-  return `${formatNumber(amount)} ${shortLabels[code] ?? unitLabel(code)}`;
+  return `${formatNumber(amount)} ${UNIT_SHORT_LABELS[code] ?? unitLabel(code)}`;
 }
-
-const UNIT_ALIASES: Record<string, { unit: UnitCode; factor: number }> = {
-  g: { unit: "g", factor: 1 },
-  gr: { unit: "g", factor: 1 },
-  gramme: { unit: "g", factor: 1 },
-  grammes: { unit: "g", factor: 1 },
-  kg: { unit: "kg", factor: 1 },
-  kilo: { unit: "kg", factor: 1 },
-  kilos: { unit: "kg", factor: 1 },
-  ml: { unit: "ml", factor: 1 },
-  millilitre: { unit: "ml", factor: 1 },
-  millilitres: { unit: "ml", factor: 1 },
-  cl: { unit: "cl", factor: 1 },
-  dl: { unit: "ml", factor: 100 },
-  l: { unit: "l", factor: 1 },
-  litre: { unit: "l", factor: 1 },
-  litres: { unit: "l", factor: 1 },
-  cas: { unit: "c_soupe", factor: 1 },
-  c_soupe: { unit: "c_soupe", factor: 1 },
-  "c a s": { unit: "c_soupe", factor: 1 },
-  "cuillere a soupe": { unit: "c_soupe", factor: 1 },
-  "cuilleres a soupe": { unit: "c_soupe", factor: 1 },
-  tbsp: { unit: "c_soupe", factor: 1 },
-  cac: { unit: "c_cafe", factor: 1 },
-  c_cafe: { unit: "c_cafe", factor: 1 },
-  "c a c": { unit: "c_cafe", factor: 1 },
-  "cuillere a cafe": { unit: "c_cafe", factor: 1 },
-  "cuilleres a cafe": { unit: "c_cafe", factor: 1 },
-  tsp: { unit: "c_cafe", factor: 1 },
-  verre: { unit: "verre", factor: 1 },
-  verres: { unit: "verre", factor: 1 },
-  piece: { unit: "piece", factor: 1 },
-  pieces: { unit: "piece", factor: 1 },
-  unite: { unit: "piece", factor: 1 },
-  unites: { unit: "piece", factor: 1 },
-  pce: { unit: "piece", factor: 1 },
-  pc: { unit: "piece", factor: 1 },
-  pot: { unit: "piece", factor: 1 },
-  pots: { unit: "piece", factor: 1 },
-  portion: { unit: "piece", factor: 1 },
-  portions: { unit: "piece", factor: 1 },
-  sachet: { unit: "sachet", factor: 1 },
-  sachets: { unit: "sachet", factor: 1 },
-  brin: { unit: "brin", factor: 1 },
-  brins: { unit: "brin", factor: 1 },
-  poignee: { unit: "poignee", factor: 1 },
-  poignees: { unit: "poignee", factor: 1 },
-  pincee: { unit: "pincee", factor: 1 },
-  pincees: { unit: "pincee", factor: 1 },
-  tranche: { unit: "tranche", factor: 1 },
-  tranches: { unit: "tranche", factor: 1 },
-  botte: { unit: "botte", factor: 1 },
-  bottes: { unit: "botte", factor: 1 },
-  gousse: { unit: "gousse", factor: 1 },
-  gousses: { unit: "gousse", factor: 1 },
-  feuille: { unit: "feuille", factor: 1 },
-  feuilles: { unit: "feuille", factor: 1 },
-  qs: { unit: "qs", factor: 1 },
-  "quantite suffisante": { unit: "qs", factor: 1 },
-  "quantite_suffisante": { unit: "qs", factor: 1 },
-  "quantitesuffisante": { unit: "qs", factor: 1 },
-  "au besoin": { unit: "qs", factor: 1 },
-  "au gout": { unit: "qs", factor: 1 },
-};
 
 /** Minuscules, sans accents ni ponctuation d'abréviation (« c.à.s » → « c a s »). */
 function normalizeUnitToken(value: string): string {
@@ -369,19 +261,6 @@ export function normalizeUnit(value: unknown): UnitCode {
   const compact = token.replace(/\s/g, "");
   return (UNIT_ALIASES[token] ?? UNIT_ALIASES[compact])?.unit ?? DEFAULT_UNIT;
 }
-
-const UNQUANTIFIED_MARKERS = [
-  "qs",
-  "q s",
-  "quantite suffisante",
-  "quantitesuffisante",
-  "au besoin",
-  "quelques",
-  "au gout",
-  "a volonte",
-  "selon gout",
-  "selon les gouts",
-] as const;
 
 function parseNumberToken(raw: string): number | null {
   const token = raw.trim().replace(",", ".");

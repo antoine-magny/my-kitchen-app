@@ -59,16 +59,25 @@ components/             Composants React partagés
   ui/modal-layout.ts    Classes overlay / panneau des modales (centré + flou)
   ui/centered-modal.tsx Portail de modale compacte (nouvel ingrédient, DLC, courses)
   ui/unit-select.tsx    Sélecteur d'unités par familles (Masse / Volume / Décompte)
+  ui/use-popover-dismiss.ts  Fermeture partagée des popovers portal
   home/                 Accueil : en-tête, repas du jour, suggestions, DLC
-  frigo/                Composants propres à la page frigo
-  planning/             Header, board, modales (export courses, génération)
+  frigo/                Composants propres à la page frigo (liste, modales, ligne)
+  planning/             Header, board, modales + hook inventaire frigo
   parametres/           Cartes Profil + quiz (modal, tags, grille, options)
-  recipe-form/          Champs partagés des deux modales (meta, ingrédients)
+  recipe-form/          Champs partagés + hook `use-recipe-form.ts` (édition)
   add-recipe/           Parcours d'ajout (étapes) + hook `use-add-recipe-form.ts`
+  login/                Champs + boutons Google / e-mail / invité
+  recettes/             Header, grille, onglets ingrédients / étapes
+  courses/              En-tête, bannière, actions de la liste
   generate-from-fridge-modal.tsx  Génération de recettes depuis le planning
   select-recipe-modal.tsx         Choix d'une recette du catalogue
 lib/                    Logique métier, sans JSX
   units.ts              Familles d'unités + combineQuantities
+  unit-aliases.ts       Alias / libellés d'unités (sans combineQuantities)
+  format-auth-error.ts  Messages d'erreur Auth (profil)
+  load-fridge-inventory.ts  Choix inventaire Supabase vs localStorage
+  popover-position.ts   Clamp / placement vertical des popovers
+  ingredient-icons.ts   Émojis, hex OpenMoji, mots-clés visuels
   profile.ts            Données du profil utilisateur (démo, non persistées)
   user-name.ts          Prénom affiché (métadonnées Auth, puis `profiles.full_name`)
   update-profile.ts     Enregistrement du profil (Auth + table `profiles`)
@@ -103,27 +112,28 @@ Quelques exemples de cette découpe, utiles comme modèles :
   `saveMealPlans`) puis délègue l'UI à `components/planning/planning-board.tsx`.
   La construction d'une semaine et l'agrégation d'ingrédients vivent dans
   `lib/planning.ts`.
-- `app/frigo/page.tsx` orchestre l'état, mais les modales et la ligne
-  d'ingrédient sont dans `components/frigo/`.
+- `app/frigo/page.tsx` hydrate / persiste le localStorage puis délègue liste et
+  modales à `components/frigo/`.
 - Les deux modales de recette restent séparées : `recipe-form-modal.tsx`
-  (édition) et `add-recipe-modal.tsx` (ajout en 3 modes). Elles partagent
-  `recipe-form/recipe-meta-fields.tsx` et `recipe-form/recipe-ingredients-fields.tsx`
-  (plus `recipe-form-styles.ts`). L'état du parcours d'ajout vit dans
-  `components/add-recipe/use-add-recipe-form.ts` (sans JSX).
+  (édition, état dans `recipe-form/use-recipe-form.ts`) et `add-recipe-modal.tsx`
+  (ajout en 3 modes, état dans `add-recipe/use-add-recipe-form.ts`). Elles
+  partagent `recipe-form/recipe-meta-fields.tsx` et
+  `recipe-form/recipe-ingredients-fields.tsx`.
 - `app/planning/page.tsx` délègue le choix de recette à
   `components/select-recipe-modal.tsx` et la génération IA à
   `components/generate-from-fridge-modal.tsx` (via `planning-modals.tsx`).
+  L'inventaire affiché est chargé par `lib/load-fridge-inventory.ts`.
 - `app/recettes/page.tsx` orchestre la liste ; le filtrage (multi-tags, temps,
   difficulté, coût, recherche titre + ingrédients) vit dans
-  `lib/recipe-filters.ts`. Les pilules et le panneau de filtres sont dans
+  `lib/recipe-filters.ts`. Header, grille, pilules et panneau sont dans
   `components/recettes/`.
 - `app/courses/page.tsx` délègue fusion / transfert à `lib/shopping-list.ts` et
-  `lib/fridge.ts` ; le bouton « Au frigo » appelle
-  `transferCheckedShoppingItemsToFridge`.
+  `lib/fridge.ts` ; le chrome UI est dans `components/courses/courses-chrome.tsx`.
 - Les écrans d'auth (`login-form`, mot de passe oublié, nouveau mot de passe,
   invité) partagent `components/auth-card.tsx` ; la logique vit dans
   `lib/auth-google.ts`, `lib/auth-signup.ts`, `lib/auth-password.ts` et
-  `lib/auth-guest.ts`.
+  `lib/auth-guest.ts`. Les boutons du formulaire de login sont dans
+  `components/login/`.
 
 ### Modales
 

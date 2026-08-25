@@ -3,13 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AuthCard } from "@/components/auth-card";
-import { GoogleIcon, UsersIcon } from "@/components/icons";
 import {
   AuthDivider,
   AuthModeToggle,
-  AuthPasswordField,
-  AuthTextField,
 } from "@/components/login/auth-fields";
+import { LoginEmailForm } from "@/components/login/login-email-form";
+import { LoginGoogleButton } from "@/components/login/login-google-button";
+import { LoginGuestButton } from "@/components/login/login-guest-button";
 import { EXISTING_ACCOUNT_MESSAGE, isExistingAccountSignUp } from "@/lib/auth-signup";
 import {
   GOOGLE_AUTH_ERROR_MESSAGE,
@@ -157,95 +157,42 @@ export function LoginForm({ oauthError, oauthEmail }: LoginFormProps) {
         }}
       />
 
-      <button
-        type="button"
+      <LoginGoogleButton
+        loading={loading === "google"}
+        disabled={busy}
         onClick={() => void handleGoogleAuth()}
-        disabled={busy}
-        className="w-full flex items-center justify-center gap-3 py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2E5B3E] disabled:opacity-50"
-      >
-        <GoogleIcon size={18} />
-        {loading === "google" ? "Redirection..." : "Continuer avec Google"}
-      </button>
+      />
 
       <AuthDivider />
 
-      <form
-        className="space-y-6"
-        onSubmit={(e) => {
-          e.preventDefault();
-          void handleAuth();
+      <LoginEmailForm
+        isSignup={isSignup}
+        busy={busy}
+        loadingEmail={loading === "email"}
+        firstName={firstName}
+        email={email}
+        password={password}
+        showPassword={showPassword}
+        error={error}
+        onFirstNameChange={setFirstName}
+        onEmailChange={setEmail}
+        onPasswordChange={setPassword}
+        onTogglePassword={() => setShowPassword(!showPassword)}
+        onSubmit={() => void handleAuth()}
+        onForgotPassword={() => {
+          const trimmed = email.trim();
+          const query = trimmed ? `?email=${encodeURIComponent(trimmed)}` : "";
+          router.push(`${REQUEST_RESET_PATH}${query}`);
         }}
-      >
-        {isSignup && (
-          <AuthTextField
-            id="firstName"
-            label="Prénom"
-            type="text"
-            autoComplete="given-name"
-            value={firstName}
-            onChange={setFirstName}
-          />
-        )}
-
-        <AuthTextField
-          id="email"
-          label="Email"
-          type="email"
-          autoComplete="email"
-          value={email}
-          onChange={setEmail}
-        />
-
-        <AuthPasswordField
-          value={password}
-          showPassword={showPassword}
-          autoComplete={isSignup ? "new-password" : "current-password"}
-          onChange={setPassword}
-          onToggleVisibility={() => setShowPassword(!showPassword)}
-        />
-
-        {error && <div className="text-red-600 text-sm">{error}</div>}
-
-        <button
-          type="submit"
-          disabled={busy}
-          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#2E5B3E] hover:bg-[#23452f] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2E5B3E] disabled:opacity-50"
-        >
-          {loading === "email" ? "..." : isSignup ? "S'inscrire" : "Se connecter"}
-        </button>
-
-        {!isSignup && (
-          <div className="text-center">
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => {
-                const trimmed = email.trim();
-                const query = trimmed ? `?email=${encodeURIComponent(trimmed)}` : "";
-                router.push(`${REQUEST_RESET_PATH}${query}`);
-              }}
-              className="text-sm font-medium text-[#2E5B3E] hover:text-[#23452f] hover:underline disabled:opacity-50"
-            >
-              Mot de passe oublié ?
-            </button>
-          </div>
-        )}
-      </form>
+      />
 
       <AuthDivider />
 
-      <button
-        type="button"
-        onClick={() => void handleGuestAuth()}
+      <LoginGuestButton
+        loading={loading === "guest"}
         disabled={busy}
-        className="w-full flex items-center justify-center gap-2 py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2E5B3E] disabled:opacity-50"
-      >
-        <UsersIcon size={18} />
-        {loading === "guest" ? "Connexion..." : "Se connecter en tant qu'invité"}
-      </button>
-      <p className="mt-3 text-center text-xs text-gray-500">
-        Sans e-mail, la session disparaît si vous vous déconnectez.
-      </p>
+        onClick={() => void handleGuestAuth()}
+      />
     </AuthCard>
   );
 }

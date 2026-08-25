@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronDownIcon } from "@/components/icons";
 import { UnitOptionRow } from "@/components/ui/unit-option-row";
+import { usePopoverDismiss } from "@/components/ui/use-popover-dismiss";
 import {
   ALL_COUNT_CODES,
   MASS_CODES,
@@ -11,6 +12,13 @@ import {
   VOLUME_CODES,
 } from "@/components/ui/unit-select-config";
 import { getIngredientCountUnit } from "@/lib/ingredients";
+import {
+  clampPopoverLeft,
+  POPOVER_BOTTOM_NAV,
+  POPOVER_GAP,
+  popoverMaxHeight,
+  popoverOpensAbove,
+} from "@/lib/popover-position";
 import { UNIT_LIST, unitLabel, type UnitCode } from "@/lib/units";
 
 export interface UnitSelectProps {
@@ -80,68 +88,36 @@ export function UnitSelect({
   function openPopover() {
     if (!triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
-    const GAP = 6;
-    const BOTTOM_NAV_HEIGHT = 80;
     const POPOVER_MAX_HEIGHT = 288;
 
     const width = Math.min(210, window.innerWidth - 16);
-    let left = Math.max(8, rect.left);
-    if (left + width > window.innerWidth - 8) {
-      left = Math.max(8, window.innerWidth - width - 8);
-    }
+    const left = clampPopoverLeft(rect.left, width, window.innerWidth);
 
-    const spaceBelow = window.innerHeight - rect.bottom - GAP - BOTTOM_NAV_HEIGHT;
-    const spaceAbove = rect.top - GAP;
-    const openAbove = spaceBelow < POPOVER_MAX_HEIGHT && spaceAbove > spaceBelow;
+    const spaceBelow = window.innerHeight - rect.bottom - POPOVER_GAP - POPOVER_BOTTOM_NAV;
+    const spaceAbove = rect.top - POPOVER_GAP;
+    const openAbove = popoverOpensAbove(spaceBelow, spaceAbove, POPOVER_MAX_HEIGHT);
     const maxHeight = openAbove
-      ? Math.min(POPOVER_MAX_HEIGHT, Math.max(120, spaceAbove - 8))
-      : Math.min(POPOVER_MAX_HEIGHT, Math.max(120, spaceBelow - 8));
+      ? popoverMaxHeight(spaceAbove, POPOVER_MAX_HEIGHT)
+      : popoverMaxHeight(spaceBelow, POPOVER_MAX_HEIGHT);
 
     setPopoverPos({
       left,
       width,
       maxHeight,
       ...(openAbove
-        ? { bottom: window.innerHeight - rect.top + GAP }
-        : { top: rect.bottom + GAP }),
+        ? { bottom: window.innerHeight - rect.top + POPOVER_GAP }
+        : { top: rect.bottom + POPOVER_GAP }),
     });
     setIsOpen(true);
   }
 
-  useEffect(() => {
-    if (!isOpen) return;
-
-    function handleClickOutside(event: MouseEvent) {
-      const target = event.target as Node;
-      if (triggerRef.current?.contains(target) || popoverRef.current?.contains(target)) return;
-      setIsOpen(false);
-    }
-
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setIsOpen(false);
-        triggerRef.current?.focus();
-      }
-    }
-
-    function handleScroll(event: Event) {
-      if (popoverRef.current?.contains(event.target as Node)) return;
-      setIsOpen(false);
-    }
-    const handleResize = () => setIsOpen(false);
-
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("scroll", handleScroll, true);
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("scroll", handleScroll, true);
-      window.removeEventListener("resize", handleResize);
-    };
-  }, [isOpen]);
+  usePopoverDismiss({
+    isOpen,
+    onClose: () => setIsOpen(false),
+    triggerRef,
+    popoverRef,
+    restoreFocus: true,
+  });
 
   const currentDisplay = UNIT_DISPLAY_CONFIG[value] ?? {
     label: unitLabel(value as UnitCode),

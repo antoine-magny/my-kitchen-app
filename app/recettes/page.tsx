@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AddRecipeModal } from "@/components/add-recipe-modal";
-import { PlusIcon, SearchIcon } from "@/components/icons";
 import { FeaturedCard } from "@/components/recettes/featured-card";
-import { RecipeCard } from "@/components/recettes/recipe-card";
 import { RecipeFilterPills } from "@/components/recettes/recipe-filter-pills";
 import { RecipeFiltersPanel } from "@/components/recettes/recipe-filters-panel";
+import { RecipesGrid } from "@/components/recettes/recipes-grid";
+import { RecipesHeader } from "@/components/recettes/recipes-header";
 import { DEFAULT_FAVORITES, readFavorites, writeFavorites } from "@/lib/favorites";
 import {
   countAdvancedFilters,
@@ -109,44 +109,11 @@ export default function RecettesPage() {
   return (
     <div className="min-h-screen bg-[#F6F8F3]">
       <main className="mx-auto max-w-md px-5 py-8 sm:max-w-2xl lg:max-w-5xl lg:px-10 lg:py-10">
-        <div className="mb-8">
-          <div className="mb-4">
-            <p className="mb-0.5 text-xs font-semibold tracking-[0.1em] text-[#7A8F7D] uppercase">Collection</p>
-            <h1 className="font-lora text-2xl leading-none font-bold text-[#1C2B1E] lg:text-3xl">Mes Recettes</h1>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div
-              className="flex min-w-0 flex-1 items-center gap-2.5 rounded-2xl px-4 py-2.5"
-              style={{
-                background: "#FFFFFF",
-                border: "1.5px solid #E2EBE3",
-                boxShadow: "0 2px 12px rgba(28,43,30,0.06)",
-              }}
-            >
-              <span className="shrink-0 text-[#7A8F7D]">
-                <SearchIcon size={16} />
-              </span>
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Titre ou ingrédient…"
-                className="min-w-0 flex-1 truncate bg-transparent text-base font-medium text-[#1C2B1E] outline-none"
-              />
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setShowAddModal(true)}
-              className="btn-primary flex shrink-0 items-center gap-2.5 rounded-2xl px-4 py-3 text-sm font-bold sm:px-5"
-            >
-              <PlusIcon size={14} />
-              <span className="hidden sm:inline">Ajouter une recette</span>
-              <span className="sm:hidden">Ajouter</span>
-            </button>
-          </div>
-        </div>
+        <RecipesHeader
+          query={query}
+          onQueryChange={setQuery}
+          onAdd={() => setShowAddModal(true)}
+        />
 
         {featured ? (
           <FeaturedCard recipe={featured} onToggleFav={toggleFav} isFav={favorites.has(featured.id)} />
@@ -174,47 +141,14 @@ export default function RecettesPage() {
           </p>
         </div>
 
-        {filtered.length > 0 ? (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-            {filtered.map((r) => (
-              <RecipeCard
-                key={r.id}
-                recipe={r}
-                onToggleFav={toggleFav}
-                isFav={favorites.has(r.id)}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-24">
-            <div className="mb-4 text-5xl">{favoritesOnly ? "💔" : "🔍"}</div>
-            <p className="font-lora text-base font-bold text-[#1C2B1E]">
-              {favoritesOnly ? "Aucun favori pour l'instant" : "Aucune recette trouvée"}
-            </p>
-            <p className="mt-1 text-sm font-medium text-[#7A8F7D]">
-              {favoritesOnly
-                ? "Touchez le cœur sur une recette pour l'ajouter ici"
-                : "Essayez un autre filtre ou mot-clé"}
-            </p>
-            {!favoritesOnly ? (
-              <button
-                type="button"
-                onClick={() => setShowAddModal(true)}
-                className="mt-5 flex items-center gap-2 rounded-xl bg-[#EBF2EC] px-4 py-2.5 text-sm font-bold text-[#4A7C59] transition-all hover:opacity-90"
-              >
-                <PlusIcon size={13} /> Ajouter une recette
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setFavoritesOnly(false)}
-                className="mt-5 flex items-center gap-2 rounded-xl bg-[#EBF2EC] px-4 py-2.5 text-sm font-bold text-[#4A7C59] transition-all hover:opacity-90"
-              >
-                Voir toutes les recettes
-              </button>
-            )}
-          </div>
-        )}
+        <RecipesGrid
+          recipes={filtered}
+          favorites={favorites}
+          favoritesOnly={favoritesOnly}
+          onToggleFav={toggleFav}
+          onAdd={() => setShowAddModal(true)}
+          onShowAll={() => setFavoritesOnly(false)}
+        />
       </main>
 
       {showAddModal ? (

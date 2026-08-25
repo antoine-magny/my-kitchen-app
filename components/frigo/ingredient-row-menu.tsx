@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { CalendarIcon, MoreIcon, MoveIcon, TrashIcon } from "@/components/icons";
 import type { Ingredient, TabId } from "@/components/frigo/shared";
+import { usePopoverDismiss } from "@/components/ui/use-popover-dismiss";
 
 export function IngredientRowMenu({
   item,
@@ -23,40 +24,22 @@ export function IngredientRowMenu({
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => {
-    if (!menuOpen) return;
-    const handleClick = (e: MouseEvent) => {
-      const target = e.target as Node;
-      if (menuRef.current?.contains(target) || buttonRef.current?.contains(target)) return;
-      setMenuOpen(false);
-      setMenuPos(null);
-    };
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setMenuOpen(false);
-        setMenuPos(null);
-      }
-    };
-    const handleReposition = () => {
-      setMenuOpen(false);
-      setMenuPos(null);
-    };
-    document.addEventListener("mousedown", handleClick);
-    document.addEventListener("keydown", handleKey);
-    window.addEventListener("resize", handleReposition);
-    window.addEventListener("scroll", handleReposition, true);
-    return () => {
-      document.removeEventListener("mousedown", handleClick);
-      document.removeEventListener("keydown", handleKey);
-      window.removeEventListener("resize", handleReposition);
-      window.removeEventListener("scroll", handleReposition, true);
-    };
-  }, [menuOpen]);
+  const close = () => {
+    setMenuOpen(false);
+    setMenuPos(null);
+  };
+
+  usePopoverDismiss({
+    isOpen: menuOpen,
+    onClose: close,
+    triggerRef: buttonRef,
+    popoverRef: menuRef,
+    ignoreScrollInside: false,
+  });
 
   const toggleMenu = () => {
     if (menuOpen) {
-      setMenuOpen(false);
-      setMenuPos(null);
+      close();
       return;
     }
     if (!buttonRef.current) return;
@@ -92,11 +75,6 @@ export function IngredientRowMenu({
     });
     setMenuOpen(true);
   };
-
-  function close() {
-    setMenuOpen(false);
-    setMenuPos(null);
-  }
 
   return (
     <div className="relative shrink-0">

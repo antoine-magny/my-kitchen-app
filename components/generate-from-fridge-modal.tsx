@@ -1,34 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { SpinnerIcon, XIcon } from "@/components/icons";
 import {
   GenerateFridgeForm,
   OPTION_COUNTS,
 } from "@/components/planning/generate-fridge-form";
 import { GenerateFridgePreview } from "@/components/planning/generate-fridge-preview";
+import { useFridgeInventory } from "@/components/planning/use-fridge-inventory";
 import {
   MODAL_CLOSE_BTN_CLASS,
   MODAL_OVERLAY_CLASS,
   MODAL_PANEL_CLASS,
 } from "@/components/ui/modal-layout";
 import { isoDateFromCalendar } from "@/lib/date-paris";
-import {
-  countUsableFridgeItems,
-  getFridgeSnapshot,
-  MIN_USABLE_FRIDGE_ITEMS,
-  type FridgeSnapshotItem,
-} from "@/lib/fridge";
+import { MIN_USABLE_FRIDGE_ITEMS } from "@/lib/fridge";
 import type { GenerateFromFridgeResult } from "@/lib/generate-from-fridge";
 import { MEAL_TYPE_LABELS, type MealType } from "@/lib/meal-types";
 import { useLockBodyScroll } from "@/lib/lock-body-scroll";
 import { addCustomRecipe, type Recipe } from "@/lib/recipes";
-
-type InventoryState = {
-  ready: boolean;
-  items: FridgeSnapshotItem[];
-  usableCount: number;
-};
 
 export function GenerateFromFridgeModal({
   defaultDate,
@@ -44,53 +34,13 @@ export function GenerateFromFridgeModal({
   const [targetDate, setTargetDate] = useState(() => isoDateFromCalendar(defaultDate));
   const [mealType, setMealType] = useState<MealType>(defaultMealType);
   const [optionCount, setOptionCount] = useState<(typeof OPTION_COUNTS)[number]>(2);
-  const [inventory, setInventory] = useState<InventoryState>({
-    ready: false,
-    items: [],
-    usableCount: 0,
-  });
+  const inventory = useFridgeInventory();
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [previewRecipes, setPreviewRecipes] = useState<Recipe[] | null>(null);
   const [selectedRecipeId, setSelectedRecipeId] = useState<number | null>(null);
 
   useLockBodyScroll();
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadInventory() {
-      let supabaseItems: FridgeSnapshotItem[] = [];
-      try {
-        const response = await fetch("/api/fridge-inventory");
-        if (response.ok) {
-          const data = (await response.json()) as { items?: FridgeSnapshotItem[] };
-          supabaseItems = Array.isArray(data.items) ? data.items : [];
-        }
-      } catch {
-        supabaseItems = [];
-      }
-
-      const localItems = getFridgeSnapshot();
-      const chosen =
-        countUsableFridgeItems(supabaseItems) >= MIN_USABLE_FRIDGE_ITEMS
-          ? supabaseItems
-          : localItems;
-
-      if (!cancelled) {
-        setInventory({
-          ready: true,
-          items: chosen,
-          usableCount: countUsableFridgeItems(chosen),
-        });
-      }
-    }
-
-    void loadInventory();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const fridgeBlocked = inventory.ready && inventory.usableCount < MIN_USABLE_FRIDGE_ITEMS;
   const canGenerate = inventory.ready && !fridgeBlocked && !generating && Boolean(targetDate);
