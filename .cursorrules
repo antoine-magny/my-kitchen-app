@@ -16,17 +16,37 @@
 - Si notre conversation aboutit à la création d'une nouvelle table Supabase, d'une nouvelle variable d'environnement, ou d'une modification structurelle majeure (ex: refactoring important, nouvelle route API logicielle) : mets automatiquement à jour le fichier `README.md` à la fin de ta réponse pour refléter ces changements, sans que j'aie besoin de te le demander.
 
 --- RÈGLE : COLLABORATION MULTI-IA ---
-- Ce dépôt est aussi modifié par Antigravity (autre IA), en local et sur GitHub.
+- Ce dépôt GitHub unique est modifié en parallèle par Cursor et Antigravity, chacun dans son clone local (voir « ENVIRONNEMENTS LOCAUX DUAL-AGENT »).
 - Ne jamais partir du principe d'être le seul auteur des fichiers : vérifier `git status` / historique distant avant d'écraser ou de « corriger » du code.
-- En synchro : `pull --rebase` obligatoire ; jamais de force-push ; en cas de conflit, s'arrêter et demander à l'utilisateur.
+- Trois phrases-clés Git : « synchro git » (sauvegarde, pas de prod), « envoie en prod » (fusion vers `main` → Vercel), « mets-toi à jour » (ce dossier se cale sur `main`, pas de prod). `pull --rebase` obligatoire ; jamais de force-push ; en cas de conflit, s'arrêter et demander à l'utilisateur.
 
---- RÈGLE : SYNCHRONISATION GITHUB ---
+--- RÈGLE : SYNCHRONISATION GITHUB (« synchro git ») ---
 Quand l'utilisateur écrit "synchro git", "synchro", ou "met à jour github" :
+But : photocopie de sécurité + ce dossier se cale sur `main`. **Pas** de production.
 1. S'il y a des changements locaux : exécute `git add .` puis analyse les fichiers modifiés pour rédiger un message de commit concis et clair en français (ex: "Ajout de la page frigo"). Ajoute la date et l'heure à la fin du message (fuseau horaire : Paris). Puis exécute : `git commit -m "Message de commit généré"`. Ne crée pas de commit vide si le working tree est propre.
-2. Exécute la commande terminal : `git pull --rebase` (récupère les modifications distantes d'un collègue ou d'un agent IA et les pose proprement par-dessus tes commits locaux).
-3. Si des conflits apparaissent : arrête-toi, liste les fichiers en conflit, et demande à l'utilisateur avant de continuer. N'utilise jamais `--force`, `--force-with-lease`, `--no-verify` ni `--no-gpg-sign`.
-4. Une fois le code aligné et sans conflit, exécute la commande terminal : `git push`
-5. Confirme à l'utilisateur que le PC et GitHub sont alignés, et que la mise à jour Vercel est lancée s'il y a eu un push.
+2. Exécute : `git fetch origin`
+3. Exécute : `git pull --rebase origin main` (ce dossier se cale sur le cahier officiel). Si des conflits apparaissent : arrête-toi, liste les fichiers en conflit, et demande à l'utilisateur avant de continuer. N'utilise jamais `--force`, `--force-with-lease`, `--no-verify` ni `--no-gpg-sign`.
+4. Une fois le code aligné et sans conflit, exécute : `git push -u origin HEAD` (sauvegarde la branche de l'agent sur GitHub).
+5. Confirme : le travail est sauvé sur GitHub sur **cette** branche ; ce dossier est à jour par rapport à `main` ; **pas** déployé en prod. Rappeler : pour la prod, dire « envoie en prod ». Rappeler : l'autre agent doit entendre « mets-toi à jour » dans **son** dossier — tu ne touches JAMAIS à l'autre clone (`C:\Users\Antoine\my-kitchen-app-antigravity`).
+
+--- RÈGLE : ENVOI EN PRODUCTION (« envoie en prod ») ---
+Quand l'utilisateur écrit "envoie en prod", "envoie en production", ou "fusion vers main" :
+Bouton rouge. Fusion de **la branche courante** vers `main` → Vercel.
+Si le working tree est sale : d'abord exécuter la procédure « synchro git » ci-dessus, puis enchaîner.
+1. Vérifier qu'on n'est PAS déjà sur `main`. Si on est sur `main` : refuser, demander une branche de travail.
+2. `git fetch origin` puis `git pull --rebase origin main`. Conflits : STOP, lister les fichiers, demander à l'utilisateur. Jamais `--force`, `--force-with-lease`, `--no-verify`, `--no-gpg-sign`.
+3. `git push -u origin HEAD`
+4. Fusion vers `main` de préférence via GitHub CLI : créer une PR si besoin puis la merger (`gh pr create` / `gh pr merge`). Sinon : `git checkout main`, `git pull --rebase origin main`, `git merge --no-ff <branche>`, `git push origin main`. Jamais de force-push.
+5. Revenir sur la branche de travail de l'agent (ne pas rester à coder sur `main`).
+6. Confirme : `main` est à jour, Vercel va déployer. Dire à l'utilisateur d'ouvrir l'**autre** éditeur (Antigravity) et de taper « mets-toi à jour ». Ne jamais modifier `C:\Users\Antoine\my-kitchen-app-antigravity` (toi = Cursor).
+
+--- RÈGLE : MISE À JOUR DU DOSSIER (« mets-toi à jour ») ---
+Quand l'utilisateur écrit "mets-toi à jour" ou "mets toi à jour" :
+Uniquement pour CE dossier. Pas de merge vers `main`. Pas de prod.
+1. Si le working tree est sale : d'abord commit comme « synchro git » (pas de perte).
+2. Puis : `git fetch origin` + `git pull --rebase origin main`. Conflits : STOP, lister les fichiers, demander à l'utilisateur. Jamais `--force`, `--force-with-lease`, `--no-verify`, `--no-gpg-sign`.
+3. Push de la branche si elle a divergé (`git push`). Jamais de force-push.
+4. Confirme : ce dossier a récupéré `main`. Pas de déploiement.
 
 --- RÈGLE : OPTIMISATION ET REFACTORING SUR DEMANDE ---
 Quand l'utilisateur écrit le mot-clé "optimisation", "Optimisation", "optimise le code" ou "refactoring" :
@@ -38,8 +58,8 @@ Objectif : Faire une restructuration et une optimisation profonde de la base de 
 Avant tout audit, toute proposition de plan ou tout refactoring, exécute d'abord la procédure « SYNCHRONISATION GITHUB » ci-dessus, dans cet ordre :
 1. S'il y a des changements locaux : `git add .` puis commit. S'il n'y a aucun changement local : fais une toute petite modification (ce fichier de règles suffit) uniquement pour permettre le commit.
 2. Le message de ce commit doit être exactement : `Synchro pré optimisation (JJ/MM/AAAA HH:MM)` (heure de Paris).
-3. `git pull --rebase`, puis `git push` si aucun conflit. En cas de conflit : arrête-toi et demande à l'utilisateur. Jamais de force-push.
-4. Confirme que le PC et GitHub sont alignés. Ensuite seulement, enchaîne sur l'Étape 1 (Audit).
+3. Exécute ensuite la procédure « synchro git » (`git fetch origin`, `git pull --rebase origin main`, `git push -u origin HEAD`) si aucun conflit. En cas de conflit : arrête-toi et demande à l'utilisateur. Jamais de force-push.
+4. Confirme que le travail est sauvé sur GitHub sur **cette** branche et que ce dossier est à jour par rapport à `main` (pas de prod). Ensuite seulement, enchaîne sur l'Étape 1 (Audit).
 
 --- Règles d'or absolues ---
 1. NE RIEN CASSER (Zéro Régression) : L'application doit fonctionner de manière 100% identique. Ne modifie JAMAIS la logique du `localStorage` (hydratation), le fonctionnement de l'API Gemini, les requêtes Supabase, ni les règles complexes de fusion des listes de courses.
@@ -55,16 +75,36 @@ N'applique JAMAIS toutes les modifications d'un coup. Procède obligatoirement a
 - Étape 3 (Action) : Exécute le refactoring progressivement, fichier par fichier.
 - Étape 4 (Sauvegarde) : Une fois le nettoyage terminé avec succès, propose-moi de faire un "synchro git".
 
+--- RÈGLE : ENVIRONNEMENTS LOCAUX DUAL-AGENT (2 DOSSIERS) ---
+Deux agents dans un seul dossier plantent le cache `.next` et bloquent Git (un working tree = une branche à la fois). Deux dossiers physiques indépendants = chacun son `.next`, son `node_modules`, sa branche.
+
+| Agent | Dossier | Commande | Port |
+| --- | --- | --- | --- |
+| Cursor (toi) | `C:\Users\Antoine\my-kitchen-app` | `npm run dev` | **3000** |
+| Antigravity | `C:\Users\Antoine\my-kitchen-app-antigravity` | `npm run dev -- -p 3001` | **3001** |
+
+- Même dépôt GitHub unique. Chacun sa branche. Fusions sur `main` → Vercel.
+- Tu travailles EXCLUSIVEMENT dans `C:\Users\Antoine\my-kitchen-app`.
+- Tu ne dois JAMAIS ouvrir, modifier, ni lancer un serveur dans `C:\Users\Antoine\my-kitchen-app-antigravity`.
+- Ne pas copier des fichiers à la main d'un dossier vers l'autre (sauf `.env.local` une fois à l'install).
+- `.env.local` est gitignoré : chaque clone l'a en local, ne jamais le committer.
+
 --- RÈGLE : COHABITATION AVEC ANTIGRAVITY ET GESTION DU LOCALHOST ---
-Tu partages cet environnement de développement local avec un autre agent IA nommé "Antigravity". Pour éviter tout conflit de serveur et de fichiers sur "My kitchen app" :
+Cursor et Antigravity travaillent en parallèle dans 2 clones locaux distincts. Le travail parallèle est autorisé SI chacun est sur sa propre branche.
 
 1. PORTS LOCALHOST RÉSERVÉS :
-   - Tu (Cursor) es le serveur principal. Lorsque tu dois lancer, tester ou me demander de lancer le serveur de développement Next.js, tu utiliseras TOUJOURS le port par défaut : `3000`.
-   - La commande de lancement que tu dois utiliser ou suggérer est : `npm run dev` (ou `npm run dev -- -p 3000`).
+   - Tu (Cursor) utilises TOUJOURS le port **3000**. Commande : `npm run dev` (ou `npm run dev -- -p 3000`).
    - Le port `3001` est strictement interdit pour toi, il est réservé à Antigravity.
+   - N'ajoute pas de script `dev:3001` dans `package.json` : le flag `-p 3001` reste local à Antigravity.
 
-2. RÈGLE DE MODIFICATION DE FICHIERS (GIT) :
-   - Si nous sommes sur la même branche (ex: `main`) qu'Antigravity, tu ne dois JAMAIS modifier des fichiers en même temps que lui pour éviter les écrasements. Nous travaillons en alternance (tu dois utiliser la compétence "synchro git" au passage de relais).
-   - Si nous avons besoin de travailler en parallèle de manière isolée, tu dois OBLIGATOIREMENT créer et basculer sur une nouvelle branche GitHub (ex: `git checkout -b feature/cursor-task`).
+2. GIT — BRANCHES PARALLÈLES :
+   - Jamais coder à deux sur `main`. Jamais coder sur `main` : crée une branche (`git checkout -b feature/cursor-...`).
+   - Un agent = une branche. Interdiction de modifier les mêmes fichiers en même temps sur la même branche.
+   - Travail parallèle OK seulement si branches différentes.
+   - « synchro git » = sauvegarde de cette branche, calage sur `main`, pas de prod.
+   - « envoie en prod » = seul chemin vers `main` / Vercel (fusion de la branche courante).
+   - « mets-toi à jour » = ce dossier récupère `main`, sans merge ni déploiement. L'autre clone s'aligne uniquement si l'utilisateur tape la même phrase **là-bas**.
+   - Jamais `--force`, `--force-with-lease`, `--no-verify`.
+   - En cas de conflit : s'arrêter, lister les fichiers, demander à l'utilisateur. Ne pas résoudre seul si Antigravity a probablement touché les mêmes fichiers.
 
    

@@ -31,17 +31,37 @@ Tu es pleinement mandaté pour exécuter proactivement et sans validation préal
 - Si notre conversation aboutit à la création d'une nouvelle table Supabase, d'une nouvelle variable d'environnement, ou d'une modification structurelle majeure (ex: refactoring important, nouvelle route API logicielle) : mets automatiquement à jour le fichier `README.md` à la fin de ta réponse pour refléter ces changements, sans que j'aie besoin de te le demander.
 
 ## RÈGLE : COLLABORATION MULTI-IA
-- Ce dépôt est modifié en parallèle par **Cursor** et **Antigravity** (local + GitHub). Aucun agent n'est le seul auteur des fichiers.
+- Ce dépôt GitHub unique est modifié en parallèle par **Cursor** et **Antigravity**, chacun dans son clone local (voir « ENVIRONNEMENTS LOCAUX DUAL-AGENT »). Aucun agent n'est le seul auteur des fichiers.
 - Ne jamais partir du principe d'être le seul à avoir touché le code : vérifier `git status` / historique distant avant d'écraser ou de « corriger » du travail.
-- En synchro : `pull --rebase` obligatoire ; jamais de force-push ; en cas de conflit, s'arrêter et demander à l'utilisateur.
+- Trois phrases-clés Git : « synchro git » (sauvegarde, pas de prod), « envoie en prod » (fusion de **ta** branche vers `main` → Vercel), « mets-toi à jour » (ce dossier se cale sur `main`, pas de prod). `pull --rebase` obligatoire ; jamais de force-push ; en cas de conflit, s'arrêter et demander à l'utilisateur. Ne merger automatiquement que sur « envoie en prod ».
 
-## RÈGLE : SYNCHRONISATION GITHUB
+## RÈGLE : SYNCHRONISATION GITHUB (« synchro git »)
 Quand l'utilisateur écrit "synchro git", "synchro", ou "met à jour github" :
+But : photocopie de sécurité + ce dossier se cale sur `main`. **Pas** de production.
 1. S'il y a des changements locaux : exécute `git add .` puis analyse les fichiers modifiés pour rédiger un message de commit concis et clair en français (ex: "Ajout de la page frigo"). Ajoute la date et l'heure à la fin du message (fuseau horaire : Paris). Puis exécute : `git commit -m "Message de commit généré"`. Ne crée pas de commit vide si le working tree est propre.
-2. Exécute la commande terminal : `git pull --rebase` (récupère les modifications distantes d'un collègue ou d'un agent IA et les pose proprement par-dessus tes commits locaux).
-3. Si des conflits apparaissent : arrête-toi, liste les fichiers en conflit, et demande à l'utilisateur avant de continuer. N'utilise jamais `--force`, `--force-with-lease`, `--no-verify` ni `--no-gpg-sign`.
-4. Une fois le code aligné et sans conflit, exécute la commande terminal : `git push`
-5. Confirme à l'utilisateur que le PC et GitHub sont alignés, et que la mise à jour Vercel est lancée s'il y a eu un push.
+2. Exécute : `git fetch origin`
+3. Exécute : `git pull --rebase origin main` (ce dossier se cale sur le cahier officiel). Si des conflits apparaissent : arrête-toi, liste les fichiers en conflit, et demande à l'utilisateur avant de continuer. N'utilise jamais `--force`, `--force-with-lease`, `--no-verify` ni `--no-gpg-sign`.
+4. Une fois le code aligné et sans conflit, exécute : `git push -u origin HEAD` (sauvegarde **ta** branche sur GitHub).
+5. Confirme : le travail est sauvé sur GitHub sur **cette** branche ; ce dossier est à jour par rapport à `main` ; **pas** déployé en prod. Rappeler : pour la prod, dire « envoie en prod ». Rappeler : l'autre agent (Cursor) doit entendre « mets-toi à jour » dans **son** dossier — tu ne touches JAMAIS au clone Cursor (`C:\Users\Antoine\my-kitchen-app`).
+
+## RÈGLE : ENVOI EN PRODUCTION (« envoie en prod »)
+Quand l'utilisateur écrit "envoie en prod", "envoie en production", ou "fusion vers main" :
+Bouton rouge. Fusion de **ta branche courante** vers `main` → Vercel.
+Si le working tree est sale : d'abord exécuter la procédure « synchro git » ci-dessus, puis enchaîner.
+1. Vérifier qu'on n'est PAS déjà sur `main`. Si on est sur `main` : refuser, demander une branche de travail.
+2. `git fetch origin` puis `git pull --rebase origin main`. Conflits : STOP, lister les fichiers, demander à l'utilisateur. Jamais `--force`, `--force-with-lease`, `--no-verify`, `--no-gpg-sign`.
+3. `git push -u origin HEAD`
+4. Fusion vers `main` de préférence via GitHub CLI : créer une PR si besoin puis la merger (`gh pr create` / `gh pr merge`). Sinon : `git checkout main`, `git pull --rebase origin main`, `git merge --no-ff <branche>`, `git push origin main`. Jamais de force-push.
+5. Revenir sur **ta** branche de travail (ne pas rester à coder sur `main`).
+6. Confirme : `main` est à jour, Vercel va déployer. Dire à l'utilisateur d'ouvrir **Cursor** et de taper « mets-toi à jour ». Ne jamais modifier `C:\Users\Antoine\my-kitchen-app` (toi = Antigravity).
+
+## RÈGLE : MISE À JOUR DU DOSSIER (« mets-toi à jour »)
+Quand l'utilisateur écrit "mets-toi à jour" ou "mets toi à jour" :
+Uniquement pour CE dossier (`C:\Users\Antoine\my-kitchen-app-antigravity`). Pas de merge vers `main`. Pas de prod.
+1. Si le working tree est sale : d'abord commit comme « synchro git » (pas de perte).
+2. Puis : `git fetch origin` + `git pull --rebase origin main`. Conflits : STOP, lister les fichiers, demander à l'utilisateur. Jamais `--force`, `--force-with-lease`, `--no-verify`, `--no-gpg-sign`.
+3. Push de la branche si elle a divergé (`git push`). Jamais de force-push.
+4. Confirme : ce dossier a récupéré `main`. Pas de déploiement.
 
 ## RÈGLE : OPTIMISATION ET REFACTORING SUR DEMANDE
 Quand l'utilisateur écrit le mot-clé "optimisation", "optimise le code" ou "refactoring" :
@@ -63,16 +83,36 @@ N'applique JAMAIS toutes les modifications d'un coup. Procède obligatoirement a
 - **Étape 4 (Sauvegarde)** : Une fois le nettoyage terminé avec succès, propose-moi de faire un "synchro git".
 
 
-## RÈGLE DE COHABITATION avec cursor (LOCALHOST ET GIT) 
+## RÈGLE : ENVIRONNEMENTS LOCAUX DUAL-AGENT (2 DOSSIERS)
+Deux agents dans un seul dossier plantent le cache `.next` et bloquent Git (un working tree = une branche à la fois). Deux dossiers physiques indépendants = chacun son `.next`, son `node_modules`, sa branche.
 
-Tu tournes actuellement sur la même machine locale qu'un autre agent IA nommé "Cursor". Pour que vous puissiez travailler en parallèle sans faire crasher Next.js ou écraser vos fichiers respectifs, tu dois appliquer ces règles absolues :
+| Agent | Dossier | Commande | Port |
+| --- | --- | --- | --- |
+| Antigravity (toi) | `C:\Users\Antoine\my-kitchen-app-antigravity` | `npm run dev -- -p 3001` | **3001** |
+| Cursor | `C:\Users\Antoine\my-kitchen-app` | `npm run dev` | **3000** |
+
+- Même dépôt GitHub unique. Chacun sa branche. Fusions sur `main` → Vercel.
+- Tu travailles EXCLUSIVEMENT dans `C:\Users\Antoine\my-kitchen-app-antigravity`.
+- Tu ne dois JAMAIS ouvrir, modifier, ni lancer un serveur dans `C:\Users\Antoine\my-kitchen-app` (clone Cursor).
+- Ne pas copier des fichiers à la main d'un dossier vers l'autre (sauf `.env.local` une fois à l'install).
+- `.env.local` est gitignoré : il existe déjà dans ce clone, ne jamais le committer.
+- N'ajoute pas de script `dev:3001` dans `package.json` : le flag `-p 3001` reste local à tes commandes.
+
+## RÈGLE DE COHABITATION avec Cursor (LOCALHOST ET GIT)
+Cursor et toi travaillez en parallèle dans 2 clones locaux distincts. Le travail parallèle est autorisé SI chacun est sur sa propre branche.
 
 1. PORT LOCALHOST DÉDIÉ (3001) :
    - Le port `3000` est formellement réservé à Cursor. Tu n'as pas le droit de l'utiliser.
-   - Lorsque tu lances le serveur Next.js pour tester tes développements, tu dois OBLIGATOIREMENT le forcer sur le port `3001`.
-   - Utilise la commande de lancement : `npm run dev -- -p 3001` (ou configure la variable d'environnement `PORT=3001`).
+   - Lorsque tu lances le serveur Next.js, tu dois OBLIGATOIREMENT le forcer sur le port `3001` : `npm run dev -- -p 3001`.
+   - Interdiction de lancer un serveur dans le dossier Cursor.
 
-2. ISOLATION DU CODE ET DES BRANCHES :
-   - Interdiction formelle de modifier les mêmes fichiers que Cursor en même temps si vous êtes sur la même branche. Dans ce cas, travaille uniquement quand on te passe le relais (après une synchronisation Git).
-   - Si tu dois exécuter une tâche en totale autonomie et en parallèle de Cursor, tu dois IMPÉRATIVEMENT créer une nouvelle branche Git avant de commencer à coder (ex: `git checkout -b feature/antigravity-task`).
+2. GIT — BRANCHES PARALLÈLES :
+   - Jamais coder à deux sur `main`. Jamais coder sur `main` : crée une branche (`git checkout -b feature/antigravity-...`).
+   - Un agent = une branche. Interdiction de modifier les mêmes fichiers en même temps sur la même branche.
+   - Travail parallèle OK seulement si branches différentes.
+   - « synchro git » = sauvegarde de ta branche, calage sur `main`, pas de prod.
+   - « envoie en prod » = seul chemin vers `main` / Vercel (fusion de **ta** branche courante).
+   - « mets-toi à jour » = ce dossier récupère `main`, sans merge ni déploiement. Cursor s'aligne uniquement si l'utilisateur tape la même phrase **dans Cursor**.
+   - Jamais `--force`, `--force-with-lease`, `--no-verify`.
+   - En cas de conflit : s'arrêter, lister les fichiers, demander à l'utilisateur. Ne pas résoudre seul si Cursor a probablement touché les mêmes fichiers.
    

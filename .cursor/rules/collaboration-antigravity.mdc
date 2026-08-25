@@ -1,18 +1,40 @@
 ---
-description: Collaboration multi-IA (Cursor + Antigravity) sur le même dépôt
+description: Collaboration multi-IA (Cursor + Antigravity) — 2 clones locaux, branches distinctes
 alwaysApply: true
 ---
 
 # Collaboration multi-IA
 
-Ce dépôt est modifié en parallèle par **Cursor** et **Antigravity** (local + GitHub). Tu n'es jamais le seul auteur des fichiers.
+Ce dépôt GitHub unique est modifié en parallèle par **Cursor** et **Antigravity**. Tu n'es jamais le seul auteur des fichiers.
+
+## Deux dossiers physiques (obligatoire)
+
+Deux agents dans un seul dossier plantent le cache `.next` et bloquent Git (un working tree = une branche à la fois). Chacun a son clone, son `.next`, son `node_modules`.
+
+| Agent | Dossier | Commande | Port |
+| --- | --- | --- | --- |
+| Cursor (toi) | `C:\Users\Antoine\my-kitchen-app` | `npm run dev` | **3000** |
+| Antigravity | `C:\Users\Antoine\my-kitchen-app-antigravity` | `npm run dev -- -p 3001` | **3001** |
+
+- Tu travailles **exclusivement** dans `C:\Users\Antoine\my-kitchen-app`.
+- Tu ne dois **jamais** ouvrir, modifier, ni lancer un serveur dans `C:\Users\Antoine\my-kitchen-app-antigravity`.
+- Travail parallèle autorisé **si** les branches sont différentes. Jamais coder à deux sur `main`, ni modifier les mêmes fichiers en même temps sur la même branche.
+- Ne pas copier des fichiers à la main d'un dossier vers l'autre (sauf `.env.local` une fois à l'install). `.env.local` est gitignoré : ne jamais le committer.
+
+## Trois phrases-clés Git
+
+Détail des séquences : voir `.cursorrules`. Jamais `--force`, `--force-with-lease`, `--no-verify`, `--no-gpg-sign`. Conflits : STOP, lister les fichiers, demander à l'utilisateur. Tu ne touches JAMAIS à `C:\Users\Antoine\my-kitchen-app-antigravity`.
+
+- **« synchro git »** (alias : « synchro », « met à jour github ») : photocopie de sécurité + ce dossier se cale sur `main`. **Pas** de prod. Commit local si besoin (message FR + date/heure Paris, pas de commit vide) → `git fetch origin` → `git pull --rebase origin main` → `git push -u origin HEAD`. Confirmer : sauvé sur **cette** branche ; dossier à jour vs `main` ; pas déployé. Rappeler « envoie en prod » pour la prod, et « mets-toi à jour » dans **l'autre** dossier.
+- **« envoie en prod »** (alias : « envoie en production », « fusion vers main ») : bouton rouge. Fusion de **la branche courante** vers `main` → Vercel. Working tree sale : d'abord « synchro git ». Refuser si déjà sur `main`. Puis fetch + rebase sur `main`, push, fusion via `gh pr create` / `gh pr merge` (sinon checkout `main`, merge `--no-ff`, push `main`), revenir sur la branche de travail. Confirmer le déploiement Vercel et dire d'ouvrir Antigravity pour « mets-toi à jour ».
+- **« mets-toi à jour »** (alias : « mets toi à jour ») : uniquement CE dossier. Pas de merge `main`, pas de prod. Commit si working tree sale, puis `git fetch origin` + `git pull --rebase origin main`, push si la branche a divergé. Confirmer : ce dossier a récupéré `main`, pas de déploiement.
 
 ## Comportement attendu
 
-- Avant de commencer toute tâche (lecture comme modification) : partir de la dernière version distante — `git fetch` puis `git pull --rebase` s'il n'y a pas de conflit — avant de travailler.
-- Sur le mot-clé « Optimisation » : synchro GitHub complète d'abord (commit « Synchro pré optimisation »), puis seulement l'audit et le plan — voir `.cursorrules`.
-- Avant toute synchro ou push : toujours `git pull --rebase` ; ne jamais force-push.
+- Avant de commencer toute tâche (lecture comme modification) : partir de la dernière version distante — `git fetch origin` puis `git pull --rebase origin main` s'il n'y a pas de conflit — avant de travailler.
+- Sur le mot-clé « Optimisation » : procédure « synchro git » d'abord (commit « Synchro pré optimisation »), puis seulement l'audit et le plan — voir `.cursorrules`.
+- Ne merger vers `main` que sur « envoie en prod ». « synchro git » et « mets-toi à jour » ne déploient rien.
 - En cas de conflit : s'arrêter, lister les fichiers, demander à l'utilisateur (ne pas résoudre seul si le conflit vient probablement d'Antigravity).
 - Ne pas écraser ni « corriger » des changements récents non commités / distants sans vérifier `git status` et `git log`.
-- Ne pas supposer que le working tree n'a changé que depuis ta dernière réponse : l'autre IA peut avoir modifié les mêmes fichiers entre-temps.
+- Ne pas supposer que le working tree n'a changé que depuis ta dernière réponse : l'autre IA peut avoir modifié les mêmes fichiers entre-temps (via GitHub / `main`).
 - Préférer des commits petits et ciblés pour faciliter les rebases croisés.
