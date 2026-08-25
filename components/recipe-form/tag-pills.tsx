@@ -1,13 +1,15 @@
 "use client";
 
-import { RECIPE_TAG_LABELS, RECIPE_TAGS, type RecipeTag } from "@/lib/recipes";
+import { DERIVED_TAGS, RECIPE_TAG_LABELS, RECIPE_TAGS, type RecipeTag } from "@/lib/recipes";
 
 export function RecipeTagPills({
   selected,
   onChange,
+  exclude = DERIVED_TAGS,
 }: {
   selected: RecipeTag[];
   onChange: (tags: RecipeTag[]) => void;
+  exclude?: readonly RecipeTag[];
 }) {
   const toggle = (tag: RecipeTag) => {
     onChange(selected.includes(tag) ? selected.filter((t) => t !== tag) : [...selected, tag]);
@@ -15,7 +17,7 @@ export function RecipeTagPills({
 
   return (
     <div className="flex flex-wrap gap-2">
-      {RECIPE_TAGS.map((tag) => {
+      {RECIPE_TAGS.filter((tag) => !exclude.includes(tag)).map((tag) => {
         const active = selected.includes(tag);
         return (
           <button

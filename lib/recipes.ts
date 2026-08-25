@@ -9,6 +9,7 @@ import {
   ingFromText,
   withDerivedTags,
   type Recipe,
+  type RecipeTag,
 } from "@/lib/recipe-model";
 
 export { RECIPES } from "@/lib/recipes-data";
@@ -22,7 +23,10 @@ export {
   RECIPE_TAG_LABELS,
   RECIPE_TAG_COLORS,
   RECIPE_TAG_CODES_HINT,
+  DERIVED_TAGS,
   DIFFICULTY_TOQUE_COUNT,
+  EXPRESS_MAX_MINUTES,
+  HIGH_PROTEIN_MIN_G,
   RECIPE_TAGS,
   coerceRecipeCost,
   coerceRecipeDifficulty,
@@ -80,11 +84,15 @@ function sanitizeRecipe(raw: unknown): Recipe | null {
         .filter((ing): ing is RecipeIngredient => ing != null)
     : [];
   const time = typeof recipe.time === "string" ? recipe.time : "30 min";
-  const tags = withDerivedTags(coerceRecipeTags(recipe.tags, recipe.tag), time);
+  const proteins = typeof recipe.proteins === "number" && Number.isFinite(recipe.proteins)
+    ? recipe.proteins
+    : 0;
+  const tags = withDerivedTags(coerceRecipeTags(recipe.tags, recipe.tag), time, proteins);
   const { tag: _legacyTag, tagLabel: _tagLabel, ...rest } = recipe;
   return {
     ...rest,
     time,
+    proteins,
     ingredients,
     tags,
     cost: coerceRecipeCost(recipe.cost),
@@ -153,12 +161,15 @@ function writeDeletedIds(ids: Set<number>) {
 export function getAllRecipes(): Recipe[] {
   const overrides = readOverrides();
   const deleted = readDeletedIds();
-  const base = RECIPES.filter((r) => !deleted.has(r.id)).map(
-    (r) => overrides[String(r.id)] ?? r,
-  );
-  const custom = readCustomRecipes()
-    .filter((r) => !deleted.has(r.id))
-    .map((r) => overrides[String(r.id)] ?? r);
+  const resolve = (recipe: Recipe): Recipe => {
+    const next = overrides[String(recipe.id)] ?? recipe;
+    return {
+      ...next,
+      tags: withDerivedTags(next.tags, next.time, next.proteins),
+    };
+  };
+  const base = RECIPES.filter((r) => !deleted.has(r.id)).map(resolve);
+  const custom = readCustomRecipes().filter((r) => !deleted.has(r.id)).map(resolve);
   return [...base, ...custom];
 }
 
@@ -174,6 +185,16 @@ export function addCustomRecipe(input: NewRecipeInput): Recipe {
   const recipe: Recipe = { ...input, id: maxId + 1 };
   writeCustomRecipes([recipe, ...custom]);
   return recipe;
+}
+
+export function updateRecipeTags(id: number, tags: RecipeTag[]): Recipe | undefined {
+  const existing = getRecipeById(id);
+  if (!existing) return undefined;
+  const { id: _id, featured: _featured, ...input } = existing;
+  return updateRecipe(id, {
+    ...input,
+    tags: withDerivedTags(coerceRecipeTags(tags), existing.time, existing.proteins),
+  });
 }
 
 export function updateRecipe(id: number, input: NewRecipeInput): Recipe {

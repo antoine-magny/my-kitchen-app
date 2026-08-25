@@ -2,19 +2,20 @@ import Link from "next/link";
 import { ClockIcon, FlameIcon, HeartIcon, MuscleIcon } from "@/components/icons";
 import { MissingIngredientsBadges } from "@/components/missing-ingredients-badges";
 import { RecipeCostSymbol, RecipeDifficultyToques } from "@/components/recettes/recipe-symbols";
-import { RECIPE_TAG_COLORS, recipeBadgeTags, tagToLabel, type Recipe } from "@/lib/recipes";
+import { RecipeTagEditor } from "@/components/recettes/recipe-tag-editor";
+import type { Recipe, RecipeTag } from "@/lib/recipes";
 
 export function RecipeCard({
   recipe,
   onToggleFav,
+  onTagsChange,
   isFav,
 }: {
   recipe: Recipe;
   onToggleFav: (id: number) => void;
+  onTagsChange: (tags: RecipeTag[]) => void;
   isFav: boolean;
 }) {
-  const badges = recipeBadgeTags(recipe);
-
   return (
     <div
       className="group overflow-hidden rounded-2xl transition-all duration-300 hover:-translate-y-1"
@@ -23,8 +24,8 @@ export function RecipeCard({
         boxShadow: "0 2px 16px rgba(28,43,30,0.07)",
       }}
     >
-      <Link href={`/recettes/${recipe.id}`} className="block">
-        <div className="relative overflow-hidden bg-[#D4EDD9]" style={{ height: 200 }}>
+      <div className="relative overflow-hidden bg-[#D4EDD9]" style={{ height: 200 }}>
+        <Link href={`/recettes/${recipe.id}`} className="block h-full">
           {recipe.photo ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -39,24 +40,17 @@ export function RecipeCard({
             className="absolute inset-0"
             style={{ background: "linear-gradient(to top, rgba(28,43,30,0.48) 0%, transparent 55%)" }}
           />
-          {badges.length > 0 ? (
-            <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
-              {badges.map((tag) => {
-                const cfg = RECIPE_TAG_COLORS[tag];
-                return (
-                  <div
-                    key={tag}
-                    className="rounded-lg px-2.5 py-1 text-xs font-bold backdrop-blur-[4px]"
-                    style={{ background: cfg.bg, color: cfg.text }}
-                  >
-                    {tagToLabel(tag)}
-                  </div>
-                );
-              })}
-            </div>
-          ) : null}
+        </Link>
+        <div className="absolute top-3 left-3 z-10">
+          <RecipeTagEditor
+            tags={recipe.tags}
+            time={recipe.time}
+            proteins={recipe.proteins}
+            title={recipe.title}
+            onSave={onTagsChange}
+          />
         </div>
-      </Link>
+      </div>
 
       <div className="px-4 pt-3.5 pb-4">
         <div className="mb-3 flex items-start justify-between gap-2">

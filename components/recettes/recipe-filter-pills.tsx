@@ -137,7 +137,12 @@ function FilterChip({
     >
       {favoris ? (
         <span className="flex items-center">
-          <HeartIcon filled={active} light={active} />
+          <HeartIcon
+            filled={active}
+            light={active}
+            color={active ? "#FFFFFF" : undefined}
+            size={14}
+          />
         </span>
       ) : null}
       {label}
