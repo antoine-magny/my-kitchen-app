@@ -3,14 +3,18 @@ import { inputClass, inputStyle } from "@/components/recipe-form-styles";
 import { UnitSelect } from "@/components/ui/unit-select";
 import { emptyIngredientRow, type RecipeFormIngredientRow } from "@/lib/recipe-import";
 
-export function FormStepIngredients({
+export function RecipeIngredientsFields({
   ingredients,
   setIngredients,
   updateIngredient,
+  namePlaceholder,
+  amountPlaceholder,
 }: {
   ingredients: RecipeFormIngredientRow[];
-  setIngredients: (updater: (prev: RecipeFormIngredientRow[]) => RecipeFormIngredientRow[]) => void;
+  setIngredients: React.Dispatch<React.SetStateAction<RecipeFormIngredientRow[]>>;
   updateIngredient: (index: number, field: keyof RecipeFormIngredientRow, value: string) => void;
+  namePlaceholder: string;
+  amountPlaceholder: string;
 }) {
   return (
     <div>
@@ -33,29 +37,29 @@ export function FormStepIngredients({
         <span className="w-10" />
       </div>
       <div className="space-y-2">
-        {ingredients.map((ing, idx) => (
+        {ingredients.map((row, idx) => (
           <div
             key={idx}
             className="grid grid-cols-[1fr_1fr_auto] items-center gap-2 sm:grid-cols-[1fr_4.5rem_5.5rem_auto]"
           >
             <input
-              value={ing.name}
+              value={row.name}
               onChange={(e) => updateIngredient(idx, "name", e.target.value)}
-              placeholder="Poulet"
+              placeholder={namePlaceholder}
               className={`${inputClass} col-span-3 sm:col-span-1`}
               style={inputStyle}
             />
             <input
-              value={ing.amount}
+              value={row.amount}
               onChange={(e) => updateIngredient(idx, "amount", e.target.value)}
-              placeholder="500"
+              placeholder={amountPlaceholder}
               inputMode="decimal"
               className={inputClass}
               style={inputStyle}
             />
             <UnitSelect
-              value={ing.unit}
-              ingredientName={ing.name}
+              value={row.unit}
+              ingredientName={row.name}
               onChange={(unit) => updateIngredient(idx, "unit", unit)}
               className={`${inputClass} flex items-center justify-between pr-3.5`}
               allowCulinary={true}

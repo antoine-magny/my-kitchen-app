@@ -24,8 +24,8 @@ import {
 } from "@/components/recipe-form/form-state";
 import { RecipeFormShell } from "@/components/recipe-form/form-shell";
 import { ImageSection } from "@/components/recipe-form/image-section";
-import { IngredientsSection } from "@/components/recipe-form/ingredients-section";
-import { MetaSection } from "@/components/recipe-form/meta-section";
+import { RecipeIngredientsFields } from "@/components/recipe-form/recipe-ingredients-fields";
+import { RecipeMetaFields } from "@/components/recipe-form/recipe-meta-fields";
 import { StepsSection } from "@/components/recipe-form/steps-section";
 
 type IngredientRow = RecipeFormIngredientRow;
@@ -198,7 +198,8 @@ export function RecipeFormModal({
             applyPhotoUrl={applyPhotoUrl}
           />
 
-          <MetaSection
+          <RecipeMetaFields
+            timeMode="single"
             titleRef={titleRef}
             title={title} setTitle={setTitle}
             time={time} setTime={setTime}
@@ -210,10 +211,12 @@ export function RecipeFormModal({
             cost={cost} setCost={setCost}
           />
 
-          <IngredientsSection
+          <RecipeIngredientsFields
             ingredients={ingredients}
             setIngredients={setIngredients}
             updateIngredient={updateIngredient}
+            namePlaceholder="Ex : Myrtilles"
+            amountPlaceholder="200"
           />
 
           <StepsSection

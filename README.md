@@ -61,8 +61,10 @@ components/             Composants React partagés
   ui/unit-select.tsx    Sélecteur d'unités par familles (Masse / Volume / Décompte)
   home/                 Accueil : en-tête, repas du jour, suggestions, DLC
   frigo/                Composants propres à la page frigo
-  planning/             Modales propres au planning (export courses)
-  parametres/           Cartes de la page Profil & Paramètres
+  planning/             Header, board, modales (export courses, génération)
+  parametres/           Cartes Profil + quiz (modal, tags, grille, options)
+  recipe-form/          Champs partagés des deux modales (meta, ingrédients)
+  add-recipe/           Parcours d'ajout (étapes) + hook `use-add-recipe-form.ts`
   generate-from-fridge-modal.tsx  Génération de recettes depuis le planning
   select-recipe-modal.tsx         Choix d'une recette du catalogue
 lib/                    Logique métier, sans JSX
@@ -97,17 +99,20 @@ composants et appelle des fonctions de `lib/`.
 
 Quelques exemples de cette découpe, utiles comme modèles :
 
-- `app/planning/page.tsx` ne fait que du rendu ; la construction d'une semaine et
-  l'agrégation des ingrédients vivent dans `lib/planning.ts`.
+- `app/planning/page.tsx` hydrate / persiste le localStorage (`getStoredMealPlans` /
+  `saveMealPlans`) puis délègue l'UI à `components/planning/planning-board.tsx`.
+  La construction d'une semaine et l'agrégation d'ingrédients vivent dans
+  `lib/planning.ts`.
 - `app/frigo/page.tsx` orchestre l'état, mais les modales et la ligne
   d'ingrédient sont dans `components/frigo/`.
-- Les deux modales de recette sont séparées : `components/recipe-form-modal.tsx`
-  (formulaire d'édition) et `components/add-recipe-modal.tsx` (parcours d'ajout
-  en 3 modes), avec les styles de champs communs dans
-  `components/recipe-form-styles.ts`.
+- Les deux modales de recette restent séparées : `recipe-form-modal.tsx`
+  (édition) et `add-recipe-modal.tsx` (ajout en 3 modes). Elles partagent
+  `recipe-form/recipe-meta-fields.tsx` et `recipe-form/recipe-ingredients-fields.tsx`
+  (plus `recipe-form-styles.ts`). L'état du parcours d'ajout vit dans
+  `components/add-recipe/use-add-recipe-form.ts` (sans JSX).
 - `app/planning/page.tsx` délègue le choix de recette à
   `components/select-recipe-modal.tsx` et la génération IA à
-  `components/generate-from-fridge-modal.tsx`.
+  `components/generate-from-fridge-modal.tsx` (via `planning-modals.tsx`).
 - `app/recettes/page.tsx` orchestre la liste ; le filtrage (multi-tags, temps,
   difficulté, coût, recherche titre + ingrédients) vit dans
   `lib/recipe-filters.ts`. Les pilules et le panneau de filtres sont dans

@@ -1,7 +1,7 @@
 import { FormStepFooter } from "@/components/add-recipe/form-step-footer";
-import { FormStepIngredients } from "@/components/add-recipe/form-step-ingredients";
 import { FormStepInstructions } from "@/components/add-recipe/form-step-instructions";
-import { FormStepMeta } from "@/components/add-recipe/form-step-meta";
+import { RecipeIngredientsFields } from "@/components/recipe-form/recipe-ingredients-fields";
+import { RecipeMetaFields } from "@/components/recipe-form/recipe-meta-fields";
 import type { RecipeFormIngredientRow } from "@/lib/recipe-import";
 import type { RecipeCost, RecipeDifficulty, RecipeTag } from "@/lib/recipes";
 
@@ -30,7 +30,7 @@ export function FormStep({
   tags: RecipeTag[]; setTags: (val: RecipeTag[]) => void;
   cost: RecipeCost; setCost: (val: RecipeCost) => void;
   ingredients: RecipeFormIngredientRow[];
-  setIngredients: (updater: (prev: RecipeFormIngredientRow[]) => RecipeFormIngredientRow[]) => void;
+  setIngredients: React.Dispatch<React.SetStateAction<RecipeFormIngredientRow[]>>;
   updateIngredient: (index: number, field: keyof RecipeFormIngredientRow, value: string) => void;
   instructions: string[];
   setInstructions: (updater: (prev: string[]) => string[]) => void;
@@ -50,7 +50,8 @@ export function FormStep({
           </div>
         )}
 
-        <FormStepMeta
+        <RecipeMetaFields
+          timeMode="split"
           title={title}
           setTitle={setTitle}
           prepTime={prepTime}
@@ -72,10 +73,12 @@ export function FormStep({
           titleRef={titleRef}
         />
 
-        <FormStepIngredients
+        <RecipeIngredientsFields
           ingredients={ingredients}
           setIngredients={setIngredients}
           updateIngredient={updateIngredient}
+          namePlaceholder="Poulet"
+          amountPlaceholder="500"
         />
 
         <FormStepInstructions
