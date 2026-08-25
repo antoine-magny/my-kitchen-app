@@ -32,14 +32,18 @@ export function GuestSignIn() {
         const { error: guestError } = await signInAsGuest(supabase);
         if (guestError) {
           setError(guestAuthErrorMessage(guestError));
-          window.location.replace(`/login?error=${GUEST_AUTH_ERROR}`);
+          router.replace(`/login?error=${GUEST_AUTH_ERROR}`);
           return;
         }
       }
 
-      window.location.replace(next);
+      // Délai pour laisser `@supabase/ssr` écrire le cookie (surtout dans Jetski/Webviews)
+      setTimeout(() => {
+        router.refresh();
+        router.replace(next);
+      }, 300);
     })();
-  }, [searchParams]);
+  }, [searchParams, router]);
 
   return (
     <AuthCard title="My Kitchen App" subtitle="Connexion en tant qu'invité…">

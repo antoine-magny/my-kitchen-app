@@ -55,7 +55,12 @@ export function LoginForm({ oauthError, oauthEmail }: LoginFormProps) {
     try {
       const { error: guestError } = await signInAsGuest(supabase);
       if (guestError) throw guestError;
-      window.location.assign("/");
+      
+      // Délai pour laisser `@supabase/ssr` écrire le cookie (surtout dans Jetski/Webviews)
+      setTimeout(() => {
+        router.push("/");
+        router.refresh();
+      }, 300);
     } catch (err: unknown) {
       setError(
         err instanceof Error ? guestAuthErrorMessage(err) : guestAuthErrorMessage(null),
