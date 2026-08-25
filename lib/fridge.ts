@@ -182,16 +182,21 @@ function resolveTransferDlc(shop: ShoppingItem, existing?: FridgeItem): {
     return { expirationDate: explicitShop };
   }
 
+  const validatedTarget = shop.dlcValidated ? shoppingTargetDate(shop) : undefined;
+  if (validatedTarget) {
+    if (existing?.expirationDate && existingIsEstimated) {
+      const expirationDate =
+        validatedTarget < existing.expirationDate ? validatedTarget : existing.expirationDate;
+      return { expirationDate, dlcEstimated: true };
+    }
+    return { expirationDate: validatedTarget, dlcEstimated: true };
+  }
+
   if (existing?.expirationDate) {
     return {
       expirationDate: existing.expirationDate,
       ...(existingIsEstimated ? { dlcEstimated: true } : {}),
     };
-  }
-
-  if (shop.dlcValidated) {
-    const target = shoppingTargetDate(shop);
-    if (target) return { expirationDate: target, dlcEstimated: true };
   }
 
   return {};

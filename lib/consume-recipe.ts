@@ -19,6 +19,7 @@ import {
   EMPTY_DAY_PLAN,
   getPlanForDay,
   getStoredMealPlans,
+  readStoredMealPlans,
   saveMealPlans,
   type MealSlot,
 } from "@/lib/planning";
@@ -310,7 +311,7 @@ export function findTodaySlotsForRecipe(
   recipeId: number,
   today: Date = parisCalendarDate(),
 ): MealSlot[] {
-  const plan = getPlanForDay(today);
+  const plan = getPlanForDay(today, readStoredMealPlans());
   const slots: MealSlot[] = [];
   if (breakfastRecipeId(plan.breakfast) === recipeId) slots.push("breakfast");
   if (plan.lunchId === recipeId) slots.push("lunch");

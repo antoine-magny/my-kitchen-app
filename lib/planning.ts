@@ -323,9 +323,15 @@ export function withCurrentWeekSeed(
   return { ...plansByWeek, [weekId]: buildInitialPlans(weekStart) };
 }
 
+/** Lit le localStorage sans amorcer la semaine courante (lecture seule). */
+export function readStoredMealPlans(): Record<string, Record<string, DayPlan>> {
+  if (typeof window === "undefined") return {};
+  return parseStoredMealPlans(window.localStorage.getItem(MEAL_PLANS_KEY));
+}
+
 export function getStoredMealPlans(): Record<string, Record<string, DayPlan>> {
   if (typeof window === "undefined") return {};
-  const stored = parseStoredMealPlans(window.localStorage.getItem(MEAL_PLANS_KEY));
+  const stored = readStoredMealPlans();
   const seeded = withCurrentWeekSeed(stored);
   if (seeded !== stored) saveMealPlans(seeded);
   return seeded;
