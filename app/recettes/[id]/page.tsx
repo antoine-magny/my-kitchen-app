@@ -37,6 +37,7 @@ export default function RecipeStepsPage({
   const [showConsumeModal, setShowConsumeModal] = useState(false);
   const [banner, setBanner] = useState<{ plannedToday: boolean } | null>(null);
   const [showCookingMode, setShowCookingMode] = useState(false);
+  const [fridgeUpdated, setFridgeUpdated] = useState(false);
   const [doneSteps, setDoneSteps] = useState<Set<number>>(new Set());
   const [currentStep, setCurrentStep] = useState(0);
   const [tab, setTab] = useState<"ingredients" | "steps">("steps");
@@ -139,17 +140,18 @@ export default function RecipeStepsPage({
           currentStep={currentStep}
           onToggleStep={toggleStep}
           onNext={goNext}
-          onCooked={() => setShowConsumeModal(true)}
+          onCooked={fridgeUpdated ? undefined : () => setShowConsumeModal(true)}
         />
-        
-        {/* Floating Start Cooking Button */}
-        <button
-          onClick={() => setShowCookingMode(true)}
-          className="fixed bottom-24 left-1/2 z-40 flex -translate-x-1/2 items-center justify-center gap-2 rounded-full bg-[#1C2B1E] px-12 py-4 font-bold text-white shadow-[0_8px_30px_rgba(28,43,30,0.4)] transition-transform hover:scale-105 active:scale-95 sm:bottom-10"
-        >
-          <PlayIcon size={20} className="fill-white" />
-          <span>Cuisiner</span>
-        </button>
+
+        {tab !== "steps" && (
+          <button
+            onClick={() => setShowCookingMode(true)}
+            className="fixed bottom-24 left-1/2 z-40 flex -translate-x-1/2 items-center justify-center gap-2 rounded-full bg-[#1C2B1E] px-12 py-4 font-bold text-white shadow-[0_8px_30px_rgba(28,43,30,0.4)] transition-transform hover:scale-105 active:scale-95 sm:bottom-10"
+          >
+            <PlayIcon size={20} className="fill-white" />
+            <span>Cuisiner</span>
+          </button>
+        )}
       </div>
 
       {showEditModal && (
@@ -170,7 +172,14 @@ export default function RecipeStepsPage({
       )}
 
       {showCookingMode && (
-        <CookingMode recipe={recipe} onClose={() => setShowCookingMode(false)} />
+        <CookingMode
+          recipe={recipe}
+          onClose={() => setShowCookingMode(false)}
+          onFinish={(info) => {
+            setBanner(info);
+            setFridgeUpdated(true);
+          }}
+        />
       )}
     </div>
   );

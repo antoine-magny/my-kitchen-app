@@ -4,19 +4,24 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { ChevronLeftIcon, ChevronRightIcon, XIcon, CheckIcon } from "@/components/icons";
+import { IngredientIcon } from "@/components/ingredient-icon";
 import { CookingTimer } from "@/components/recettes/cooking-timer";
+import {
+  consumeRecipeIngredients,
+  findTodaySlotsForRecipe,
+  matchRecipeIngredientsWithFridge,
+} from "@/lib/consume-recipe";
 import { parseMinutes } from "@/lib/recipe-time";
 import type { Recipe } from "@/lib/recipes";
 import { getFridgeItems, setFridgeItems } from "@/lib/fridge";
-import { normalizeProductName } from "@/lib/shopping-categories";
-import { combineQuantities } from "@/lib/units";
 
 interface CookingModeProps {
   recipe: Recipe;
   onClose: () => void;
+  onFinish?: (info: { plannedToday: boolean }) => void;
 }
 
-export function CookingMode({ recipe, onClose }: CookingModeProps) {
+export function CookingMode({ recipe, onClose, onFinish }: CookingModeProps) {
   const [stepIndex, setStepIndex] = useState(-1);
   const [mounted, setMounted] = useState(false);
   const [checkedIngredients, setCheckedIngredients] = useState<Set<number>>(
@@ -52,33 +57,18 @@ export function CookingMode({ recipe, onClose }: CookingModeProps) {
 
   const handleFinish = () => {
     const fridge = getFridgeItems();
-    const updatedFridge = [...fridge];
-
-    for (const i of checkedIngredients) {
-      const ing = recipe.ingredients[i];
-      const cleanName = normalizeProductName(ing.name);
-      
-      const fridgeIndex = updatedFridge.findIndex(fi => 
-        (ing.ingredientId && fi.ingredientId === ing.ingredientId) || 
-        normalizeProductName(fi.customName) === cleanName
-      );
-
-      if (fridgeIndex !== -1) {
-        const fi = updatedFridge[fridgeIndex];
-        if (ing.amount > 0) {
-          const combined = combineQuantities(fi.amount, fi.unit, -ing.amount, ing.unit, ing.ingredientId || cleanName);
-          if (combined && combined.amount > 0) {
-            updatedFridge[fridgeIndex] = { ...fi, amount: combined.amount, unit: combined.unit };
-          } else {
-            updatedFridge.splice(fridgeIndex, 1);
-          }
-        } else {
-          updatedFridge.splice(fridgeIndex, 1);
-        }
-      }
-    }
-    
-    setFridgeItems(updatedFridge);
+    const ingredientsToDeduct = recipe.ingredients.filter((_, i) => checkedIngredients.has(i));
+    const match = matchRecipeIngredientsWithFridge(ingredientsToDeduct, fridge);
+    const itemsToDeduct = match.deductions.map((row) => ({
+      id: row.id,
+      amountToDeduct: row.amountToDeduct,
+    }));
+    const next = consumeRecipeIngredients(ingredientsToDeduct, itemsToDeduct, fridge, {
+      recipeId: recipe.id,
+      recipeTitle: recipe.title,
+    });
+    setFridgeItems(next);
+    onFinish?.({ plannedToday: findTodaySlotsForRecipe(recipe.id).length > 0 });
     onClose();
   };
 
@@ -131,8 +121,8 @@ export function CookingMode({ recipe, onClose }: CookingModeProps) {
             <div className="grid gap-3 sm:grid-cols-2">
               {recipe.ingredients.map((ing, i) => (
                 <div key={i} className="flex items-center gap-4 rounded-2xl bg-white/5 p-4 backdrop-blur">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/10 text-2xl shadow-inner">
-                    {ing.icon}
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/10 shadow-inner">
+                    <IngredientIcon iconHex={ing.icon} name={ing.name} size={28} />
                   </div>
                   <div>
                     <p className="font-bold">{ing.name}</p>
@@ -157,7 +147,7 @@ export function CookingMode({ recipe, onClose }: CookingModeProps) {
 
             {durationMinutes != null && durationMinutes > 0 && isTimerRelevant && (
               <div className="mt-8">
-                <CookingTimer durationMinutes={durationMinutes} />
+                <CookingTimer key={stepIndex} durationMinutes={durationMinutes} />
               </div>
             )}
           </div>
@@ -196,10 +186,14 @@ export function CookingMode({ recipe, onClose }: CookingModeProps) {
                     checkedIngredients.has(i) ? "bg-[#4A7C59]/20 border-2 border-[#4A7C59] shadow-[0_0_15px_rgba(74,124,89,0.2)]" : "bg-white/5 border-2 border-transparent opacity-60 hover:opacity-100"
                   }`}
                 >
-                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-2xl shadow-inner transition-colors ${
+                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl shadow-inner transition-colors ${
                     checkedIngredients.has(i) ? "bg-[#4A7C59]" : "bg-white/10"
                   }`}>
-                    {checkedIngredients.has(i) ? <CheckIcon size={24} strokeWidth={3} className="text-white" /> : ing.icon}
+                    {checkedIngredients.has(i) ? (
+                      <CheckIcon size={24} strokeWidth={3} className="text-white" />
+                    ) : (
+                      <IngredientIcon iconHex={ing.icon} name={ing.name} size={28} />
+                    )}
                   </div>
                   <div>
                     <p className={`font-bold ${checkedIngredients.has(i) ? "text-white" : "text-[#A3B8A8]"}`}>{ing.name}</p>
