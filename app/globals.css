@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Active les classes `dark:` de Tailwind, pilotées par [data-theme="dark"] sur <html> (voir lib/theme.ts) */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 :root {
   --background: #f6f8f3;
   --foreground: #1c2b1e;
@@ -7,6 +10,13 @@
   --sidebar-width: 15rem;
   --scrollbar-thumb: #a8c9b0;
   --scrollbar-thumb-hover: #7a8f7d;
+}
+
+[data-theme="dark"] {
+  --background: #10140f;
+  --foreground: #eef3ec;
+  --scrollbar-thumb: #3a4a3d;
+  --scrollbar-thumb-hover: #4f634f;
 }
 
 @media (min-width: 64rem) {
