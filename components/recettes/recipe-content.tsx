@@ -34,28 +34,9 @@ export function RecipeContent({
 
   return (
     <>
-      <div className="px-5 pt-4 pb-28 lg:pb-24">
+      <div className="px-5 pt-4 pb-32">
         <MissingIngredientsBadges names={recipe.missingIngredients} className="mb-4" />
-        <div
-          className="mb-5 overflow-hidden rounded-2xl"
-          style={{ background: "#FFFFFF", boxShadow: "0 2px 14px rgba(74,124,89,0.08)" }}
-        >
-          <div className="flex items-center justify-between px-4 pt-3.5 pb-2">
-            <p className="text-xs font-bold tracking-wide text-[#7A8F7D] uppercase">Progression</p>
-            <p className="text-xs font-bold text-[#4A7C59]">
-              {doneCount}/{total} étapes
-            </p>
-          </div>
-          <div className="mx-4 mb-3.5 h-2 overflow-hidden rounded-full bg-[#EBF2EC]">
-            <div
-              className="h-full rounded-full transition-all duration-300"
-              style={{
-                width: `${progress}%`,
-                background: "linear-gradient(90deg, #4A7C59, #6FAE82)",
-              }}
-            />
-          </div>
-        </div>
+
 
         <div
           className="mb-5 flex rounded-2xl p-1"
@@ -110,7 +91,6 @@ export function RecipeContent({
           </button>
         ) : null}
       </div>
-
       {tab === "steps" && (
         <RecipeStepBar
           recipe={recipe}

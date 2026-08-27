@@ -17,37 +17,28 @@ export function RecipeStepsPanel({
 }) {
   return (
     <ol className="flex flex-col gap-3">
-      {recipe.steps.map((step, index) => {
-        const done = doneSteps.has(index);
-        const current = currentStep === index;
-        return (
-          <li key={step.title}>
-            <button
-              type="button"
-              onClick={() => onToggleStep(index)}
-              className="w-full rounded-3xl px-4 py-4 text-left transition-all active:scale-[0.99]"
+      {recipe.steps.map((step, index) => (
+        <li key={step.title}>
+            <div
+              className="w-full rounded-3xl px-4 py-4 text-left transition-all"
               style={{
-                background: done ? "#EBF2EC" : "#FFFFFF",
-                boxShadow: current
-                  ? "0 0 0 2px #4A7C59, 0 6px 24px rgba(74,124,89,0.14)"
-                  : "0 3px 16px rgba(74,124,89,0.08)",
+                background: "#FFFFFF",
+                boxShadow: "0 3px 16px rgba(74,124,89,0.08)",
               }}
             >
               <div className="flex gap-3.5">
                 <div
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-extrabold transition-colors"
                   style={{
-                    background: done ? "#4A7C59" : current ? "#1C2B1E" : "#EBF2EC",
-                    color: done || current ? "#FFFFFF" : "#4A7C59",
+                    background: "#EBF2EC",
+                    color: "#4A7C59",
                   }}
                 >
-                  {done ? <CheckIcon size={14} strokeWidth={3} /> : index + 1}
+                  {index + 1}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="mb-1 flex items-start justify-between gap-2">
-                    <h2
-                      className={`font-lora text-base leading-snug font-bold ${done ? "text-[#4A7C59] line-through decoration-[#4A7C59]/40" : "text-[#1C2B1E]"}`}
-                    >
+                    <h2 className="font-lora text-base leading-snug font-bold text-[#1C2B1E]">
                       {step.title}
                     </h2>
                     {step.duration && (
@@ -56,17 +47,16 @@ export function RecipeStepsPanel({
                       </span>
                     )}
                   </div>
-                  <p className={`text-sm leading-relaxed font-medium ${done ? "text-[#7A8F7D]" : "text-[#5A6E5C]"}`}>
+                  <p className="text-sm leading-relaxed font-medium text-[#5A6E5C]">
                     {step.detail}
                   </p>
                 </div>
               </div>
-            </button>
+            </div>
           </li>
-        );
-      })}
-    </ol>
-  );
+        ))}
+      </ol>
+    );
 }
 
 export function RecipeStepBar({
