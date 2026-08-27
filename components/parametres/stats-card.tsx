@@ -1,12 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ChartIcon, ChevronRightIcon } from "@/components/icons";
 import { StatsModal } from "@/components/parametres/stats-modal";
-import { TOP_CONSUMED_FOODS, WEEKLY_HIGHLIGHTS } from "@/lib/profile";
+import { StatsTopFoods } from "@/components/parametres/stats-top-foods";
+import { buildTopFoods, buildWeeklyHighlights } from "@/lib/nutrition-insights";
+import { useNutritionStats } from "@/lib/use-nutrition-stats";
+
+const TOP_FOODS_WINDOW_DAYS = 30;
 
 export function StatsCard() {
   const [isStatsOpen, setIsStatsOpen] = useState(false);
+  const stats = useNutritionStats();
+
+  const highlights = useMemo(() => buildWeeklyHighlights(stats.history), [stats.history]);
+  const topFoods = useMemo(
+    () => buildTopFoods(stats.history, TOP_FOODS_WINDOW_DAYS),
+    [stats.history],
+  );
 
   return (
     <div
@@ -27,7 +38,7 @@ export function StatsCard() {
         <span className="min-w-0 flex-1">
           <span className="block text-sm font-bold text-[#1C2B1E]">📊 Voir mes statistiques</span>
           <span className="mt-0.5 block text-xs font-medium text-[#7A8F7D]">
-            Aliments les plus consommés, moyenne de calories par jour…
+            Calories et protéines par semaine ou par mois, diversité, top recettes…
           </span>
         </span>
         <span className="shrink-0 text-[#7A8F7D]">
@@ -38,14 +49,14 @@ export function StatsCard() {
       <div className="h-px bg-[#F0F4EF]" />
 
       <div className="grid grid-cols-3">
-        {WEEKLY_HIGHLIGHTS.map((stat, idx) => (
+        {highlights.map((stat, idx) => (
           <div
             key={stat.label}
             className="px-1.5 py-3 text-center sm:px-3 sm:py-4"
             style={{ borderLeft: idx > 0 ? "1px solid #F0F4EF" : "none" }}
           >
             <p className="font-lora text-base leading-none font-bold text-[#2E5B3E] sm:text-lg">
-              {stat.value}
+              {stats.ready ? stat.value : "—"}
             </p>
             <p className="mt-1 text-[10px] leading-tight font-medium text-[#7A8F7D] sm:text-xs">
               {stat.label}
@@ -56,33 +67,9 @@ export function StatsCard() {
 
       <div className="h-px bg-[#F0F4EF]" />
 
-      <div className="px-5 py-4">
-        <p className="mb-3 text-xs font-semibold tracking-[0.1em] text-[#7A8F7D] uppercase">
-          Top aliments · 30 jours
-        </p>
-        <div className="flex flex-col gap-2.5">
-          {TOP_CONSUMED_FOODS.map((food) => (
-            <div key={food.label} className="flex items-center gap-2.5">
-              <span className="text-base leading-none" aria-hidden>
-                {food.emoji}
-              </span>
-              <span className="w-20 shrink-0 truncate text-xs font-bold text-[#1C2B1E]">{food.label}</span>
-              <span className="h-2 flex-1 overflow-hidden rounded-full bg-[#F0F4EF]">
-                <span
-                  className="block h-full rounded-full"
-                  style={{
-                    width: `${food.share}%`,
-                    background: "linear-gradient(90deg, #4A7C59, #6FAE82)",
-                  }}
-                />
-              </span>
-              <span className="w-9 shrink-0 text-right text-xs font-bold text-[#7A8F7D]">{food.share}%</span>
-            </div>
-          ))}
-        </div>
-      </div>
+      <StatsTopFoods foods={topFoods} windowDays={TOP_FOODS_WINDOW_DAYS} variant="plain" />
 
-      {isStatsOpen && <StatsModal onClose={() => setIsStatsOpen(false)} />}
+      {isStatsOpen && <StatsModal onClose={() => setIsStatsOpen(false)} stats={stats} />}
     </div>
   );
 }
