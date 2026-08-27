@@ -517,3 +517,30 @@ export function PieChartIcon({ size = 18, strokeWidth = 2.2, className }: IconPr
   );
 }
 
+export function PlayIcon({ size = 24, strokeWidth = 2, className }: IconProps) {
+  return (
+    <StrokeIcon size={size} strokeWidth={strokeWidth} className={className}>
+      <polygon points="5 3 19 12 5 21 5 3" />
+    </StrokeIcon>
+  );
+}
+
+export function PauseIcon({ size = 24, strokeWidth = 2, className }: IconProps) {
+  return (
+    <StrokeIcon size={size} strokeWidth={strokeWidth} className={className}>
+      <rect x="6" y="4" width="4" height="16" />
+      <rect x="14" y="4" width="4" height="16" />
+    </StrokeIcon>
+  );
+}
+
+export function RotateCcwIcon({ size = 24, strokeWidth = 2, className }: IconProps) {
+  return (
+    <StrokeIcon size={size} strokeWidth={strokeWidth} className={className}>
+      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+      <path d="M3 3v5h5" />
+    </StrokeIcon>
+  );
+}
+
+
