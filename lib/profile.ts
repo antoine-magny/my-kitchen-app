@@ -88,17 +88,3 @@ export const SETTINGS_ENTRIES: SettingsEntry[] = [
   { emoji: "🔔", label: "Notifications", hint: "Rappels DLC et repas du jour" },
   { emoji: "❓", label: "Aide & support", hint: "Questions fréquentes et contact" },
 ];
-
-/** Aperçu statique de la future page de statistiques. */
-export const WEEKLY_HIGHLIGHTS = [
-  { value: "1 980", label: "kcal / jour" },
-  { value: "17", label: "repas cuisinés" },
-  { value: "2", label: "aliments jetés" },
-];
-
-export const TOP_CONSUMED_FOODS: { emoji: string; label: string; share: number }[] = [
-  { emoji: "🥚", label: "Œufs", share: 82 },
-  { emoji: "🍅", label: "Tomates", share: 64 },
-  { emoji: "🍗", label: "Poulet", share: 47 },
-  { emoji: "🥑", label: "Avocat", share: 31 },
-];

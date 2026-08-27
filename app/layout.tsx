@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Lora, Nunito } from "next/font/google";
 import { AppShell } from "@/components/bottom-nav";
+import { ThemeInitScript } from "@/components/theme-init-script";
 import "./globals.css";
 
 const nunito = Nunito({
@@ -30,7 +31,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" className={`${nunito.variable} ${lora.variable} h-full antialiased`}>
+    <html
+      lang="fr"
+      data-theme="light"
+      suppressHydrationWarning
+      className={`${nunito.variable} ${lora.variable} h-full antialiased`}
+    >
+      <head>
+        <ThemeInitScript />
+      </head>
       <body className="flex min-h-full flex-col font-[family-name:var(--font-nunito)]">
         <AppShell>{children}</AppShell>
       </body>

@@ -1,26 +1,39 @@
 "use client";
 
-import { useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronRightIcon } from "@/components/icons";
 import { HelpSupportModal } from "@/components/parametres/help-support-modal";
 import { NotificationsModal } from "@/components/parametres/notifications-modal";
 import { SETTINGS_ENTRIES } from "@/lib/profile";
 import { createClient } from "@/lib/supabase/client";
+import { applyTheme, getInitialTheme, getStoredTheme, type ThemeId } from "@/lib/theme";
 
-const THEMES = [
+const THEMES: { id: ThemeId; emoji: string; label: string }[] = [
   { id: "light", emoji: "☀️", label: "Clair" },
   { id: "dark", emoji: "🌙", label: "Sombre" },
-] as const;
-
-type ThemeId = (typeof THEMES)[number]["id"];
+];
 
 export function SettingsMenu() {
-  const [theme, setTheme] = useState<ThemeId>("light");
+  // Lecture paresseuse : reste cohérent avec l'attribut déjà posé par le
+  // script d'initialisation dans app/layout.tsx (voir lib/theme.ts).
+  const [theme, setTheme] = useState<ThemeId>(() => getInitialTheme());
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const router = useRouter();
   const supabase = createClient();
+
+  // Re-applique la préférence stockée après le double rendu de Strict Mode
+  // en dev, qui réinitialise sinon l'attribut data-theme (no-op en prod).
+  useLayoutEffect(() => {
+    const stored = getStoredTheme();
+    if (stored) document.documentElement.setAttribute("data-theme", stored);
+  }, []);
+
+  const handleThemeChange = (id: ThemeId) => {
+    setTheme(id);
+    applyTheme(id);
+  };
 
   const handleLogout = async () => {
     window.localStorage.clear();
@@ -90,7 +103,7 @@ export function SettingsMenu() {
               <button
                 key={option.id}
                 type="button"
-                onClick={() => setTheme(option.id)}
+                onClick={() => handleThemeChange(option.id)}
                 aria-pressed={active}
                 className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${
                   active ? "bg-white text-[#2E5C3A] shadow-sm" : "text-[#7A8F7D]"

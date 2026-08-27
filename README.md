@@ -78,7 +78,7 @@ components/             Composants React partagés
   home/                 Accueil : en-tête, repas du jour, suggestions, DLC
   frigo/                Composants propres à la page frigo (liste, modales, ligne)
   planning/             Header, board, modales + hook inventaire frigo
-  parametres/           Cartes Profil + quiz (modal, tags, grille, options)
+  parametres/           Cartes Profil + quiz (modal, tags, grille, options) + statistiques
   recipe-form/          Champs partagés + hook `use-recipe-form.ts` (édition)
   add-recipe/           Parcours d'ajout (étapes) + hook `use-add-recipe-form.ts`
   login/                Champs + boutons Google / e-mail / invité
@@ -106,6 +106,11 @@ lib/                    Logique métier, sans JSX
   inventory-match.ts    Identité partagée courses / frigo / consommation (`ingredientId` ou nom exact)
   ingredients.ts        Référentiel canonique (ingredientId)
   planning.ts           Construction de semaine + agrégation d'ingrédients
+  nutrition-history.ts  Historique journalier dérivé du planning, purgé à 1 an
+  nutrition-stats.ts    Séries calories / protéines par semaine ou par mois
+  nutrition-insights.ts Diversité protéique, top recettes, top aliments
+  protein-sources.ts    Classement des ingrédients en 6 familles protéiques
+  use-nutrition-stats.ts  Hook : historique + cibles chargés après hydratation
   recipe-model.ts       Types Recipe : tags multiples, coût, difficulté
   recipe-filters.ts     Filtrage du catalogue (tags, temps, difficulté, coût, recherche)
   recipe-time.ts        parseMinutes (filtres, save-recipe, planning)
@@ -211,11 +216,44 @@ envoyée à Supabase.
   Chacune garde son état dans un `useState` local, perdu au rechargement.
 - **Déconnexion** (`settings-menu.tsx`) : `localStorage.clear()` puis
   `supabase.auth.signOut()`, redirection vers `/login`.
-- Boutons encore inertes, en attente de la logique métier : statistiques, test
-  de profil culinaire, gestion du compte, notifications, aide, thème.
+- Boutons encore inertes, en attente de la logique métier : test de profil
+  culinaire, gestion du compte, notifications, aide, thème.
 
 Quand la persistance des préférences arrivera, elle devra suivre le modèle
 hybride du projet : `localStorage` d'abord, Supabase en arrière-plan.
+
+### Statistiques nutritionnelles
+
+`stats-card.tsx` (aperçu) et `stats-modal.tsx` (détail) affichent des données
+réelles, plus aucune donnée de démonstration. Un seul chargement via le hook
+`lib/use-nutrition-stats.ts`, passé en props à la modale — la modale ne relit
+jamais le `localStorage` elle-même.
+
+Chaîne de données :
+
+1. `lib/nutrition-history.ts` re-dérive un historique journalier
+   (`calories`, `proteins`, titres des repas, `ingredientId`, familles
+   protéiques) depuis `my-kitchen-meal-plans-v1`, le fusionne avec l'archive
+   `my-kitchen-nutrition-history-v1`, **purge tout ce qui dépasse 365 jours**
+   (`HISTORY_RETENTION_DAYS`) puis réécrit l'archive. Le planning reste la
+   source de vérité ; l'archive prend le relais pour les jours qu'il ne
+   contient plus. Le catalogue de recettes n'est lu qu'une fois par chargement
+   (`Map` par `id`), jamais `getRecipeById` dans une boucle.
+2. `lib/nutrition-stats.ts` construit la série tracée : une barre par jour en
+   mode semaine, une barre par semaine (moyenne journalière) en mode mois.
+   Recul limité à 51 semaines / 11 mois pour rester dans la rétention.
+3. `lib/nutrition-insights.ts` fournit les lectures transverses : indice de
+   diversité, recettes les plus réalisées, top aliments, chiffres clés.
+4. `lib/protein-sources.ts` classe un ingrédient dans l'une des 6 familles
+   protéiques (viandes, poissons, œufs, laitiers, légumineuses, végétales).
+   Un aliment reconnu du catalogue n'est jamais repêché par mots-clés : son
+   absence de `SOURCE_BY_CATALOG_ID` est un choix (beurre, semoule…).
+
+Les cibles quotidiennes affichées viennent du profil (`my-kitchen-profile-v1`),
+pas d'une constante. Les moyennes ne portent que sur les **jours renseignés**.
+
+La modale n'a **qu'une seule barre de défilement** : celle du panneau
+`CenteredModal`. Ne jamais réintroduire un `overflow-y-auto` interne.
 
 ---
 
@@ -360,6 +398,7 @@ Clés `localStorage` utilisées :
 | `my-kitchen-recipe-overrides` | Modifications des recettes livrées | `lib/recipes.ts` |
 | `my-kitchen-deleted-recipes` | Recettes livrées masquées | `lib/recipes.ts` |
 | `my-kitchen-favorite-recipes` | Favoris | pages `app/recettes` |
+| `my-kitchen-nutrition-history-v1` | Archive nutritionnelle quotidienne, purgée à 1 an | `lib/nutrition-history.ts` |
 
 Migration automatique depuis les clés legacy (`my-kitchen-fridge-items`,
 `my-kitchen-shopping-list`) au premier chargement.
