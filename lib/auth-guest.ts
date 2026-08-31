@@ -44,6 +44,12 @@ export const DEV_AUTO_GUEST_ATTEMPTED_COOKIE = "dev_auto_guest_attempted";
  * `guest_session_active` avant `signInAnonymously`.
  */
 export function isDevAutoGuestEnabled(): boolean {
+  // --- DÉSACTIVATION TEMPORAIRE DE L'AUTHENTIFICATION ---
+  // Mettre à `false` pour réactiver la redirection vers la page de login
+  const FORCE_ANONYMOUS_MODE = true;
+  if (FORCE_ANONYMOUS_MODE) return true;
+  // ------------------------------------------------------
+
   if (process.env.NODE_ENV !== "development") return false;
   const flag = process.env.DEV_AUTO_GUEST?.trim().toLowerCase();
   return flag === "1" || flag === "true";
